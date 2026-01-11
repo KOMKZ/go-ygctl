@@ -1,0 +1,46 @@
+package util
+
+import (
+	"strings"
+	"unicode"
+)
+
+// TruncateString truncates a string to the specified max length.
+func TruncateString(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	if max <= 3 {
+		return s[:max]
+	}
+	return s[:max-3] + "..."
+}
+
+// ToSnakeCase converts a CamelCase string to snake_case.
+func ToSnakeCase(s string) string {
+	var result strings.Builder
+	for i, r := range s {
+		if unicode.IsUpper(r) {
+			if i > 0 {
+				result.WriteByte('_')
+			}
+			result.WriteRune(unicode.ToLower(r))
+		} else {
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
+}
+
+// IsEmpty checks if a string is empty or contains only whitespace.
+func IsEmpty(s string) bool {
+	return strings.TrimSpace(s) == ""
+}
+
+// DefaultIfEmpty returns defaultVal if s is empty, otherwise returns s.
+func DefaultIfEmpty(s, defaultVal string) string {
+	if IsEmpty(s) {
+		return defaultVal
+	}
+	return s
+}

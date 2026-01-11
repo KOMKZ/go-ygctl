@@ -1,0 +1,12 @@
+package main
+
+import (
+	"{{.ModuleName}}/internal/app"
+)
+
+func main() {
+	application := app.New()
+	if err := application.Run(); err != nil {
+		panic(err)
+	}
+}

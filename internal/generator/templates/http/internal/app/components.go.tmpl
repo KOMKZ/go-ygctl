@@ -1,0 +1,40 @@
+package app
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/health"
+{{if .EnableDatabase}}	"github.com/KOMKZ/go-yogan-framework/database"
+{{end}}{{if .EnableRedis}}	"github.com/KOMKZ/go-yogan-framework/redis"
+{{end}}	// "github.com/KOMKZ/go-yogan-framework/kafka"
+	// "github.com/KOMKZ/go-yogan-framework/telemetry"
+	// "github.com/KOMKZ/go-yogan-framework/limiter"
+	// "github.com/KOMKZ/go-yogan-framework/breaker"
+	// "github.com/KOMKZ/go-yogan-framework/grpc"
+	// "github.com/KOMKZ/go-yogan-framework/governance"
+	// "github.com/KOMKZ/go-yogan-framework/jwt"
+	// "github.com/KOMKZ/go-yogan-framework/auth"
+	// "github.com/KOMKZ/go-yogan-framework/event"
+)
+
+// RegisterComponents registers all business components
+func (a *{{.AppNamePascal}}App) RegisterComponents(app *application.Application) {
+	app.Register(
+		// ====== Core Components ======
+		health.NewComponent(), // Health check
+{{if .EnableDatabase}}		database.NewComponent(), // Database
+{{end}}{{if .EnableRedis}}		redis.NewComponent(), // Redis
+{{end}}
+		// ====== Optional Components (uncomment as needed) ======
+		// database.NewComponent(), // Database (MySQL/PostgreSQL/SQLite)
+		// redis.NewComponent(),    // Redis
+		// kafka.NewComponent(),      // Kafka producer/consumer
+		// telemetry.NewComponent(),  // OpenTelemetry tracing & metrics
+		// limiter.NewComponent(),    // Rate limiting
+		// breaker.NewComponent(),    // Circuit breaker
+		// grpc.NewComponent(),       // gRPC client/server
+		// governance.NewComponent(), // Service governance (etcd)
+		// jwt.NewComponent(),        // JWT authentication
+		// auth.NewComponent(),       // Authentication service
+		// event.NewComponent(),      // Event dispatcher
+	)
+}

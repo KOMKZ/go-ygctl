@@ -1,0 +1,22 @@
+package demo
+
+import (
+	"context"
+
+	"{{.ModuleName}}/internal/domain/demo/model"
+)
+
+// Repository defines demo repository interface
+type Repository interface {
+	// CRUD operations
+	Create(ctx context.Context, demo *model.Demo) error
+	FindByID(ctx context.Context, id uint) (*model.Demo, error)
+	Update(ctx context.Context, demo *model.Demo) error
+	Delete(ctx context.Context, id uint) error
+
+	// Pagination query
+	Paginate(ctx context.Context, page, pageSize int, filters map[string]interface{}) ([]model.Demo, int64, error)
+
+	// Business queries
+	FindByTitle(ctx context.Context, title string) (*model.Demo, error)
+}

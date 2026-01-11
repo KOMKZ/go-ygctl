@@ -1,0 +1,90 @@
+# {{.AppName}} configuration
+
+# ====== Logger Configuration ======
+logger:
+  base_log_dir: "./logs"
+  logger_name: "logger"
+  app_name: "{{.AppName}}"
+  module_number: 10
+  level: "debug"
+  encoding: "json"
+  console_encoding: "console_pretty"
+  render_style: "single_line"
+  enable_console: true
+  enable_level_in_filename: true
+  enable_date_in_filename: true
+  date_format: "2006-01-02"
+  max_size: 100
+  max_backups: 3
+  max_age: 28
+  compress: true
+  enable_caller: true
+  enable_stacktrace: true
+  stacktrace_level: "error"
+  stacktrace_depth: 5
+  enable_trace_id: true
+  trace_id_key: "trace_id"
+  trace_id_field_name: "trace_id"
+
+# ====== API Server Configuration ======
+api_server:
+  host: "0.0.0.0"
+  port: {{.ServerPort}}
+  mode: "debug"  # debug, release, test
+  read_timeout: 60
+  write_timeout: 60
+
+# ====== Health Check Configuration ======
+health:
+  enabled: true
+  timeout: 5s
+
+# ====== Middleware Configuration ======
+middleware:
+  trace_id:
+    enable: true
+    trace_id_key: "trace_id"
+    trace_id_header: "X-Trace-ID"
+    enable_response_header: true
+  
+  request_log:
+    enable: true
+    skip_paths: ["/health"]
+    enable_body: false
+    max_body_size: 1024
+  
+  cors:
+    enable: false
+  
+  rate_limit:
+    enable: false
+
+# ====== HTTP Error Handling ======
+httpx:
+  enable: false
+  full_error_chain: true
+{{if .EnableDatabase}}
+# ====== Database Configuration ======
+database:
+  connections:
+    master:
+      driver: "mysql"
+      dsn: "root:password@tcp(localhost:3306)/{{.AppName}}?charset=utf8mb4&parseTime=True&loc=Local"
+      max_open_conns: 100
+      max_idle_conns: 10
+      conn_max_lifetime: 3600
+      enable_log: true
+      slow_threshold: 200000000
+{{end}}
+{{if .EnableRedis}}
+# ====== Redis Configuration ======
+redis:
+  instances:
+    main:
+      mode: "standalone"
+      addrs:
+        - "localhost:6379"
+      password: ""
+      db: 0
+      pool_size: 10
+{{end}}

@@ -1,0 +1,44 @@
+package router
+
+import (
+	demoDomain "{{.ModuleName}}/internal/domain/demo"
+	demoModule "{{.ModuleName}}/internal/module/demo"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/gin-gonic/gin"
+)
+
+// RegisterDemoRoutes registers demo CRUD routes
+//
+// Routes:
+//   - GET    /api/demos/page   - List page
+//   - GET    /api/demos/:id    - Get by ID
+//   - POST   /api/demos        - Create
+//   - PUT    /api/demos/:id    - Update
+//   - DELETE /api/demos/:id    - Delete
+//
+// Note: This demo uses in-memory storage. To use real database:
+//  1. Uncomment database.NewComponent() in components.go
+//  2. Replace NewMemoryRepository with NewGORMRepository(db)
+func RegisterDemoRoutes(engine *gin.Engine, app *application.Application) {
+	// Use in-memory repository for demo (no database required)
+	demoRepo := demoDomain.NewMemoryRepository()
+
+	demoLogger := logger.GetLogger("demo")
+	demoService := demoDomain.NewService(demoRepo, demoLogger)
+
+	// Create handler
+	demoHandler := demoModule.NewHandler(demoService, demoLogger)
+
+	// Register routes
+	api := engine.Group("/api/demos")
+	{
+		api.GET("/page", demoHandler.ListPage)
+		api.GET("/:id", demoHandler.GetByID)
+		api.POST("", demoHandler.Create)
+		api.PUT("/:id", demoHandler.Update)
+		api.DELETE("/:id", demoHandler.Delete)
+	}
+
+	app.MustGetLogger().DebugCtx(app.Context(), "✅ Demo routes registered (in-memory storage)")
+}

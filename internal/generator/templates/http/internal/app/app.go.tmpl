@@ -1,0 +1,97 @@
+package app
+
+import (
+	"sync"
+
+	"{{.ModuleName}}/internal/config"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/gin-gonic/gin"
+)
+
+// {{.AppNamePascal}}App application instance
+type {{.AppNamePascal}}App struct {
+	Core       *application.Application // Exported for testing
+	cfg        *config.{{.AppNamePascal}}Config
+	cfgMu      sync.RWMutex
+	configPath string
+	flags      *application.AppFlags
+	logger     *logger.CtxZapLogger
+}
+
+// New creates {{.AppNamePascal}}App application instance (default config path)
+func New() *{{.AppNamePascal}}App {
+	return &{{.AppNamePascal}}App{
+		configPath: "./configs",
+		Core:       application.New("./configs", "{{.AppNameUpper}}", nil),
+		logger:     logger.GetLogger("{{.AppName}}"),
+	}
+}
+
+// NewWithConfig creates {{.AppNamePascal}}App application instance (custom config path)
+func NewWithConfig(configPath string) *{{.AppNamePascal}}App {
+	return &{{.AppNamePascal}}App{
+		configPath: configPath,
+		Core:       application.New(configPath, "{{.AppNameUpper}}", nil),
+		logger:     logger.GetLogger("{{.AppName}}"),
+	}
+}
+
+// NewWithFlags creates {{.AppNamePascal}}App application instance (supports command line args)
+func NewWithFlags(flags *application.AppFlags) *{{.AppNamePascal}}App {
+	return &{{.AppNamePascal}}App{
+		configPath: flags.ConfigDir,
+		flags:      flags,
+		Core:       application.New(flags.ConfigDir, "{{.AppNameUpper}}", flags),
+		logger:     logger.GetLogger("{{.AppName}}"),
+	}
+}
+
+// GetApp returns internal application instance (for testing)
+func (a *{{.AppNamePascal}}App) GetApp() *application.Application {
+	return a.Core
+}
+
+// Run starts the application (blocking, for production)
+func (a *{{.AppNamePascal}}App) Run() error {
+	return a.run(true)
+}
+
+// RunNonBlocking starts the application without blocking (for testing)
+func (a *{{.AppNamePascal}}App) RunNonBlocking() error {
+	return a.run(false)
+}
+
+// run internal start logic
+func (a *{{.AppNamePascal}}App) run(blocking bool) error {
+	// Register business components
+	a.RegisterComponents(a.Core)
+
+	// Setup callbacks
+	a.SetupCallbacks(a.Core)
+
+	// Start application
+	if blocking {
+		return a.Core.Run()
+	}
+	return a.Core.RunNonBlocking()
+}
+
+// GetConfig returns current config (thread-safe)
+func (a *{{.AppNamePascal}}App) GetConfig() *config.{{.AppNamePascal}}Config {
+	a.cfgMu.RLock()
+	defer a.cfgMu.RUnlock()
+	return a.cfg
+}
+
+// GetHTTPServer returns HTTP Server (for testing)
+func (a *{{.AppNamePascal}}App) GetHTTPServer() interface {
+	GetEngine() *gin.Engine
+} {
+	return a.Core.GetHTTPServer()
+}
+
+// Shutdown stops the application
+func (a *{{.AppNamePascal}}App) Shutdown() {
+	a.Core.Shutdown()
+}

@@ -1,0 +1,43 @@
+package app
+
+import (
+	"{{.ModuleName}}/internal/config"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"go.uber.org/zap"
+)
+
+// SetupCallbacks registers all lifecycle callbacks
+func (a *{{.AppNamePascal}}App) SetupCallbacks(app *application.Application) {
+	// OnSetup: Load app-specific config, initialize dependencies
+	app.OnSetup(func(app *application.Application) error {
+		// Load app-specific config
+		var cfg config.{{.AppNamePascal}}Config
+		if err := app.GetConfigLoader().Unmarshal(&cfg); err != nil {
+			return err
+		}
+
+		a.cfgMu.Lock()
+		a.cfg = &cfg
+		a.cfgMu.Unlock()
+
+		a.logger.DebugCtx(app.Context(), "App config loaded",
+			zap.String("app", "{{.AppName}}"))
+
+		return nil
+	})
+
+	// RegisterRoutes: Register all routes (see router.go)
+	app.RegisterRoutes(NewRouterRegistrar(a))
+
+	// OnReady: Called after all components started
+	app.OnReady(func(app *application.Application) error {
+		a.logger.InfoCtx(app.Context(), "✅ {{.AppName}} is ready")
+		return nil
+	})
+
+	// OnShutdown: Cleanup before shutdown
+	app.OnShutdown(func(app *application.Application) error {
+		a.logger.InfoCtx(app.Context(), "{{.AppName}} shutting down...")
+		return nil
+	})
+}
