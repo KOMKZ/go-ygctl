@@ -10,81 +10,59 @@ import (
 )
 
 var (
-	httpAppName     string
-	httpModuleName  string
-	httpOutputPath  string
-	httpPort        int
-	httpInteractive bool
-	httpLocalFw     bool
-	httpFwPath      string
-	httpNoDemo      bool
+	testMode   bool
+	testName   string
+	testModule string
+	testOutput string
 )
 
 var newHTTPCmd = &cobra.Command{
-	Use:   "http [app-name]",
+	Use:   "http",
 	Short: "Create a new HTTP application",
 	Long: `Create a new Gin-based HTTP application with Yogan Framework.
 
-Examples:
-  # Interactive mode
-  go-ygctl new http --interactive
+This command runs in interactive mode and will guide you through
+the configuration process.
 
-  # Quick mode with arguments
-  go-ygctl new http my-api --module github.com/myorg/my-api
-
-  # Specify output path
-  go-ygctl new http my-api --output ./apps --port 8090`,
-	Args: cobra.MaximumNArgs(1),
+Example:
+  go-ygctl new http`,
 	RunE: runNewHTTP,
 }
 
 func init() {
 	newCmd.AddCommand(newHTTPCmd)
-
-	newHTTPCmd.Flags().BoolVarP(&httpInteractive, "interactive", "i", false, "Interactive mode")
-	newHTTPCmd.Flags().StringVarP(&httpModuleName, "module", "m", "", "Go module name")
-	newHTTPCmd.Flags().StringVarP(&httpOutputPath, "output", "o", ".", "Output directory")
-	newHTTPCmd.Flags().IntVarP(&httpPort, "port", "p", 8080, "Server port")
-	newHTTPCmd.Flags().BoolVar(&httpLocalFw, "local-framework", true, "Use local framework with replace directive")
-	newHTTPCmd.Flags().StringVar(&httpFwPath, "framework-path", "../../go-yogan-framework", "Local framework path")
-	newHTTPCmd.Flags().BoolVar(&httpNoDemo, "no-demo", false, "Generate empty structure without demo code")
+	// Hidden flags for testing
+	newHTTPCmd.Flags().BoolVar(&testMode, "test", false, "Test mode (non-interactive)")
+	newHTTPCmd.Flags().StringVar(&testName, "test-name", "", "App name for test mode")
+	newHTTPCmd.Flags().StringVar(&testModule, "test-module", "", "Module name for test mode")
+	newHTTPCmd.Flags().StringVar(&testOutput, "test-output", ".", "Output path for test mode")
+	newHTTPCmd.Flags().MarkHidden("test")
+	newHTTPCmd.Flags().MarkHidden("test-name")
+	newHTTPCmd.Flags().MarkHidden("test-module")
+	newHTTPCmd.Flags().MarkHidden("test-output")
 }
 
 func runNewHTTP(cmd *cobra.Command, args []string) error {
 	var config *generator.AppConfig
 	var err error
 
-	if httpInteractive {
+	if testMode {
+		// Test mode (non-interactive)
+		config = generator.NewDefaultConfig()
+		config.AppName = testName
+		config.ModuleName = testModule
+		config.OutputPath = testOutput
+		config.Description = fmt.Sprintf("%s HTTP API", generator.ToPascalCase(testName))
+	} else {
 		// Interactive mode
 		config, err = generator.PromptHTTPConfig()
 		if err != nil {
 			return err
 		}
-	} else {
-		// Quick mode
-		if len(args) < 1 {
-			return fmt.Errorf("app name required, use --interactive for guided setup")
-		}
-
-		config = generator.NewDefaultConfig()
-		config.AppName = args[0]
-		config.OutputPath = httpOutputPath
-		config.ServerPort = httpPort
-		config.UseLocalFramework = httpLocalFw
-		config.FrameworkPath = httpFwPath
-
-		if httpModuleName != "" {
-			config.ModuleName = httpModuleName
-		} else {
-			config.ModuleName = fmt.Sprintf("github.com/myorg/%s", config.AppName)
-		}
-
-		config.Description = fmt.Sprintf("%s HTTP API", generator.ToPascalCase(config.AppName))
-		config.SkipDemo = httpNoDemo
 	}
 
 	// Generate
-	color.Cyan("🚀 Generating HTTP application: %s", config.AppName)
+	color.Cyan("\n🚀 Generating HTTP application: %s", config.AppName)
 
 	gen := generator.NewHTTPGenerator(config)
 	if err := gen.Generate(); err != nil {
@@ -100,10 +78,8 @@ func runNewHTTP(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  cd %s\n", absPath)
 
 	if config.UseLocalFramework {
-		// Local mode: just tidy and run
 		fmt.Println("  go mod tidy")
 	} else {
-		// Remote mode: need to fetch framework first
 		fmt.Println("  go get github.com/KOMKZ/go-yogan-framework@latest")
 		fmt.Println("  go mod tidy")
 	}

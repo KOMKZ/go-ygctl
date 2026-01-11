@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "0.1.0"
+var version = "0.2.0"
 
 var rootCmd = &cobra.Command{
 	Use:   "go-ygctl",
@@ -21,8 +21,7 @@ Supported application types:
   - gRPC (gRPC server/client)       [coming soon]
 
 Example:
-  go-ygctl new http my-api
-  go-ygctl new http --interactive`,
+  go-ygctl new http`,
 	Version: version,
 }
 

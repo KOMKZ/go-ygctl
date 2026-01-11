@@ -1,0 +1,11 @@
+package model
+
+import "time"
+
+// Home entity for demo purposes
+type Home struct {
+	ID        uint      `json:"id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"createdAt"`
+}

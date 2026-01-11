@@ -1,0 +1,64 @@
+package home
+
+import (
+	homeDomain "{{.ModuleName}}/internal/domain/home"
+	"github.com/KOMKZ/go-yogan-framework/httpx"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/gin-gonic/gin"
+)
+
+// Handler handles home HTTP requests
+type Handler struct {
+	service *homeDomain.Service
+	logger  *logger.CtxZapLogger
+}
+
+// NewHandler creates home handler
+func NewHandler(service *homeDomain.Service, log *logger.CtxZapLogger) *Handler {
+	return &Handler{
+		service: service,
+		logger:  log,
+	}
+}
+
+// Index handles GET /
+func (h *Handler) Index(c *gin.Context) {
+	info, err := h.service.GetInfo(c.Request.Context())
+	if err != nil {
+		httpx.HandleError(c, err)
+		return
+	}
+
+	httpx.OkJson(c, IndexResponse{
+		Message: info.Title,
+		Version: "1.0.0",
+	})
+}
+
+// Health handles GET /health
+func (h *Handler) Health(c *gin.Context) {
+	httpx.OkJson(c, HealthResponse{
+		Status: "ok",
+	})
+}
+
+// List handles GET /api/home
+func (h *Handler) List(c *gin.Context) {
+	items, err := h.service.List(c.Request.Context())
+	if err != nil {
+		httpx.HandleError(c, err)
+		return
+	}
+
+	response := make([]HomeResponse, len(items))
+	for i, item := range items {
+		response[i] = HomeResponse{
+			ID:        item.ID,
+			Title:     item.Title,
+			Content:   item.Content,
+			CreatedAt: item.CreatedAt,
+		}
+	}
+
+	httpx.OkJson(c, response)
+}

@@ -1,0 +1,32 @@
+package router
+
+import (
+	homeDomain "{{.ModuleName}}/internal/domain/home"
+	homeModule "{{.ModuleName}}/internal/module/home"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/gin-gonic/gin"
+)
+
+// RegisterHomeRoutes registers home routes
+//
+// Routes:
+//   - GET /           - Index/Welcome
+//   - GET /health     - Health check
+//   - GET /api/home   - List items
+func RegisterHomeRoutes(engine *gin.Engine, app *application.Application) {
+	// Build domain layer (router → handler → service → repository)
+	homeRepo := homeDomain.NewMemoryRepository()
+	homeLogger := logger.GetLogger("home")
+	homeService := homeDomain.NewService(homeRepo, homeLogger)
+
+	// Create handler
+	homeHandler := homeModule.NewHandler(homeService, homeLogger)
+
+	// Register routes
+	engine.GET("/", homeHandler.Index)
+	engine.GET("/health", homeHandler.Health)
+	engine.GET("/api/home", homeHandler.List)
+
+	app.MustGetLogger().DebugCtx(app.Context(), "✅ Home routes registered")
+}

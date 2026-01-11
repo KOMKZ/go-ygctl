@@ -18,13 +18,10 @@ func NewRouterRegistrar(app *{{.AppNamePascal}}App) *RouterRegistrar {
 
 // RegisterRoutes registers all routes
 func (r *RouterRegistrar) RegisterRoutes(engine *gin.Engine, app *application.Application) {
-	// Health & root routes
-	router.RegisterHealthRoutes(engine, app)
+	// Home routes (includes /, /health, /api/home)
+	router.RegisterHomeRoutes(engine, app)
 
-	// Demo CRUD routes (example: router → handler → domain → model)
-	router.RegisterDemoRoutes(engine, app)
-
-	// Add more route registrations as needed:
+	// Add more route registrations here:
 	// router.RegisterUserRoutes(engine, app)
 	// router.RegisterOrderRoutes(engine, app)
 }

@@ -1,0 +1,22 @@
+package home
+
+import "time"
+
+// IndexResponse response for index endpoint
+type IndexResponse struct {
+	Message string `json:"message"`
+	Version string `json:"version"`
+}
+
+// HealthResponse response for health check
+type HealthResponse struct {
+	Status string `json:"status"`
+}
+
+// HomeResponse response DTO for home item
+type HomeResponse struct {
+	ID        uint      `json:"id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"createdAt"`
+}

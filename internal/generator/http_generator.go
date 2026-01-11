@@ -41,15 +41,10 @@ func (g *HTTPGenerator) Generate() error {
 		"configs",
 		"internal/app",
 		"internal/config",
-		"internal/domain",
-		"internal/module",
+		"internal/domain/home/model",
+		"internal/module/home",
 		"internal/router",
 		"pkg/util",
-	}
-
-	// Add demo directories only if not skipping demo
-	if !g.config.SkipDemo {
-		dirs = append(dirs, "internal/domain/demo/model", "internal/module/demo")
 	}
 
 	for _, dir := range dirs {
@@ -58,7 +53,7 @@ func (g *HTTPGenerator) Generate() error {
 		}
 	}
 
-	// Core files (always generated)
+	// Generate files from templates
 	files := []struct {
 		template string
 		output   string
@@ -69,36 +64,18 @@ func (g *HTTPGenerator) Generate() error {
 		{"internal/app/app.go.tmpl", "internal/app/app.go"},
 		{"internal/app/callbacks.go.tmpl", "internal/app/callbacks.go"},
 		{"internal/app/components.go.tmpl", "internal/app/components.go"},
+		{"internal/app/router.go.tmpl", "internal/app/router.go"},
 		{"internal/config/config.go.tmpl", "internal/config/config.go"},
-		{"internal/router/health.go.tmpl", "internal/router/health.go"},
+		{"internal/domain/home/model/home.go.tmpl", "internal/domain/home/model/home.go"},
+		{"internal/domain/home/repository.go.tmpl", "internal/domain/home/repository.go"},
+		{"internal/domain/home/service.go.tmpl", "internal/domain/home/service.go"},
+		{"internal/module/home/handler.go.tmpl", "internal/module/home/handler.go"},
+		{"internal/module/home/request.go.tmpl", "internal/module/home/request.go"},
+		{"internal/module/home/response.go.tmpl", "internal/module/home/response.go"},
+		{"internal/router/home.go.tmpl", "internal/router/home.go"},
 		{"pkg/util/ptr.go.tmpl", "pkg/util/ptr.go"},
 		{"pkg/util/string.go.tmpl", "pkg/util/string.go"},
 		{"pkg/README.md.tmpl", "pkg/README.md"},
-	}
-
-	// Add demo files only if not skipping demo
-	if !g.config.SkipDemo {
-		demoFiles := []struct {
-			template string
-			output   string
-		}{
-			{"internal/app/router.go.tmpl", "internal/app/router.go"},
-			{"internal/domain/demo/model/demo.go.tmpl", "internal/domain/demo/model/demo.go"},
-			{"internal/domain/demo/repository.go.tmpl", "internal/domain/demo/repository.go"},
-			{"internal/domain/demo/repository_memory.go.tmpl", "internal/domain/demo/repository_memory.go"},
-			{"internal/domain/demo/service.go.tmpl", "internal/domain/demo/service.go"},
-			{"internal/module/demo/handler.go.tmpl", "internal/module/demo/handler.go"},
-			{"internal/module/demo/request.go.tmpl", "internal/module/demo/request.go"},
-			{"internal/module/demo/response.go.tmpl", "internal/module/demo/response.go"},
-			{"internal/router/demo.go.tmpl", "internal/router/demo.go"},
-		}
-		files = append(files, demoFiles...)
-	} else {
-		// Generate empty router registrar for no-demo mode
-		files = append(files, struct {
-			template string
-			output   string
-		}{"internal/app/router_empty.go.tmpl", "internal/app/router.go"})
 	}
 
 	data := g.templateData()
@@ -114,7 +91,6 @@ func (g *HTTPGenerator) Generate() error {
 
 // templateData returns the data for template rendering
 func (g *HTTPGenerator) templateData() map[string]interface{} {
-	// Convert app-name to APP_NAME for env prefix
 	appNameUpper := strings.ToUpper(strings.ReplaceAll(g.config.AppName, "-", "_"))
 
 	return map[string]interface{}{
@@ -126,17 +102,6 @@ func (g *HTTPGenerator) templateData() map[string]interface{} {
 		"ServerPort":        g.config.ServerPort,
 		"UseLocalFramework": g.config.UseLocalFramework,
 		"FrameworkPath":     g.config.FrameworkPath,
-		"EnableDatabase":    g.config.EnableDatabase,
-		"EnableRedis":       g.config.EnableRedis,
-	}
-}
-
-// templateFuncs returns custom template functions
-func templateFuncs() template.FuncMap {
-	return template.FuncMap{
-		"ToUpper": strings.ToUpper,
-		"ToLower": strings.ToLower,
-		"Replace": strings.ReplaceAll,
 	}
 }
 
@@ -148,7 +113,7 @@ func (g *HTTPGenerator) renderTemplate(appPath, tmplName, outputName string, dat
 		return fmt.Errorf("failed to read template %s: %w", tmplName, err)
 	}
 
-	tmpl, err := template.New(tmplName).Funcs(templateFuncs()).Parse(string(content))
+	tmpl, err := template.New(tmplName).Parse(string(content))
 	if err != nil {
 		return fmt.Errorf("failed to parse template %s: %w", tmplName, err)
 	}

@@ -63,28 +63,22 @@ middleware:
 httpx:
   enable: false
   full_error_chain: true
-{{if .EnableDatabase}}
-# ====== Database Configuration ======
-database:
-  connections:
-    master:
-      driver: "mysql"
-      dsn: "root:password@tcp(localhost:3306)/{{.AppName}}?charset=utf8mb4&parseTime=True&loc=Local"
-      max_open_conns: 100
-      max_idle_conns: 10
-      conn_max_lifetime: 3600
-      enable_log: true
-      slow_threshold: 200000000
-{{end}}
-{{if .EnableRedis}}
-# ====== Redis Configuration ======
-redis:
-  instances:
-    main:
-      mode: "standalone"
-      addrs:
-        - "localhost:6379"
-      password: ""
-      db: 0
-      pool_size: 10
-{{end}}
+
+# ====== Database Configuration (uncomment when needed) ======
+# database:
+#   connections:
+#     master:
+#       driver: "mysql"
+#       dsn: "root:password@tcp(localhost:3306)/{{.AppName}}?charset=utf8mb4&parseTime=True&loc=Local"
+#       max_open_conns: 100
+#       max_idle_conns: 10
+
+# ====== Redis Configuration (uncomment when needed) ======
+# redis:
+#   instances:
+#     main:
+#       mode: "standalone"
+#       addrs:
+#         - "localhost:6379"
+#       password: ""
+#       db: 0

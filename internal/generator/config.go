@@ -8,16 +8,11 @@ type AppConfig struct {
 	Description string // e.g., "User management API"
 
 	// Output
-	OutputPath string // e.g., "./apps" or "/path/to/apps"
+	OutputPath string // e.g., "./apps"
 
 	// Framework reference
-	UseLocalFramework bool   // true = use replace directive, false = use remote
-	FrameworkPath     string // local path to framework (if UseLocalFramework)
-
-	// Features
-	EnableDatabase bool
-	EnableRedis    bool
-	SkipDemo       bool // If true, generate empty structure without demo code
+	UseLocalFramework bool   // true = use replace directive
+	FrameworkPath     string // local path to framework
 
 	// Server config
 	ServerPort int
@@ -29,9 +24,6 @@ func NewDefaultConfig() *AppConfig {
 		ServerPort:        8080,
 		UseLocalFramework: true,
 		FrameworkPath:     "../../go-yogan-framework",
-		EnableDatabase:    false,
-		EnableRedis:       false,
-		SkipDemo:          false,
 	}
 }
 

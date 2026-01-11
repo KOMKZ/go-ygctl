@@ -1,0 +1,55 @@
+package home
+
+import (
+	"context"
+	"sync"
+	"time"
+
+	"{{.ModuleName}}/internal/domain/home/model"
+)
+
+// Repository defines home repository interface
+type Repository interface {
+	GetInfo(ctx context.Context) (*model.Home, error)
+	List(ctx context.Context) ([]model.Home, error)
+}
+
+// MemoryRepository in-memory implementation
+type MemoryRepository struct {
+	mu   sync.RWMutex
+	data []model.Home
+}
+
+// NewMemoryRepository creates a new in-memory repository
+func NewMemoryRepository() *MemoryRepository {
+	now := time.Now()
+	return &MemoryRepository{
+		data: []model.Home{
+			{ID: 1, Title: "Welcome", Content: "Welcome to {{.AppName}}", CreatedAt: now},
+			{ID: 2, Title: "Getting Started", Content: "This is a demo application", CreatedAt: now},
+		},
+	}
+}
+
+// GetInfo returns application info
+func (r *MemoryRepository) GetInfo(ctx context.Context) (*model.Home, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if len(r.data) > 0 {
+		return &r.data[0], nil
+	}
+	return &model.Home{Title: "{{.AppName}}", Content: "No data"}, nil
+}
+
+// List returns all items
+func (r *MemoryRepository) List(ctx context.Context) ([]model.Home, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]model.Home, len(r.data))
+	copy(result, r.data)
+	return result, nil
+}
+
+var _ Repository = (*MemoryRepository)(nil)

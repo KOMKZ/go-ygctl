@@ -1,0 +1,32 @@
+package home
+
+import (
+	"context"
+
+	"{{.ModuleName}}/internal/domain/home/model"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+)
+
+// Service handles home business logic
+type Service struct {
+	repo   Repository
+	logger *logger.CtxZapLogger
+}
+
+// NewService creates home service
+func NewService(repo Repository, log *logger.CtxZapLogger) *Service {
+	return &Service{
+		repo:   repo,
+		logger: log,
+	}
+}
+
+// GetInfo returns application info
+func (s *Service) GetInfo(ctx context.Context) (*model.Home, error) {
+	return s.repo.GetInfo(ctx)
+}
+
+// List returns all items
+func (s *Service) List(ctx context.Context) ([]model.Home, error) {
+	return s.repo.List(ctx)
+}
