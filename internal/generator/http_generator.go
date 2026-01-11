@@ -41,10 +41,15 @@ func (g *HTTPGenerator) Generate() error {
 		"configs",
 		"internal/app",
 		"internal/config",
-		"internal/domain/demo/model",
-		"internal/module/demo",
+		"internal/domain",
+		"internal/module",
 		"internal/router",
 		"pkg/util",
+	}
+
+	// Add demo directories only if not skipping demo
+	if !g.config.SkipDemo {
+		dirs = append(dirs, "internal/domain/demo/model", "internal/module/demo")
 	}
 
 	for _, dir := range dirs {
@@ -53,7 +58,7 @@ func (g *HTTPGenerator) Generate() error {
 		}
 	}
 
-	// Generate files from templates
+	// Core files (always generated)
 	files := []struct {
 		template string
 		output   string
@@ -64,20 +69,36 @@ func (g *HTTPGenerator) Generate() error {
 		{"internal/app/app.go.tmpl", "internal/app/app.go"},
 		{"internal/app/callbacks.go.tmpl", "internal/app/callbacks.go"},
 		{"internal/app/components.go.tmpl", "internal/app/components.go"},
-		{"internal/app/router.go.tmpl", "internal/app/router.go"},
 		{"internal/config/config.go.tmpl", "internal/config/config.go"},
-		{"internal/domain/demo/model/demo.go.tmpl", "internal/domain/demo/model/demo.go"},
-		{"internal/domain/demo/repository.go.tmpl", "internal/domain/demo/repository.go"},
-		{"internal/domain/demo/repository_memory.go.tmpl", "internal/domain/demo/repository_memory.go"},
-		{"internal/domain/demo/service.go.tmpl", "internal/domain/demo/service.go"},
-		{"internal/module/demo/handler.go.tmpl", "internal/module/demo/handler.go"},
-		{"internal/module/demo/request.go.tmpl", "internal/module/demo/request.go"},
-		{"internal/module/demo/response.go.tmpl", "internal/module/demo/response.go"},
-		{"internal/router/demo.go.tmpl", "internal/router/demo.go"},
 		{"internal/router/health.go.tmpl", "internal/router/health.go"},
 		{"pkg/util/ptr.go.tmpl", "pkg/util/ptr.go"},
 		{"pkg/util/string.go.tmpl", "pkg/util/string.go"},
 		{"pkg/README.md.tmpl", "pkg/README.md"},
+	}
+
+	// Add demo files only if not skipping demo
+	if !g.config.SkipDemo {
+		demoFiles := []struct {
+			template string
+			output   string
+		}{
+			{"internal/app/router.go.tmpl", "internal/app/router.go"},
+			{"internal/domain/demo/model/demo.go.tmpl", "internal/domain/demo/model/demo.go"},
+			{"internal/domain/demo/repository.go.tmpl", "internal/domain/demo/repository.go"},
+			{"internal/domain/demo/repository_memory.go.tmpl", "internal/domain/demo/repository_memory.go"},
+			{"internal/domain/demo/service.go.tmpl", "internal/domain/demo/service.go"},
+			{"internal/module/demo/handler.go.tmpl", "internal/module/demo/handler.go"},
+			{"internal/module/demo/request.go.tmpl", "internal/module/demo/request.go"},
+			{"internal/module/demo/response.go.tmpl", "internal/module/demo/response.go"},
+			{"internal/router/demo.go.tmpl", "internal/router/demo.go"},
+		}
+		files = append(files, demoFiles...)
+	} else {
+		// Generate empty router registrar for no-demo mode
+		files = append(files, struct {
+			template string
+			output   string
+		}{"internal/app/router_empty.go.tmpl", "internal/app/router.go"})
 	}
 
 	data := g.templateData()

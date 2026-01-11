@@ -17,6 +17,7 @@ type AppConfig struct {
 	// Features
 	EnableDatabase bool
 	EnableRedis    bool
+	SkipDemo       bool // If true, generate empty structure without demo code
 
 	// Server config
 	ServerPort int
@@ -30,6 +31,7 @@ func NewDefaultConfig() *AppConfig {
 		FrameworkPath:     "../../go-yogan-framework",
 		EnableDatabase:    false,
 		EnableRedis:       false,
+		SkipDemo:          false,
 	}
 }
 

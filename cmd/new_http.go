@@ -17,6 +17,7 @@ var (
 	httpInteractive bool
 	httpLocalFw     bool
 	httpFwPath      string
+	httpNoDemo      bool
 )
 
 var newHTTPCmd = &cobra.Command{
@@ -46,6 +47,7 @@ func init() {
 	newHTTPCmd.Flags().IntVarP(&httpPort, "port", "p", 8080, "Server port")
 	newHTTPCmd.Flags().BoolVar(&httpLocalFw, "local-framework", true, "Use local framework with replace directive")
 	newHTTPCmd.Flags().StringVar(&httpFwPath, "framework-path", "../../go-yogan-framework", "Local framework path")
+	newHTTPCmd.Flags().BoolVar(&httpNoDemo, "no-demo", false, "Generate empty structure without demo code")
 }
 
 func runNewHTTP(cmd *cobra.Command, args []string) error {
@@ -78,6 +80,7 @@ func runNewHTTP(cmd *cobra.Command, args []string) error {
 		}
 
 		config.Description = fmt.Sprintf("%s HTTP API", generator.ToPascalCase(config.AppName))
+		config.SkipDemo = httpNoDemo
 	}
 
 	// Generate

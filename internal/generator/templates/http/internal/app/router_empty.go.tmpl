@@ -1,0 +1,28 @@
+package app
+
+import (
+	"{{.ModuleName}}/internal/router"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/gin-gonic/gin"
+)
+
+// RouterRegistrar implements application.RouterRegistrar
+type RouterRegistrar struct {
+	app *{{.AppNamePascal}}App
+}
+
+// NewRouterRegistrar creates a new RouterRegistrar
+func NewRouterRegistrar(app *{{.AppNamePascal}}App) *RouterRegistrar {
+	return &RouterRegistrar{app: app}
+}
+
+// RegisterRoutes registers all routes
+func (r *RouterRegistrar) RegisterRoutes(engine *gin.Engine, app *application.Application) {
+	// Health & root routes
+	router.RegisterHealthRoutes(engine, app)
+
+	// TODO: Add your route registrations here
+	// Example:
+	// router.RegisterUserRoutes(engine, app)
+	// router.RegisterOrderRoutes(engine, app)
+}

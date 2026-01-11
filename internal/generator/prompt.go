@@ -95,6 +95,17 @@ func PromptHTTPConfig() (*AppConfig, error) {
 		}
 	}
 
+	// Skip demo option
+	var skipDemo bool
+	if err := survey.AskOne(&survey.Confirm{
+		Message: "Skip demo code (generate empty structure)?",
+		Default: false,
+		Help:    "If yes, generates empty directories without demo code",
+	}, &skipDemo); err != nil {
+		return nil, err
+	}
+	config.SkipDemo = skipDemo
+
 	// Confirmation
 	fmt.Println()
 	fmt.Println("=== Configuration Summary ===")
@@ -104,6 +115,7 @@ func PromptHTTPConfig() (*AppConfig, error) {
 	fmt.Printf("  Port:        %d\n", config.ServerPort)
 	fmt.Printf("  Framework:   %s\n", frameworkDesc(config))
 	fmt.Printf("  Components:  %s\n", componentsDesc(config))
+	fmt.Printf("  Demo Code:   %s\n", demoDesc(config))
 	fmt.Println()
 
 	var confirm bool
@@ -138,4 +150,11 @@ func componentsDesc(c *AppConfig) string {
 		parts = append(parts, "redis")
 	}
 	return strings.Join(parts, ", ")
+}
+
+func demoDesc(c *AppConfig) string {
+	if c.SkipDemo {
+		return "no (empty structure)"
+	}
+	return "yes (with demo code)"
 }
