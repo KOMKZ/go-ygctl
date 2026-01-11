@@ -1,0 +1,58 @@
+# Limiter 限流组件集成指南
+
+> 本文档将指导你一步步完成限流组件的集成。
+
+---
+
+## 📋 前置条件
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+{{- if eq .Config.store_type "redis"}}
+- [ ] 你已经配置好 Redis 组件
+{{- end}}
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+```yaml
+limiter:
+  enabled: true
+  store_type: "{{.Config.store_type}}"
+{{- if eq .Config.store_type "redis"}}
+  redis:
+    instance: "main"
+    key_prefix: "limiter:"
+{{- end}}
+  
+  resources:
+    - name: "api"
+      algorithm: "{{.Config.algorithm}}"
+      rate: 100
+      window: 1s
+```
+
+---
+
+## 🚀 Step 2: 注册组件
+
+```go
+import (
+    "github.com/KOMKZ/go-yogan-framework/limiter"
+{{- if eq .Config.store_type "redis"}}
+    "github.com/KOMKZ/go-yogan-framework/redis"
+{{- end}}
+)
+
+app.Register(
+{{- if eq .Config.store_type "redis"}}
+    redis.NewComponent(),
+{{- end}}
+    limiter.NewComponent(),
+)
+```
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*

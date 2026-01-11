@@ -8,20 +8,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "0.2.0"
+var version = "0.3.0"
 
 var rootCmd = &cobra.Command{
 	Use:   "go-ygctl",
 	Short: "Yogan Framework CLI Tool",
 	Long: `go-ygctl is a CLI tool for generating Yogan Framework applications.
 
+Commands:
+  new        Create a new application
+  component  Manage framework components
+
 Supported application types:
   - HTTP (Gin-based web application)
   - CLI  (Command-line application) [coming soon]
   - gRPC (gRPC server/client)       [coming soon]
 
-Example:
-  go-ygctl new http`,
+Examples:
+  go-ygctl new http              # Create a new HTTP application
+  go-ygctl component list        # List available components
+  go-ygctl component add database # Generate integration guide`,
 	Version: version,
 }
 
