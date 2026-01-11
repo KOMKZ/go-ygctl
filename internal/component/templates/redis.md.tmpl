@@ -1,0 +1,387 @@
+# Redis 组件集成指南
+
+> 本文档将指导你一步步完成 Redis 组件的集成。
+
+---
+
+## 📋 前置条件
+
+在开始之前，请确保：
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+- [ ] 你有一个可用的 Redis 服务器
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+打开 `configs/config.yaml`，添加以下配置：
+
+```yaml
+# ============ Redis 配置 ============
+redis:
+  instances:
+    {{.Config.instance_name}}:
+      mode: "{{.Config.mode}}"
+{{- if eq .Config.mode "standalone"}}
+      addrs:
+        - "localhost:6379"
+{{- else}}
+      addrs:
+        - "localhost:7000"
+        - "localhost:7001"
+        - "localhost:7002"
+{{- end}}
+{{- if .Config.need_password}}
+      password: "your-redis-password"
+{{- else}}
+      password: ""
+{{- end}}
+      db: 0
+      pool_size: 10
+      min_idle_conns: 5
+      max_retries: 3
+      dial_timeout: 5s
+      read_timeout: 3s
+      write_timeout: 3s
+```
+
+### 💡 配置说明
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `mode` | 连接模式 (standalone/cluster) | standalone |
+| `addrs` | Redis 地址列表 | - |
+| `password` | 密码 | 空 |
+| `db` | 数据库编号 (0-15，仅 standalone) | 0 |
+| `pool_size` | 连接池大小 | 10 |
+
+---
+
+## 🚀 Step 2: 注册组件
+
+打开 `internal/app/components.go`，添加以下代码：
+
+### 2.1 添加 import
+
+```go
+import (
+    // ... 已有的 import ...
+    
+    // 添加这一行
+    "github.com/KOMKZ/go-yogan-framework/redis"
+)
+```
+
+### 2.2 注册组件
+
+在 `RegisterComponents` 函数中添加：
+
+```go
+func (a *YourApp) RegisterComponents(app *application.Application) {
+    app.Register(
+        health.NewComponent(),
+        
+        // 添加这一行
+        redis.NewComponent(),
+    )
+}
+```
+
+---
+
+## 🚀 Step 3: 创建缓存服务
+
+创建文件 `internal/service/cache/cache.go`：
+
+```go
+package cache
+
+import (
+    "context"
+    "encoding/json"
+    "time"
+    
+    goredis "github.com/redis/go-redis/v9"
+)
+
+// Service 缓存服务
+type Service struct {
+    client *goredis.Client
+}
+
+// NewService 创建缓存服务
+func NewService(client *goredis.Client) *Service {
+    return &Service{client: client}
+}
+
+// Set 设置缓存
+func (s *Service) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+    data, err := json.Marshal(value)
+    if err != nil {
+        return err
+    }
+    return s.client.Set(ctx, key, data, expiration).Err()
+}
+
+// Get 获取缓存
+func (s *Service) Get(ctx context.Context, key string, dest interface{}) error {
+    data, err := s.client.Get(ctx, key).Bytes()
+    if err != nil {
+        return err
+    }
+    return json.Unmarshal(data, dest)
+}
+
+// Delete 删除缓存
+func (s *Service) Delete(ctx context.Context, keys ...string) error {
+    return s.client.Del(ctx, keys...).Err()
+}
+
+// Exists 检查 key 是否存在
+func (s *Service) Exists(ctx context.Context, key string) (bool, error) {
+    n, err := s.client.Exists(ctx, key).Result()
+    return n > 0, err
+}
+
+// SetNX 仅当 key 不存在时设置 (用于分布式锁)
+func (s *Service) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) (bool, error) {
+    data, err := json.Marshal(value)
+    if err != nil {
+        return false, err
+    }
+    return s.client.SetNX(ctx, key, data, expiration).Result()
+}
+```
+
+---
+
+## 🚀 Step 4: 创建分布式锁
+
+创建文件 `internal/service/cache/lock.go`：
+
+```go
+package cache
+
+import (
+    "context"
+    "errors"
+    "time"
+    
+    "github.com/google/uuid"
+    goredis "github.com/redis/go-redis/v9"
+)
+
+var (
+    ErrLockFailed  = errors.New("获取锁失败")
+    ErrUnlockFailed = errors.New("释放锁失败")
+)
+
+// Lock 分布式锁
+type Lock struct {
+    client *goredis.Client
+    key    string
+    value  string
+    ttl    time.Duration
+}
+
+// NewLock 创建分布式锁
+func NewLock(client *goredis.Client, key string, ttl time.Duration) *Lock {
+    return &Lock{
+        client: client,
+        key:    "lock:" + key,
+        value:  uuid.New().String(),
+        ttl:    ttl,
+    }
+}
+
+// Acquire 获取锁
+func (l *Lock) Acquire(ctx context.Context) error {
+    ok, err := l.client.SetNX(ctx, l.key, l.value, l.ttl).Result()
+    if err != nil {
+        return err
+    }
+    if !ok {
+        return ErrLockFailed
+    }
+    return nil
+}
+
+// Release 释放锁
+func (l *Lock) Release(ctx context.Context) error {
+    // 使用 Lua 脚本确保原子性
+    script := `
+        if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+        else
+            return 0
+        end
+    `
+    result, err := l.client.Eval(ctx, script, []string{l.key}, l.value).Int()
+    if err != nil {
+        return err
+    }
+    if result == 0 {
+        return ErrUnlockFailed
+    }
+    return nil
+}
+
+// TryAcquire 尝试获取锁，带重试
+func (l *Lock) TryAcquire(ctx context.Context, maxRetries int, retryInterval time.Duration) error {
+    for i := 0; i < maxRetries; i++ {
+        err := l.Acquire(ctx)
+        if err == nil {
+            return nil
+        }
+        if !errors.Is(err, ErrLockFailed) {
+            return err
+        }
+        time.Sleep(retryInterval)
+    }
+    return ErrLockFailed
+}
+```
+
+---
+
+## 🚀 Step 5: 在路由中使用
+
+打开或创建 `internal/router/cache.go`：
+
+```go
+package router
+
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/KOMKZ/go-yogan-framework/application"
+    "github.com/KOMKZ/go-yogan-framework/component"
+    "github.com/KOMKZ/go-yogan-framework/redis"
+    
+    "your-app/internal/service/cache"
+)
+
+func RegisterCacheRoutes(engine *gin.Engine, app *application.Application) {
+    // 1. 从 Registry 获取 Redis 组件
+    redisComp, ok := app.GetRegistry().Get(component.ComponentRedis)
+    if !ok {
+        panic("redis component not found")
+    }
+    
+    // 2. 获取 Redis Client
+    client := redisComp.(*redis.Component).GetManager().Client("{{.Config.instance_name}}")
+    
+    // 3. 创建缓存服务
+    cacheService := cache.NewService(client)
+    
+    // 4. 注册示例路由
+    api := engine.Group("/api/cache")
+    {
+        api.GET("/demo", func(c *gin.Context) {
+            ctx := c.Request.Context()
+            
+            // 尝试从缓存获取
+            var data map[string]interface{}
+            err := cacheService.Get(ctx, "demo:key", &data)
+            if err == nil {
+                c.JSON(200, gin.H{"source": "cache", "data": data})
+                return
+            }
+            
+            // 缓存未命中，从数据库获取（模拟）
+            data = map[string]interface{}{
+                "id":   1,
+                "name": "demo",
+            }
+            
+            // 写入缓存
+            _ = cacheService.Set(ctx, "demo:key", data, 5*time.Minute)
+            
+            c.JSON(200, gin.H{"source": "db", "data": data})
+        })
+    }
+}
+```
+
+---
+
+## 🚀 Step 6: 注册路由
+
+打开 `internal/app/router.go`，添加路由注册：
+
+```go
+func (a *YourApp) RegisterRoutes(engine *gin.Engine, app *application.Application) {
+    // ... 已有的路由 ...
+    
+    // 添加这一行
+    router.RegisterCacheRoutes(engine, app)
+}
+```
+
+---
+
+## ✅ Step 7: 验证
+
+### 启动应用
+
+```bash
+go run main.go
+```
+
+### 测试缓存
+
+```bash
+# 第一次请求 (从 db)
+curl http://localhost:8080/api/cache/demo
+# 返回: {"source":"db","data":{...}}
+
+# 第二次请求 (从 cache)
+curl http://localhost:8080/api/cache/demo
+# 返回: {"source":"cache","data":{...}}
+```
+
+---
+
+## 🔥 故障排查
+
+### 问题 1: 连接失败
+
+```
+Error: dial tcp 127.0.0.1:6379: connect: connection refused
+```
+
+**解决方案**:
+1. 检查 Redis 服务是否启动: `redis-cli ping`
+2. 检查配置中的地址是否正确
+3. 检查防火墙设置
+
+### 问题 2: 认证失败
+
+```
+Error: NOAUTH Authentication required
+```
+
+**解决方案**:
+1. 配置中添加正确的 `password`
+2. 或者取消 Redis 的密码认证
+
+### 问题 3: 组件未找到
+
+```
+panic: redis component not found
+```
+
+**解决方案**:
+1. 确认在 `components.go` 中注册了 `redis.NewComponent()`
+
+---
+
+## 📚 延伸阅读
+
+- [go-redis 官方文档](https://redis.uptrace.dev/)
+- [Yogan Framework Redis 源码](https://github.com/KOMKZ/go-yogan-framework/tree/main/redis)
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*

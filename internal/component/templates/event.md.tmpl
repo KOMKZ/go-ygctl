@@ -1,0 +1,58 @@
+# Event 事件总线组件集成指南
+
+> 本文档将指导你一步步完成事件总线组件的集成。
+
+---
+
+## 📋 前置条件
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+```yaml
+event:
+  enabled: true
+  pool_size: {{.Config.pool_size}}
+```
+
+---
+
+## 🚀 Step 2: 注册组件
+
+```go
+import "github.com/KOMKZ/go-yogan-framework/event"
+
+app.Register(
+    event.NewComponent(),
+)
+```
+
+---
+
+## 🚀 Step 3: 使用示例
+
+```go
+// 获取事件分发器
+eventComp, _ := app.GetRegistry().Get(component.ComponentEvent)
+dispatcher := eventComp.(*event.Component).GetDispatcher()
+
+// 注册监听器
+dispatcher.Subscribe("user.created", func(ctx context.Context, e event.Event) error {
+    log.Printf("用户创建: %v", e.Payload())
+    return nil
+})
+
+// 发布事件
+dispatcher.Publish(ctx, event.New("user.created", map[string]interface{}{
+    "user_id": 1,
+    "username": "test",
+}))
+```
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*

@@ -1,0 +1,62 @@
+# Telemetry 组件集成指南
+
+> 本文档将指导你一步步完成 OpenTelemetry 可观测性组件的集成。
+
+---
+
+## 📋 前置条件
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+- [ ] 你有一个 OTLP Collector (如 Jaeger, OpenObserve)
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+```yaml
+telemetry:
+  enabled: true
+  service_name: "{{.Config.service_name}}"
+  service_version: "1.0.0"
+  
+  exporter:
+    type: "{{.Config.exporter_type}}"
+{{- if eq .Config.exporter_type "otlp-grpc"}}
+    endpoint: "localhost:4317"
+{{- else if eq .Config.exporter_type "otlp-http"}}
+    endpoint: "http://localhost:4318/v1/traces"
+{{- else if eq .Config.exporter_type "jaeger"}}
+    endpoint: "http://localhost:14268/api/traces"
+{{- end}}
+  
+  sampler:
+    type: "ratio"
+    ratio: 1.0
+
+{{- if .Config.enable_metrics}}
+  metrics:
+    enabled: true
+    export_interval: 30s
+    http:
+      enabled: true
+    database:
+      enabled: true
+{{- end}}
+```
+
+---
+
+## 🚀 Step 2: 注册组件
+
+```go
+import "github.com/KOMKZ/go-yogan-framework/telemetry"
+
+app.Register(
+    telemetry.NewComponent(),
+)
+```
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*

@@ -1,0 +1,387 @@
+# Database 组件集成指南
+
+> 本文档将指导你一步步完成 Database 组件的集成。
+
+---
+
+## 📋 前置条件
+
+在开始之前，请确保：
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+- [ ] 你有一个可用的 {{.Config.db_type}} 数据库
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+打开 `configs/config.yaml`，添加以下配置：
+
+```yaml
+# ============ Database 配置 ============
+database:
+  connections:
+    {{.Config.conn_name}}:
+      driver: "{{.Config.db_type}}"
+{{- if eq .Config.db_type "mysql"}}
+      dsn: "root:password@tcp(localhost:3306)/mydb?charset=utf8mb4&parseTime=True&loc=Local"
+{{- else if eq .Config.db_type "postgres"}}
+      dsn: "host=localhost user=postgres password=password dbname=mydb port=5432 sslmode=disable"
+{{- else if eq .Config.db_type "sqlite"}}
+      dsn: "file:mydb.db?cache=shared&mode=rwc"
+{{- end}}
+      max_open_conns: 100
+      max_idle_conns: 10
+      conn_max_lifetime: 3600s
+{{- if .Config.enable_log}}
+      enable_log: true
+      slow_threshold: 200ms
+      enable_audit: true
+{{- else}}
+      enable_log: false
+{{- end}}
+{{- if .Config.enable_otel}}
+      trace_sql: true
+      trace_sql_max_len: 1000
+{{- end}}
+```
+
+### 💡 配置说明
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `driver` | 数据库驱动 (mysql/postgres/sqlite) | mysql |
+| `dsn` | 数据库连接字符串 | - |
+| `max_open_conns` | 最大打开连接数 | 100 |
+| `max_idle_conns` | 最大空闲连接数 | 10 |
+| `enable_log` | 是否启用 SQL 日志 | true |
+| `slow_threshold` | 慢查询阈值 | 200ms |
+
+---
+
+## 🚀 Step 2: 注册组件
+
+打开 `internal/app/components.go`，添加以下代码：
+
+### 2.1 添加 import
+
+```go
+import (
+    // ... 已有的 import ...
+    
+    // 添加这一行
+    "github.com/KOMKZ/go-yogan-framework/database"
+)
+```
+
+### 2.2 注册组件
+
+在 `RegisterComponents` 函数中添加：
+
+```go
+func (a *YourApp) RegisterComponents(app *application.Application) {
+    app.Register(
+        health.NewComponent(),
+        
+        // 添加这一行
+        database.NewComponent(),
+    )
+}
+```
+
+---
+
+## 🚀 Step 3: 创建 Model
+
+创建文件 `internal/domain/user/model/user.go`：
+
+```go
+package model
+
+import (
+    "time"
+)
+
+// User 用户模型
+type User struct {
+    ID        uint      `gorm:"primaryKey" json:"id"`
+    Username  string    `gorm:"size:100;uniqueIndex" json:"username"`
+    Email     string    `gorm:"size:255;uniqueIndex" json:"email"`
+    Password  string    `gorm:"size:255" json:"-"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TableName 表名
+func (User) TableName() string {
+    return "users"
+}
+```
+
+---
+
+## 🚀 Step 4: 创建 Repository
+
+### 4.1 创建接口
+
+创建文件 `internal/domain/user/repository.go`：
+
+```go
+package user
+
+import (
+    "context"
+    
+    "your-app/internal/domain/user/model"
+)
+
+// Repository 用户仓库接口
+type Repository interface {
+    Create(ctx context.Context, user *model.User) error
+    FindByID(ctx context.Context, id uint) (*model.User, error)
+    FindByUsername(ctx context.Context, username string) (*model.User, error)
+    Update(ctx context.Context, user *model.User) error
+    Delete(ctx context.Context, id uint) error
+    List(ctx context.Context, offset, limit int) ([]*model.User, int64, error)
+}
+```
+
+### 4.2 创建实现
+
+创建文件 `internal/domain/user/repository_db.go`：
+
+```go
+package user
+
+import (
+    "context"
+    
+    "your-app/internal/domain/user/model"
+    "gorm.io/gorm"
+)
+
+type dbRepository struct {
+    db *gorm.DB
+}
+
+// NewDBRepository 创建数据库仓库
+func NewDBRepository(db *gorm.DB) Repository {
+    return &dbRepository{db: db}
+}
+
+func (r *dbRepository) Create(ctx context.Context, user *model.User) error {
+    return r.db.WithContext(ctx).Create(user).Error
+}
+
+func (r *dbRepository) FindByID(ctx context.Context, id uint) (*model.User, error) {
+    var user model.User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    if err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+
+func (r *dbRepository) FindByUsername(ctx context.Context, username string) (*model.User, error) {
+    var user model.User
+    err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
+    if err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+
+func (r *dbRepository) Update(ctx context.Context, user *model.User) error {
+    return r.db.WithContext(ctx).Save(user).Error
+}
+
+func (r *dbRepository) Delete(ctx context.Context, id uint) error {
+    return r.db.WithContext(ctx).Delete(&model.User{}, id).Error
+}
+
+func (r *dbRepository) List(ctx context.Context, offset, limit int) ([]*model.User, int64, error) {
+    var users []*model.User
+    var total int64
+    
+    db := r.db.WithContext(ctx).Model(&model.User{})
+    
+    if err := db.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+    
+    if err := db.Offset(offset).Limit(limit).Find(&users).Error; err != nil {
+        return nil, 0, err
+    }
+    
+    return users, total, nil
+}
+```
+
+---
+
+## 🚀 Step 5: 在路由中使用
+
+打开或创建 `internal/router/user.go`：
+
+```go
+package router
+
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/KOMKZ/go-yogan-framework/application"
+    "github.com/KOMKZ/go-yogan-framework/component"
+    "github.com/KOMKZ/go-yogan-framework/database"
+    
+    userDomain "your-app/internal/domain/user"
+    userModule "your-app/internal/module/user"
+)
+
+func RegisterUserRoutes(engine *gin.Engine, app *application.Application) {
+    // 1. 从 Registry 获取 Database 组件
+    dbComp, ok := app.GetRegistry().Get(component.ComponentDatabase)
+    if !ok {
+        panic("database component not found")
+    }
+    
+    // 2. 类型断言获取 Manager
+    db := dbComp.(*database.Component).GetManager().DB("{{.Config.conn_name}}")
+    
+    // 3. 创建 Repository
+    userRepo := userDomain.NewDBRepository(db)
+    
+    // 4. 创建 Service
+    userService := userDomain.NewService(userRepo)
+    
+    // 5. 创建 Handler
+    userHandler := userModule.NewHandler(userService)
+    
+    // 6. 注册路由
+    api := engine.Group("/api/users")
+    {
+        api.POST("", userHandler.Create)
+        api.GET("/:id", userHandler.Get)
+        api.PUT("/:id", userHandler.Update)
+        api.DELETE("/:id", userHandler.Delete)
+        api.GET("", userHandler.List)
+    }
+}
+```
+
+---
+
+## 🚀 Step 6: 注册路由
+
+打开 `internal/app/router.go`，添加路由注册：
+
+```go
+func (a *YourApp) RegisterRoutes(engine *gin.Engine, app *application.Application) {
+    // ... 已有的路由 ...
+    
+    // 添加这一行
+    router.RegisterUserRoutes(engine, app)
+}
+```
+
+---
+
+## 🔧 Step 7: 数据库迁移
+
+### 自动迁移
+
+在应用启动时执行迁移：
+
+```go
+// internal/app/callbacks.go
+func (a *YourApp) OnSetup(app *application.Application) {
+    // 获取数据库
+    dbComp, _ := app.GetRegistry().Get(component.ComponentDatabase)
+    db := dbComp.(*database.Component).GetManager().DB("{{.Config.conn_name}}")
+    
+    // 自动迁移
+    db.AutoMigrate(&model.User{})
+}
+```
+
+### 或使用迁移工具
+
+推荐使用 [golang-migrate](https://github.com/golang-migrate/migrate)：
+
+```bash
+# 安装
+go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# 创建迁移文件
+migrate create -ext sql -dir migrations -seq create_users_table
+
+# 执行迁移
+migrate -path migrations -database "mysql://root:password@tcp(localhost:3306)/mydb" up
+```
+
+---
+
+## ✅ Step 8: 验证
+
+### 启动应用
+
+```bash
+go run main.go
+```
+
+### 测试 API
+
+```bash
+# 创建用户
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "test", "email": "test@example.com", "password": "123456"}'
+
+# 获取用户
+curl http://localhost:8080/api/users/1
+```
+
+---
+
+## 🔥 故障排查
+
+### 问题 1: 连接失败
+
+```
+Error: dial tcp 127.0.0.1:3306: connect: connection refused
+```
+
+**解决方案**:
+1. 检查数据库服务是否启动
+2. 检查 DSN 中的地址和端口是否正确
+3. 检查防火墙设置
+
+### 问题 2: 认证失败
+
+```
+Error: Access denied for user 'root'@'localhost'
+```
+
+**解决方案**:
+1. 检查 DSN 中的用户名和密码
+2. 确认用户有访问该数据库的权限
+
+### 问题 3: 组件未找到
+
+```
+panic: database component not found
+```
+
+**解决方案**:
+1. 确认在 `components.go` 中注册了 `database.NewComponent()`
+2. 确认组件注册顺序正确
+
+---
+
+## 📚 延伸阅读
+
+- [GORM 官方文档](https://gorm.io/docs/)
+- [Yogan Framework Database 源码](https://github.com/KOMKZ/go-yogan-framework/tree/main/database)
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*

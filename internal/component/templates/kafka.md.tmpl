@@ -1,0 +1,73 @@
+# Kafka 组件集成指南
+
+> 本文档将指导你一步步完成 Kafka 消息队列组件的集成。
+
+---
+
+## 📋 前置条件
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+- [ ] 你有一个可用的 Kafka 集群
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+```yaml
+kafka:
+  brokers:
+    - "localhost:9092"
+  version: "3.8.0"
+  client_id: "your-app"
+{{- if or (eq .Config.use_case "producer") (eq .Config.use_case "both")}}
+  producer:
+    enabled: true
+    required_acks: 1
+    timeout: 10s
+    compression: "none"
+{{- end}}
+{{- if or (eq .Config.use_case "consumer") (eq .Config.use_case "both")}}
+  consumer:
+    enabled: true
+    group_id: "your-app-consumer"
+    topics:
+      - "{{.Config.topic_name}}"
+    auto_commit: true
+{{- end}}
+{{- if .Config.need_auth}}
+  sasl:
+    enabled: true
+    mechanism: "PLAIN"
+    username: "your-username"
+    password: "your-password"
+{{- end}}
+```
+
+---
+
+## 🚀 Step 2: 注册组件
+
+```go
+import "github.com/KOMKZ/go-yogan-framework/kafka"
+
+app.Register(
+    kafka.NewComponent(),
+)
+```
+
+---
+
+## 🚀 Step 3: 发送消息示例
+
+```go
+kafkaComp, _ := app.GetRegistry().Get(component.ComponentKafka)
+manager := kafkaComp.(*kafka.Component).GetManager()
+
+// 发送消息
+err := manager.SendMessage(ctx, "{{.Config.topic_name}}", "key", []byte("hello world"))
+```
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*
