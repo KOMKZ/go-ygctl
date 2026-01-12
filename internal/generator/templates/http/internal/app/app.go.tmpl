@@ -52,6 +52,12 @@ func (a *{{.AppNamePascal}}App) GetApp() *application.Application {
 	return a.Core
 }
 
+// WithVersion sets application version (chain call)
+func (a *{{.AppNamePascal}}App) WithVersion(version string) *{{.AppNamePascal}}App {
+	a.Core.WithVersion(version)
+	return a
+}
+
 // Run starts the application (blocking, for production)
 func (a *{{.AppNamePascal}}App) Run() error {
 	return a.run(true)

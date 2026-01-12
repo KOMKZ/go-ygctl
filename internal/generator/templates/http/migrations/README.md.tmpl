@@ -1,0 +1,68 @@
+# 数据库迁移目录
+
+本目录包含所有数据库 Schema 变更的迁移文件。
+
+## 工具
+
+- **golang-migrate/migrate**
+- 安装：`go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest`
+
+## 快速使用
+
+```bash
+# 执行迁移
+make migrate-up
+
+# 回滚迁移
+make migrate-down
+
+# 查看版本
+make migrate-version
+
+# 创建新迁移
+make migrate-create NAME=add_orders_table
+```
+
+## 命名规范
+
+迁移文件命名：`NNNNNN_description.up.sql` 和 `NNNNNN_description.down.sql`
+
+- `NNNNNN`：6位序列号（自动生成）
+- `description`：简短描述（snake_case）
+- `up.sql`：正向迁移
+- `down.sql`：回滚迁移
+
+**示例**：
+- `000001_create_users_table.up.sql`
+- `000001_create_users_table.down.sql`
+
+## 迁移文件模板
+
+### Up 迁移
+
+```sql
+-- 创建 XXX 表
+-- 作者：Your Name
+-- 日期：YYYY-MM-DD
+
+CREATE TABLE IF NOT EXISTS `table_name` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='表注释';
+```
+
+### Down 迁移
+
+```sql
+-- 回滚：删除 XXX 表
+
+DROP TABLE IF EXISTS `table_name`;
+```
+
+## 注意事项
+
+1. ✅ **每个 Up 必须有对应的 Down**：确保可回滚
+2. ✅ **使用 IF EXISTS/IF NOT EXISTS**：保证幂等性
+3. ✅ **生产环境谨慎操作**：迁移前务必备份
