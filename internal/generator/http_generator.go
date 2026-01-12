@@ -9,7 +9,7 @@ import (
 	"text/template"
 )
 
-//go:embed templates/http/*
+//go:embed all:templates/http
 var httpTemplates embed.FS
 
 // HTTPGenerator generates HTTP application from templates
@@ -38,6 +38,7 @@ func (g *HTTPGenerator) Generate() error {
 	// Create directory structure
 	dirs := []string{
 		"",
+		"build",
 		"configs",
 		"migrations",
 		"scripts",
@@ -61,9 +62,12 @@ func (g *HTTPGenerator) Generate() error {
 		output     string
 		executable bool
 	}{
+		{".gitignore.tmpl", ".gitignore", false},
+		{"README.md.tmpl", "README.md", false},
 		{"main.go.tmpl", "main.go", false},
 		{"go.mod.tmpl", "go.mod", false},
 		{"Makefile.tmpl", "Makefile", false},
+		{"build/.gitkeep.tmpl", "build/.gitkeep", false},
 		{"configs/config.yaml.tmpl", "configs/config.yaml", false},
 		{"migrations/README.md.tmpl", "migrations/README.md", false},
 		{"scripts/migrate.sh.tmpl", "scripts/migrate.sh", true},
