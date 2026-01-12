@@ -1,0 +1,59 @@
+# {{.AppName}} Makefile
+
+.PHONY: build run clean test migrate-up migrate-down migrate-create migrate-version
+
+# Build
+build:
+	go build -o ./build/{{.AppName}} .
+
+# Run
+run:
+	go run .
+
+# Clean
+clean:
+	rm -rf ./build
+
+# Test
+test:
+	go test -v ./...
+
+# ========================================
+# Database Migrations
+# ========================================
+
+migrate-up:
+	@./scripts/migrate.sh up
+
+migrate-down:
+	@./scripts/migrate.sh down
+
+migrate-version:
+	@./scripts/migrate.sh version
+
+migrate-create:
+	@if [ -z "$(NAME)" ]; then echo "❌ Error: NAME required. Usage: make migrate-create NAME=add_orders_table"; exit 1; fi
+	@./scripts/migrate.sh create $(NAME)
+
+migrate-goto:
+	@if [ -z "$(V)" ]; then echo "❌ Error: Version required. Usage: make migrate-goto V=1"; exit 1; fi
+	@./scripts/migrate.sh goto $(V)
+
+migrate-drop:
+	@./scripts/migrate.sh drop
+
+# Help
+help:
+	@echo "Available targets:"
+	@echo "  build              - Build the application"
+	@echo "  run                - Run the application"
+	@echo "  clean              - Clean build artifacts"
+	@echo "  test               - Run tests"
+	@echo ""
+	@echo "Database Migrations:"
+	@echo "  migrate-up         - Run all pending migrations"
+	@echo "  migrate-down       - Rollback last migration"
+	@echo "  migrate-version    - Show current migration version"
+	@echo "  migrate-create     - Create new migration (NAME=xxx)"
+	@echo "  migrate-goto       - Migrate to specific version (V=x)"
+	@echo "  migrate-drop       - Drop all tables (DANGEROUS!)"
