@@ -104,3 +104,47 @@ func (c *RPCConfig) Validate() error {
 	}
 	return nil
 }
+
+// CLIConfig holds the configuration for generating a CLI application
+type CLIConfig struct {
+	// Project info (multi-app workspace)
+	ProjectName string // e.g., "my-project" (workspace root directory)
+	OrgName     string // e.g., "github.com/myorg" (organization prefix)
+
+	// App info
+	AppName     string // e.g., "my-cli"
+	ModuleName  string // e.g., "github.com/myorg/my-project/apps/my-cli"
+	Description string // e.g., "CLI tool for my-project"
+
+	// Output
+	OutputPath string // e.g., "." (where to create project)
+
+	// Framework reference
+	UseLocalFramework bool   // true = use replace directive
+	FrameworkPath     string // local path to framework (relative to apps/<app>)
+}
+
+// NewDefaultCLIConfig returns a config with sensible defaults
+func NewDefaultCLIConfig() *CLIConfig {
+	return &CLIConfig{
+		UseLocalFramework: true,
+		FrameworkPath:     "../../../go-yogan-framework", // relative to apps/<app>/
+	}
+}
+
+// Validate checks if the config is valid
+func (c *CLIConfig) Validate() error {
+	if c.ProjectName == "" {
+		return ErrProjectNameRequired
+	}
+	if c.AppName == "" {
+		return ErrAppNameRequired
+	}
+	if c.ModuleName == "" {
+		return ErrModuleNameRequired
+	}
+	if c.OutputPath == "" {
+		return ErrOutputPathRequired
+	}
+	return nil
+}

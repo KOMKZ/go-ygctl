@@ -1,0 +1,109 @@
+# {{.ProjectName}}
+
+{{.Description}}
+
+## Project Structure
+
+```
+{{.ProjectName}}/
+├── go.work                    # Go workspace
+├── Makefile                   # Project-level commands
+├── apps/
+│   └── {{.AppName}}/          # CLI application
+│       ├── main.go
+│       ├── go.mod
+│       ├── config/
+│       └── internal/
+│           ├── app/           # Application layer
+│           ├── command/       # CLI commands
+│           └── config/        # Config structs
+├── domains/                   # Domain packages
+├── pkg/                       # Shared utilities
+│   ├── errdef/               # Error definitions
+│   └── apputil/              # App utilities
+└── scripts/                   # Build scripts
+```
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+# Install pkg dependencies
+cd pkg
+go mod tidy
+
+# Install app dependencies
+cd ../apps/{{.AppName}}
+{{- if not .UseLocalFramework}}
+go get github.com/KOMKZ/go-yogan-framework@latest
+{{- end}}
+go mod tidy
+```
+
+### 2. Run Application
+
+```bash
+cd apps/{{.AppName}}
+
+# Show help
+go run main.go --help
+
+# Run home command
+go run main.go home
+
+# Run home info
+go run main.go home info
+
+# Run home ping
+go run main.go home ping
+```
+
+### 3. Build
+
+```bash
+# From project root
+make build-all
+
+# Or build specific app
+make build APP={{.AppName}}
+```
+
+## Adding New Commands
+
+1. Create command file in `apps/{{.AppName}}/internal/command/`:
+
+```go
+package command
+
+func RegisterXxxCommands(root *cobra.Command, app *application.CLIApplication) {
+    xxxCmd := &cobra.Command{
+        Use:   "xxx",
+        Short: "Description",
+        Run: func(cmd *cobra.Command, args []string) {
+            // Implementation
+        },
+    }
+    root.AddCommand(xxxCmd)
+}
+```
+
+2. Register in `apps/{{.AppName}}/internal/app/commands.go`:
+
+```go
+command.RegisterXxxCommands(c.rootCmd, core)
+```
+
+## Adding New Domains
+
+```bash
+mkdir -p domains/my-domain
+cd domains/my-domain
+go mod init {{.ProjectModule}}/domains/my-domain
+```
+
+Then add to `go.work`:
+
+```go
+use ./domains/my-domain
+```
