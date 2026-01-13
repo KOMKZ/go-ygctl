@@ -1,0 +1,51 @@
+# {{.ProjectName}}
+
+Multi-application project powered by [Yogan Framework](https://github.com/KOMKZ/go-yogan-framework).
+
+## Project Structure
+
+```
+{{.ProjectName}}/
+├── go.work              # Go workspace configuration
+├── apps/                # Application modules
+│   └── {{.AppName}}/    # First HTTP application
+├── domains/             # Shared domain packages
+├── proto/               # Shared protobuf definitions
+├── pkg/                 # Shared utility packages
+│   ├── errdef/          # Error definitions
+│   └── apputil/         # Application utilities
+└── scripts/             # Build and utility scripts
+```
+
+## Quick Start
+
+```bash
+# Build all applications
+./scripts/build.sh
+
+# Build specific application
+./scripts/build.sh {{.AppName}}
+
+# Run application
+cd apps/{{.AppName}} && go run main.go
+```
+
+## Adding New Application
+
+1. Create new app directory: `apps/new-app/`
+2. Add to go.work: `use ./apps/new-app`
+3. Follow the structure of existing apps
+
+## Adding New Domain
+
+1. Create domain directory: `domains/user/`
+2. Add go.mod: `module {{.ProjectModule}}/domains/user`
+3. Add to go.work: `use ./domains/user`
+
+## Configuration
+
+Each application has its own config in `apps/<app>/config/config.yaml`.
+
+## License
+
+MIT

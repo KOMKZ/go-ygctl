@@ -9,7 +9,7 @@ import (
 	"text/template"
 )
 
-//go:embed all:templates/http
+//go:embed all:templates/http all:templates/project
 var httpTemplates embed.FS
 
 // HTTPGenerator generates HTTP application from templates
@@ -22,79 +22,111 @@ func NewHTTPGenerator(config *AppConfig) *HTTPGenerator {
 	return &HTTPGenerator{config: config}
 }
 
-// Generate creates the HTTP application
+// Generate creates the multi-app project with HTTP application
 func (g *HTTPGenerator) Generate() error {
 	if err := g.config.Validate(); err != nil {
 		return err
 	}
 
-	appPath := filepath.Join(g.config.OutputPath, g.config.AppName)
+	projectPath := filepath.Join(g.config.OutputPath, g.config.ProjectName)
+	appPath := filepath.Join(projectPath, "apps", g.config.AppName)
 
-	// Check if path exists
-	if _, err := os.Stat(appPath); !os.IsNotExist(err) {
-		return fmt.Errorf("%w: %s", ErrPathExists, appPath)
+	// Check if project path exists
+	if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
+		return fmt.Errorf("%w: %s", ErrPathExists, projectPath)
 	}
 
-	// Create directory structure
-	dirs := []string{
+	// Create project-level directory structure
+	projectDirs := []string{
 		"",
-		"build",
-		"configs",
-		"migrations",
+		"apps",
+		"domains",
+		"proto",
+		"pkg/errdef",
+		"pkg/apputil",
 		"scripts",
-		"internal/app",
-		"internal/config",
-		"internal/domain/home/model",
-		"internal/module/home",
-		"internal/router",
-		"pkg/util",
 	}
 
-	for _, dir := range dirs {
-		if err := os.MkdirAll(filepath.Join(appPath, dir), 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+	for _, dir := range projectDirs {
+		if err := os.MkdirAll(filepath.Join(projectPath, dir), 0755); err != nil {
+			return fmt.Errorf("failed to create project directory %s: %w", dir, err)
 		}
 	}
 
-	// Generate files from templates
-	files := []struct {
-		template   string
-		output     string
-		executable bool
-	}{
-		{".gitignore.tmpl", ".gitignore", false},
-		{"README.md.tmpl", "README.md", false},
-		{"main.go.tmpl", "main.go", false},
-		{"go.mod.tmpl", "go.mod", false},
-		{"Makefile.tmpl", "Makefile", false},
-		{"build/.gitkeep.tmpl", "build/.gitkeep", false},
-		{"configs/config.yaml.tmpl", "configs/config.yaml", false},
-		{"migrations/README.md.tmpl", "migrations/README.md", false},
-		{"scripts/migrate.sh.tmpl", "scripts/migrate.sh", true},
-		{"internal/app/app.go.tmpl", "internal/app/app.go", false},
-		{"internal/app/callbacks.go.tmpl", "internal/app/callbacks.go", false},
-		{"internal/app/components.go.tmpl", "internal/app/components.go", false},
-		{"internal/app/router.go.tmpl", "internal/app/router.go", false},
-		{"internal/config/config.go.tmpl", "internal/config/config.go", false},
-		{"internal/domain/home/model/home.go.tmpl", "internal/domain/home/model/home.go", false},
-		{"internal/domain/home/repository.go.tmpl", "internal/domain/home/repository.go", false},
-		{"internal/domain/home/service.go.tmpl", "internal/domain/home/service.go", false},
-		{"internal/module/home/handler.go.tmpl", "internal/module/home/handler.go", false},
-		{"internal/module/home/request.go.tmpl", "internal/module/home/request.go", false},
-		{"internal/module/home/response.go.tmpl", "internal/module/home/response.go", false},
-		{"internal/router/home.go.tmpl", "internal/router/home.go", false},
-		{"pkg/util/ptr.go.tmpl", "pkg/util/ptr.go", false},
-		{"pkg/util/string.go.tmpl", "pkg/util/string.go", false},
-		{"pkg/README.md.tmpl", "pkg/README.md", false},
+	// Create app-level directory structure
+	appDirs := []string{
+		"",
+		"config",
+		"migrations",
+		"internal/app",
+		"internal/config",
+		"internal/module/home",
+		"internal/router",
+	}
+
+	for _, dir := range appDirs {
+		if err := os.MkdirAll(filepath.Join(appPath, dir), 0755); err != nil {
+			return fmt.Errorf("failed to create app directory %s: %w", dir, err)
+		}
 	}
 
 	data := g.templateData()
 
-	for _, f := range files {
-		if err := g.renderTemplate(appPath, f.template, f.output, data); err != nil {
-			return fmt.Errorf("failed to generate %s: %w", f.output, err)
+	// Generate project-level files
+	projectFiles := []struct {
+		template   string
+		output     string
+		executable bool
+	}{
+		{"project/.gitignore.tmpl", ".gitignore", false},
+		{"project/README.md.tmpl", "README.md", false},
+		{"project/go.work.tmpl", "go.work", false},
+		{"project/domains/.gitkeep.tmpl", "domains/.gitkeep", false},
+		{"project/proto/.gitkeep.tmpl", "proto/.gitkeep", false},
+		{"project/pkg/go.mod.tmpl", "pkg/go.mod", false},
+		{"project/pkg/errdef/errors.go.tmpl", "pkg/errdef/errors.go", false},
+		{"project/pkg/apputil/registry.go.tmpl", "pkg/apputil/registry.go", false},
+		{"project/scripts/build.sh.tmpl", "scripts/build.sh", true},
+	}
+
+	for _, f := range projectFiles {
+		if err := g.renderTemplate(projectPath, f.template, f.output, data); err != nil {
+			return fmt.Errorf("failed to generate project file %s: %w", f.output, err)
 		}
-		// Set executable permission for scripts
+		if f.executable {
+			outputPath := filepath.Join(projectPath, f.output)
+			if err := os.Chmod(outputPath, 0755); err != nil {
+				return fmt.Errorf("failed to set executable permission for %s: %w", f.output, err)
+			}
+		}
+	}
+
+	// Generate app-level files
+	appFiles := []struct {
+		template   string
+		output     string
+		executable bool
+	}{
+		{"http/main.go.tmpl", "main.go", false},
+		{"http/go.mod.tmpl", "go.mod", false},
+		{"http/Makefile.tmpl", "Makefile", false},
+		{"http/config/config.yaml.tmpl", "config/config.yaml", false},
+		{"http/migrations/README.md.tmpl", "migrations/README.md", false},
+		{"http/internal/app/app.go.tmpl", "internal/app/app.go", false},
+		{"http/internal/app/callbacks.go.tmpl", "internal/app/callbacks.go", false},
+		{"http/internal/app/components.go.tmpl", "internal/app/components.go", false},
+		{"http/internal/app/router.go.tmpl", "internal/app/router.go", false},
+		{"http/internal/config/config.go.tmpl", "internal/config/config.go", false},
+		{"http/internal/module/home/handler.go.tmpl", "internal/module/home/handler.go", false},
+		{"http/internal/module/home/request.go.tmpl", "internal/module/home/request.go", false},
+		{"http/internal/module/home/response.go.tmpl", "internal/module/home/response.go", false},
+		{"http/internal/router/home.go.tmpl", "internal/router/home.go", false},
+	}
+
+	for _, f := range appFiles {
+		if err := g.renderTemplate(appPath, f.template, f.output, data); err != nil {
+			return fmt.Errorf("failed to generate app file %s: %w", f.output, err)
+		}
 		if f.executable {
 			outputPath := filepath.Join(appPath, f.output)
 			if err := os.Chmod(outputPath, 0755); err != nil {
@@ -110,8 +142,19 @@ func (g *HTTPGenerator) Generate() error {
 func (g *HTTPGenerator) templateData() map[string]interface{} {
 	appNameSnake := strings.ReplaceAll(g.config.AppName, "-", "_")
 	appNameUpper := strings.ToUpper(appNameSnake)
+	projectNameSnake := strings.ReplaceAll(g.config.ProjectName, "-", "_")
+
+	// Project module: github.com/myorg/my-project
+	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
 	return map[string]interface{}{
+		// Project level
+		"ProjectName":       g.config.ProjectName,
+		"ProjectNameSnake":  projectNameSnake,
+		"ProjectModule":     projectModule,
+		"OrgName":           g.config.OrgName,
+
+		// App level
 		"AppName":           g.config.AppName,
 		"AppNamePascal":     ToPascalCase(g.config.AppName),
 		"AppNameSnake":      appNameSnake,

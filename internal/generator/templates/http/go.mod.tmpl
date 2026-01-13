@@ -4,7 +4,13 @@ go 1.24.1
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/KOMKZ/go-yogan-framework v0.0.0
+	{{.ProjectModule}}/pkg v0.0.0
 )
-{{if .UseLocalFramework}}
-replace github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
-{{end}}
+
+replace (
+	{{.ProjectModule}}/pkg => ../../pkg
+{{- if .UseLocalFramework}}
+	github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
+{{- end}}
+)

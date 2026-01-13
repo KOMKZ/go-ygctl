@@ -11,29 +11,41 @@ import (
 func PromptHTTPConfig() (*AppConfig, error) {
 	config := NewDefaultConfig()
 
-	fmt.Println("\n🚀 Create New HTTP Application")
-	fmt.Println("───────────────────────────────")
+	fmt.Println("\n🚀 Create Multi-App Project with HTTP Application")
+	fmt.Println("──────────────────────────────────────────────────")
+
+	// Project name
+	if err := survey.AskOne(&survey.Input{
+		Message: "Project name (workspace root):",
+		Help:    "Use kebab-case, e.g., my-project",
+	}, &config.ProjectName, survey.WithValidator(survey.Required)); err != nil {
+		return nil, err
+	}
+
+	// Organization name
+	if err := survey.AskOne(&survey.Input{
+		Message: "Organization (module prefix):",
+		Default: "github.com/myorg",
+		Help:    "e.g., github.com/myorg",
+	}, &config.OrgName, survey.WithValidator(survey.Required)); err != nil {
+		return nil, err
+	}
 
 	// App name
 	if err := survey.AskOne(&survey.Input{
-		Message: "Application name (e.g., user-api):",
-		Help:    "Use kebab-case, this will be the directory name",
+		Message: "First application name:",
+		Default: "admin-api",
+		Help:    "Use kebab-case, e.g., admin-api, user-api",
 	}, &config.AppName, survey.WithValidator(survey.Required)); err != nil {
 		return nil, err
 	}
 
-	// Module name
-	defaultModule := fmt.Sprintf("github.com/myorg/%s", config.AppName)
-	if err := survey.AskOne(&survey.Input{
-		Message: "Go module name:",
-		Default: defaultModule,
-	}, &config.ModuleName, survey.WithValidator(survey.Required)); err != nil {
-		return nil, err
-	}
+	// Auto-generate module name for app
+	config.ModuleName = fmt.Sprintf("%s/%s/apps/%s", config.OrgName, config.ProjectName, config.AppName)
 
 	// Description
 	if err := survey.AskOne(&survey.Input{
-		Message: "Description:",
+		Message: "Application description:",
 		Default: fmt.Sprintf("%s HTTP API", ToPascalCase(config.AppName)),
 	}, &config.Description); err != nil {
 		return nil, err
@@ -67,27 +79,38 @@ func PromptHTTPConfig() (*AppConfig, error) {
 
 	if useLocal {
 		if err := survey.AskOne(&survey.Input{
-			Message: "Local framework path:",
-			Default: "../../go-yogan-framework",
+			Message: "Local framework path (relative to apps/<app>):",
+			Default: "../../../go-yogan-framework",
 		}, &config.FrameworkPath); err != nil {
 			return nil, err
 		}
 	}
 
 	// Summary
-	fmt.Println("\n═══════════════════════════════")
+	projectPath := filepath.Join(config.OutputPath, config.ProjectName)
+	fmt.Println("\n═══════════════════════════════════════════════════")
 	fmt.Println("📋 Configuration Summary")
-	fmt.Println("═══════════════════════════════")
-	fmt.Printf("  App Name:    %s\n", config.AppName)
+	fmt.Println("═══════════════════════════════════════════════════")
+	fmt.Printf("  Project:     %s\n", config.ProjectName)
+	fmt.Printf("  Output:      %s\n", projectPath)
+	fmt.Printf("  App:         apps/%s\n", config.AppName)
 	fmt.Printf("  Module:      %s\n", config.ModuleName)
-	fmt.Printf("  Output:      %s\n", filepath.Join(config.OutputPath, config.AppName))
 	fmt.Printf("  Port:        %d\n", config.ServerPort)
 	if config.UseLocalFramework {
 		fmt.Printf("  Framework:   local (%s)\n", config.FrameworkPath)
 	} else {
 		fmt.Printf("  Framework:   remote\n")
 	}
-	fmt.Println("═══════════════════════════════")
+	fmt.Println("───────────────────────────────────────────────────")
+	fmt.Println("  Generated structure:")
+	fmt.Printf("  %s/\n", config.ProjectName)
+	fmt.Println("  ├── go.work")
+	fmt.Printf("  ├── apps/%s/\n", config.AppName)
+	fmt.Println("  ├── domains/")
+	fmt.Println("  ├── proto/")
+	fmt.Println("  ├── pkg/")
+	fmt.Println("  └── scripts/")
+	fmt.Println("═══════════════════════════════════════════════════")
 
 	var confirm bool
 	if err := survey.AskOne(&survey.Confirm{

@@ -1,0 +1,47 @@
+package apputil
+
+import (
+	"fmt"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/component"
+	"github.com/KOMKZ/go-yogan-framework/database"
+	"github.com/KOMKZ/go-yogan-framework/jwt"
+	"github.com/KOMKZ/go-yogan-framework/registry"
+	"gorm.io/gorm"
+)
+
+// MustDB returns the default database connection or panics
+func MustDB(app *application.Application) *gorm.DB {
+	return MustDBNamed(app, "master")
+}
+
+// MustDBNamed returns a named database connection or panics
+func MustDBNamed(app *application.Application, name string) *gorm.DB {
+	dbComp, ok := registry.GetTyped[*database.Component](app.GetRegistry(), component.ComponentDatabase)
+	if !ok || dbComp.GetManager() == nil {
+		panicf("database")
+	}
+	return dbComp.GetManager().DB(name)
+}
+
+// MustJWTManager returns the JWT manager or panics
+func MustJWTManager(app *application.Application) jwt.TokenManager {
+	jwtComp, ok := registry.GetTyped[*jwt.Component](app.GetRegistry(), component.ComponentJWT)
+	if !ok || jwtComp.GetManager() == nil {
+		panicf("jwt")
+	}
+	return jwtComp.GetManager()
+}
+
+func panicf(name string) {
+	panic(fmt.Sprintf(`
+	
+	❌ [apputil] %s 组件已注册但 Manager 未初始化，请检查 %s 配置是否正确
+	
+	💡 请检查:
+	   1. 配置文件中是否正确配置了相关组件
+	   2. 组件是否在 RegisterComponents 中注册
+	
+	`, name, name))
+}
