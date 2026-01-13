@@ -1,0 +1,72 @@
+# {{.AppName}} gRPC service configuration
+
+# Application info
+app:
+  name: "{{.AppName}}"
+  version: "0.1.0"
+  env: "dev"
+
+# Logger configuration
+logger:
+  base_log_dir: "./logs"
+  logger_name: "logger"
+  app_name: "{{.AppName}}"
+  module_number: 20
+  level: "debug"
+  encoding: "json"
+  console_encoding: "console_pretty"
+  render_style: "single_line"
+  enable_console: true
+  enable_level_in_filename: true
+  enable_date_in_filename: true
+  date_format: "2006-01-02"
+  max_size: 100
+  max_backups: 3
+  max_age: 28
+  compress: true
+  enable_caller: true
+  enable_stacktrace: true
+  stacktrace_level: "error"
+  stacktrace_depth: 5
+  enable_trace_id: true
+  trace_id_key: "trace_id"
+  trace_id_field_name: "trace_id"
+
+# gRPC server configuration
+grpc:
+  server:
+    enabled: true
+    port: {{.GRPCPort}}
+    max_recv_size: 4      # MB
+    max_send_size: 4      # MB
+    enable_reflect: true  # Enable gRPC reflection for grpcurl
+
+# Health check
+health:
+  enabled: true
+  timeout: 5s
+
+# Redis (required by limiter)
+redis:
+  instances:
+    main:
+      mode: "standalone"
+      addrs:
+        - "localhost:6379"
+      password: ""
+      db: 0
+
+# Limiter (required by gRPC)
+limiter:
+  enabled: false  # Set to true to enable rate limiting
+  algorithm: "token_bucket"
+  default:
+    rate: 100
+    burst: 200
+
+# Database (uncomment when needed)
+# database:
+#   connections:
+#     master:
+#       driver: "mysql"
+#       dsn: "root:password@tcp(localhost:3306)/{{.AppNameSnake}}?charset=utf8mb4&parseTime=True&loc=Local"
