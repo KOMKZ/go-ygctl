@@ -1,0 +1,28 @@
+.PHONY: build run clean test
+
+APP_NAME := {{.AppName}}
+BUILD_DIR := ../../build
+
+# Build the application
+build:
+	go build -o $(BUILD_DIR)/$(APP_NAME) .
+
+# Run the application
+run:
+	go run main.go
+
+# Clean build artifacts
+clean:
+	rm -f $(BUILD_DIR)/$(APP_NAME)
+
+# Run tests
+test:
+	go test -v ./...
+
+# Help
+help:
+	@echo "Available commands:"
+	@echo "  make build  - Build the application"
+	@echo "  make run    - Run the application"
+	@echo "  make clean  - Clean build artifacts"
+	@echo "  make test   - Run tests"

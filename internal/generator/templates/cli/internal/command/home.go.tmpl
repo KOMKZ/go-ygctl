@@ -1,0 +1,54 @@
+package command
+
+import (
+	"fmt"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+)
+
+// RegisterHomeCommands registers home command
+func RegisterHomeCommands(root *cobra.Command, app *application.CLIApplication) {
+	log := logger.GetLogger("home_cmd")
+
+	homeCmd := &cobra.Command{
+		Use:   "home",
+		Short: "Demo home command",
+		Long:  `This is a demo command to show CLI application structure.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("🏠 Welcome to {{.AppName}}!")
+			fmt.Println()
+			fmt.Println("This is a demo home command.")
+			fmt.Println("You can add more commands in internal/command/")
+			fmt.Println()
+
+			log.InfoCtx(cmd.Context(), "Home command executed",
+				zap.Strings("args", args))
+		},
+	}
+
+	// Add subcommands
+	homeCmd.AddCommand(&cobra.Command{
+		Use:   "info",
+		Short: "Show application info",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("📋 Application Info")
+			fmt.Println("────────────────────")
+			fmt.Println("  Name:    {{.AppName}}")
+			fmt.Println("  Version: v0.1.0")
+			fmt.Println("  Module:  {{.ModuleName}}")
+		},
+	})
+
+	homeCmd.AddCommand(&cobra.Command{
+		Use:   "ping",
+		Short: "Health check",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("🏓 pong!")
+		},
+	})
+
+	root.AddCommand(homeCmd)
+}

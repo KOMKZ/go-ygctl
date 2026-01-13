@@ -1,0 +1,13 @@
+package config
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/logger"
+)
+
+// Config CLI application config
+type Config struct {
+	Logger logger.ManagerConfig `mapstructure:"logger"`
+	// Add more config sections as needed:
+	// Database map[string]database.Config `mapstructure:"database"`
+	// Redis    map[string]redis.Config    `mapstructure:"redis"`
+}
