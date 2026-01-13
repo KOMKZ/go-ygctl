@@ -1,0 +1,33 @@
+.PHONY: build run start clean test
+
+APP_NAME := {{.AppName}}
+BUILD_DIR := ../../build
+
+# Build the application
+build:
+	go build -o $(BUILD_DIR)/$(APP_NAME) .
+
+# Start cron scheduler
+start:
+	go run main.go start
+
+# Run single task manually
+run:
+	go run main.go run --task demo
+
+# Clean build artifacts
+clean:
+	rm -f $(BUILD_DIR)/$(APP_NAME)
+
+# Run tests
+test:
+	go test -v ./...
+
+# Help
+help:
+	@echo "Available commands:"
+	@echo "  make build  - Build the application"
+	@echo "  make start  - Start cron scheduler"
+	@echo "  make run    - Run single task (demo)"
+	@echo "  make clean  - Clean build artifacts"
+	@echo "  make test   - Run tests"
