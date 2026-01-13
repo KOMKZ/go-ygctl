@@ -3,9 +3,16 @@ module {{.ProjectModule}}/pkg
 go 1.24.1
 
 require (
+{{- if .UseLocalFramework}}
 	github.com/KOMKZ/go-yogan-framework v0.0.0
+{{- end}}
 	gorm.io/gorm v1.25.12
 )
-{{if .UseLocalFramework}}
-replace github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
-{{end}}
+{{- if .UseLocalFramework}}
+
+replace github.com/KOMKZ/go-yogan-framework => {{.PkgFrameworkPath}}
+{{- end}}
+{{- if not .UseLocalFramework}}
+
+// Remote mode: run `go get -u github.com/KOMKZ/go-yogan-framework@latest` to install framework
+{{- end}}

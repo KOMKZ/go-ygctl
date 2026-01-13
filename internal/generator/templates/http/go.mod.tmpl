@@ -4,7 +4,9 @@ go 1.24.1
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+{{- if .UseLocalFramework}}
 	github.com/KOMKZ/go-yogan-framework v0.0.0
+{{- end}}
 	{{.ProjectModule}}/pkg v0.0.0
 )
 
@@ -14,3 +16,7 @@ replace (
 	github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
 {{- end}}
 )
+
+{{- if not .UseLocalFramework}}
+// Remote mode: run `go get -u github.com/KOMKZ/go-yogan-framework@latest` to install framework
+{{- end}}

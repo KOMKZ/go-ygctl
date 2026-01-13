@@ -60,6 +60,7 @@ func (g *HTTPGenerator) Generate() error {
 		"migrations",
 		"internal/app",
 		"internal/config",
+		"internal/domain/home/model",
 		"internal/module/home",
 		"internal/router",
 	}
@@ -117,6 +118,9 @@ func (g *HTTPGenerator) Generate() error {
 		{"http/internal/app/components.go.tmpl", "internal/app/components.go", false},
 		{"http/internal/app/router.go.tmpl", "internal/app/router.go", false},
 		{"http/internal/config/config.go.tmpl", "internal/config/config.go", false},
+		{"http/internal/domain/home/model/home.go.tmpl", "internal/domain/home/model/home.go", false},
+		{"http/internal/domain/home/repository.go.tmpl", "internal/domain/home/repository.go", false},
+		{"http/internal/domain/home/service.go.tmpl", "internal/domain/home/service.go", false},
 		{"http/internal/module/home/handler.go.tmpl", "internal/module/home/handler.go", false},
 		{"http/internal/module/home/request.go.tmpl", "internal/module/home/request.go", false},
 		{"http/internal/module/home/response.go.tmpl", "internal/module/home/response.go", false},
@@ -147,12 +151,22 @@ func (g *HTTPGenerator) templateData() map[string]interface{} {
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
+	// Framework path for pkg (relative to project root)
+	// If app framework path is "../../../go-yogan-framework", pkg path is "../go-yogan-framework"
+	pkgFrameworkPath := "../go-yogan-framework"
+	if g.config.FrameworkPath != "" {
+		// Convert from apps/<app>/ relative to project root relative
+		// ../../../go-yogan-framework -> ../go-yogan-framework
+		pkgFrameworkPath = strings.TrimPrefix(g.config.FrameworkPath, "../../")
+	}
+
 	return map[string]interface{}{
 		// Project level
-		"ProjectName":       g.config.ProjectName,
-		"ProjectNameSnake":  projectNameSnake,
-		"ProjectModule":     projectModule,
-		"OrgName":           g.config.OrgName,
+		"ProjectName":        g.config.ProjectName,
+		"ProjectNameSnake":   projectNameSnake,
+		"ProjectModule":      projectModule,
+		"OrgName":            g.config.OrgName,
+		"PkgFrameworkPath":   pkgFrameworkPath,
 
 		// App level
 		"AppName":           g.config.AppName,
@@ -168,8 +182,9 @@ func (g *HTTPGenerator) templateData() map[string]interface{} {
 }
 
 // renderTemplate renders a template file
-func (g *HTTPGenerator) renderTemplate(appPath, tmplName, outputName string, data map[string]interface{}) error {
-	tmplPath := filepath.Join("templates/http", tmplName)
+// tmplName should be relative to templates/, e.g., "project/.gitignore.tmpl" or "http/main.go.tmpl"
+func (g *HTTPGenerator) renderTemplate(outputDir, tmplName, outputName string, data map[string]interface{}) error {
+	tmplPath := filepath.Join("templates", tmplName)
 	content, err := httpTemplates.ReadFile(tmplPath)
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", tmplName, err)
@@ -180,7 +195,7 @@ func (g *HTTPGenerator) renderTemplate(appPath, tmplName, outputName string, dat
 		return fmt.Errorf("failed to parse template %s: %w", tmplName, err)
 	}
 
-	outputPath := filepath.Join(appPath, outputName)
+	outputPath := filepath.Join(outputDir, outputName)
 	file, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", outputPath, err)
