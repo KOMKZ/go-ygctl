@@ -1,0 +1,22 @@
+// Package app component registration
+package app
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	pkgGrpc "github.com/KOMKZ/go-yogan-framework/grpc"
+	"github.com/KOMKZ/go-yogan-framework/health"
+	"github.com/KOMKZ/go-yogan-framework/limiter"
+	"github.com/KOMKZ/go-yogan-framework/redis"
+)
+
+// RegisterComponents registers business components
+func (a *{{.AppNamePascal}}App) RegisterComponents(app *application.GRPCApplication) {
+	app.Register(
+		// Add database component when needed:
+		// database.NewComponent(),
+		redis.NewComponent(),    // Redis (required by limiter)
+		limiter.NewComponent(),  // Limiter (required by gRPC)
+		pkgGrpc.NewComponent(),  // gRPC component
+		health.NewComponent(),   // Health check
+	)
+}

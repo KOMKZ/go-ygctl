@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,27 +8,26 @@ import (
 	"text/template"
 )
 
-//go:embed all:templates/http all:templates/project all:templates/rpc
-var httpTemplates embed.FS
-
-// HTTPGenerator generates HTTP application from templates
-type HTTPGenerator struct {
-	config *AppConfig
+// RPCGenerator generates gRPC application from templates
+type RPCGenerator struct {
+	config *RPCConfig
 }
 
-// NewHTTPGenerator creates a new HTTP generator
-func NewHTTPGenerator(config *AppConfig) *HTTPGenerator {
-	return &HTTPGenerator{config: config}
+// NewRPCGenerator creates a new RPC generator
+func NewRPCGenerator(config *RPCConfig) *RPCGenerator {
+	return &RPCGenerator{config: config}
 }
 
-// Generate creates the multi-app project with HTTP application
-func (g *HTTPGenerator) Generate() error {
+// Generate creates the multi-app project with gRPC application
+func (g *RPCGenerator) Generate() error {
 	if err := g.config.Validate(); err != nil {
 		return err
 	}
 
 	projectPath := filepath.Join(g.config.OutputPath, g.config.ProjectName)
 	appPath := filepath.Join(projectPath, "apps", g.config.AppName)
+	serviceLower := ToSnakeCase(g.config.ServiceName)
+	protoPath := filepath.Join(projectPath, "proto", serviceLower)
 
 	// Check if project path exists
 	if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
@@ -57,18 +55,20 @@ func (g *HTTPGenerator) Generate() error {
 	appDirs := []string{
 		"",
 		"config",
-		"migrations",
 		"internal/app",
 		"internal/config",
-		"internal/domain/home/model",
-		"internal/module/home",
-		"internal/router",
+		"internal/module/" + serviceLower,
 	}
 
 	for _, dir := range appDirs {
 		if err := os.MkdirAll(filepath.Join(appPath, dir), 0755); err != nil {
 			return fmt.Errorf("failed to create app directory %s: %w", dir, err)
 		}
+	}
+
+	// Create proto directory
+	if err := os.MkdirAll(protoPath, 0755); err != nil {
+		return fmt.Errorf("failed to create proto directory: %w", err)
 	}
 
 	data := g.templateData()
@@ -82,9 +82,8 @@ func (g *HTTPGenerator) Generate() error {
 		{"project/.gitignore.tmpl", ".gitignore", false},
 		{"project/README.md.tmpl", "README.md", false},
 		{"project/Makefile.tmpl", "Makefile", false},
-		{"project/go.work.tmpl", "go.work", false},
+		{"rpc/project/go.work.tmpl", "go.work", false},
 		{"project/domains/.gitkeep.tmpl", "domains/.gitkeep", false},
-		{"project/proto/.gitkeep.tmpl", "proto/.gitkeep", false},
 		{"project/pkg/go.mod.tmpl", "pkg/go.mod", false},
 		{"project/pkg/errdef/errors.go.tmpl", "pkg/errdef/errors.go", false},
 		{"project/pkg/apputil/registry.go.tmpl", "pkg/apputil/registry.go", false},
@@ -105,62 +104,40 @@ func (g *HTTPGenerator) Generate() error {
 
 	// Generate app-level files
 	appFiles := []struct {
-		template   string
-		output     string
-		executable bool
+		template string
+		output   string
 	}{
-		{"http/main.go.tmpl", "main.go", false},
-		{"http/go.mod.tmpl", "go.mod", false},
-		{"http/Makefile.tmpl", "Makefile", false},
-		{"http/config/config.yaml.tmpl", "config/config.yaml", false},
-		{"http/migrations/README.md.tmpl", "migrations/README.md", false},
-		{"http/internal/app/app.go.tmpl", "internal/app/app.go", false},
-		{"http/internal/app/callbacks.go.tmpl", "internal/app/callbacks.go", false},
-		{"http/internal/app/components.go.tmpl", "internal/app/components.go", false},
-		{"http/internal/app/router.go.tmpl", "internal/app/router.go", false},
-		{"http/internal/config/config.go.tmpl", "internal/config/config.go", false},
-		{"http/internal/domain/home/model/home.go.tmpl", "internal/domain/home/model/home.go", false},
-		{"http/internal/domain/home/repository.go.tmpl", "internal/domain/home/repository.go", false},
-		{"http/internal/domain/home/service.go.tmpl", "internal/domain/home/service.go", false},
-		{"http/internal/module/home/handler.go.tmpl", "internal/module/home/handler.go", false},
-		{"http/internal/module/home/request.go.tmpl", "internal/module/home/request.go", false},
-		{"http/internal/module/home/response.go.tmpl", "internal/module/home/response.go", false},
-		{"http/internal/router/home.go.tmpl", "internal/router/home.go", false},
+		{"rpc/main.go.tmpl", "main.go"},
+		{"rpc/go.mod.tmpl", "go.mod"},
+		{"rpc/Makefile.tmpl", "Makefile"},
+		{"rpc/config/config.yaml.tmpl", "config/config.yaml"},
+		{"rpc/internal/app/app.go.tmpl", "internal/app/app.go"},
+		{"rpc/internal/app/callbacks.go.tmpl", "internal/app/callbacks.go"},
+		{"rpc/internal/app/components.go.tmpl", "internal/app/components.go"},
+		{"rpc/internal/config/config.go.tmpl", "internal/config/config.go"},
+		{"rpc/internal/module/handler.go.tmpl", "internal/module/" + serviceLower + "/handler.go"},
 	}
 
 	for _, f := range appFiles {
 		if err := g.renderTemplate(appPath, f.template, f.output, data); err != nil {
 			return fmt.Errorf("failed to generate app file %s: %w", f.output, err)
 		}
-		if f.executable {
-			outputPath := filepath.Join(appPath, f.output)
-			if err := os.Chmod(outputPath, 0755); err != nil {
-				return fmt.Errorf("failed to set executable permission for %s: %w", f.output, err)
-			}
-		}
 	}
 
-	// Generate proto files (optional)
-	if g.config.GenerateProto {
-		protoPath := filepath.Join(projectPath, "proto", "payment")
-		if err := os.MkdirAll(protoPath, 0755); err != nil {
-			return fmt.Errorf("failed to create proto directory: %w", err)
-		}
+	// Generate proto files
+	protoFiles := []struct {
+		template string
+		output   string
+	}{
+		{"rpc/proto/service.proto.tmpl", serviceLower + ".proto"},
+		{"rpc/proto/go.mod.tmpl", "go.mod"},
+		{"rpc/proto/Makefile.tmpl", "Makefile"},
+		{"rpc/proto/README.md.tmpl", "README.md"},
+	}
 
-		protoFiles := []struct {
-			template string
-			output   string
-		}{
-			{"project/proto/payment/payment.proto.tmpl", "payment.proto"},
-			{"project/proto/payment/go.mod.tmpl", "go.mod"},
-			{"project/proto/payment/Makefile.tmpl", "Makefile"},
-			{"project/proto/payment/README.md.tmpl", "README.md"},
-		}
-
-		for _, f := range protoFiles {
-			if err := g.renderTemplate(protoPath, f.template, f.output, data); err != nil {
-				return fmt.Errorf("failed to generate proto file %s: %w", f.output, err)
-			}
+	for _, f := range protoFiles {
+		if err := g.renderTemplate(protoPath, f.template, f.output, data); err != nil {
+			return fmt.Errorf("failed to generate proto file %s: %w", f.output, err)
 		}
 	}
 
@@ -168,31 +145,29 @@ func (g *HTTPGenerator) Generate() error {
 }
 
 // templateData returns the data for template rendering
-func (g *HTTPGenerator) templateData() map[string]interface{} {
+func (g *RPCGenerator) templateData() map[string]interface{} {
 	appNameSnake := strings.ReplaceAll(g.config.AppName, "-", "_")
 	appNameUpper := strings.ToUpper(appNameSnake)
 	projectNameSnake := strings.ReplaceAll(g.config.ProjectName, "-", "_")
+	serviceLower := ToSnakeCase(g.config.ServiceName)
 
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
 	// Framework path for pkg (relative to project root)
-	// If app framework path is "../../../go-yogan-framework", pkg path is "../go-yogan-framework"
 	pkgFrameworkPath := "../go-yogan-framework"
 	if g.config.FrameworkPath != "" {
-		// Convert from apps/<app>/ relative to project root relative
-		// ../../../go-yogan-framework -> ../go-yogan-framework
 		pkgFrameworkPath = strings.TrimPrefix(g.config.FrameworkPath, "../../")
 	}
 
 	return map[string]interface{}{
 		// Project level
-		"ProjectName":        g.config.ProjectName,
-		"ProjectNameSnake":   projectNameSnake,
-		"ProjectModule":      projectModule,
-		"OrgName":            g.config.OrgName,
-		"PkgFrameworkPath":   pkgFrameworkPath,
-		"GenerateProto":      g.config.GenerateProto,
+		"ProjectName":       g.config.ProjectName,
+		"ProjectNameSnake":  projectNameSnake,
+		"ProjectModule":     projectModule,
+		"OrgName":           g.config.OrgName,
+		"PkgFrameworkPath":  pkgFrameworkPath,
+		"GenerateProto":     true, // RPC always has proto
 
 		// App level
 		"AppName":           g.config.AppName,
@@ -201,15 +176,19 @@ func (g *HTTPGenerator) templateData() map[string]interface{} {
 		"AppNameUpper":      appNameUpper,
 		"ModuleName":        g.config.ModuleName,
 		"Description":       g.config.Description,
-		"ServerPort":        g.config.ServerPort,
+		"GRPCPort":          g.config.GRPCPort,
 		"UseLocalFramework": g.config.UseLocalFramework,
 		"FrameworkPath":     g.config.FrameworkPath,
+
+		// Service level
+		"ServiceName":       g.config.ServiceName,
+		"ServiceNameLower":  serviceLower,
+		"ServiceNameSnake":  serviceLower,
 	}
 }
 
 // renderTemplate renders a template file
-// tmplName should be relative to templates/, e.g., "project/.gitignore.tmpl" or "http/main.go.tmpl"
-func (g *HTTPGenerator) renderTemplate(outputDir, tmplName, outputName string, data map[string]interface{}) error {
+func (g *RPCGenerator) renderTemplate(outputDir, tmplName, outputName string, data map[string]interface{}) error {
 	tmplPath := filepath.Join("templates", tmplName)
 	content, err := httpTemplates.ReadFile(tmplPath)
 	if err != nil {
