@@ -86,6 +86,17 @@ func PromptHTTPConfig() (*AppConfig, error) {
 		}
 	}
 
+	// Optional: Generate proto example
+	var generateProto bool
+	if err := survey.AskOne(&survey.Confirm{
+		Message: "Generate gRPC/Proto example (DemoPaymentService)?",
+		Default: false,
+		Help:    "Creates proto/ directory with example .proto file and build scripts",
+	}, &generateProto); err != nil {
+		return nil, err
+	}
+	config.GenerateProto = generateProto
+
 	// Summary
 	projectPath := filepath.Join(config.OutputPath, config.ProjectName)
 	fmt.Println("\n═══════════════════════════════════════════════════")
@@ -101,13 +112,22 @@ func PromptHTTPConfig() (*AppConfig, error) {
 	} else {
 		fmt.Printf("  Framework:   remote\n")
 	}
+	if config.GenerateProto {
+		fmt.Println("  Proto:       yes (DemoPaymentService example)")
+	} else {
+		fmt.Println("  Proto:       no")
+	}
 	fmt.Println("───────────────────────────────────────────────────")
 	fmt.Println("  Generated structure:")
 	fmt.Printf("  %s/\n", config.ProjectName)
 	fmt.Println("  ├── go.work")
 	fmt.Printf("  ├── apps/%s/\n", config.AppName)
 	fmt.Println("  ├── domains/")
-	fmt.Println("  ├── proto/")
+	if config.GenerateProto {
+		fmt.Println("  ├── proto/payment/  (with DemoPaymentService)")
+	} else {
+		fmt.Println("  ├── proto/")
+	}
 	fmt.Println("  ├── pkg/")
 	fmt.Println("  └── scripts/")
 	fmt.Println("═══════════════════════════════════════════════════")

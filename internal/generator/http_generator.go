@@ -81,6 +81,7 @@ func (g *HTTPGenerator) Generate() error {
 	}{
 		{"project/.gitignore.tmpl", ".gitignore", false},
 		{"project/README.md.tmpl", "README.md", false},
+		{"project/Makefile.tmpl", "Makefile", false},
 		{"project/go.work.tmpl", "go.work", false},
 		{"project/domains/.gitkeep.tmpl", "domains/.gitkeep", false},
 		{"project/proto/.gitkeep.tmpl", "proto/.gitkeep", false},
@@ -139,6 +140,30 @@ func (g *HTTPGenerator) Generate() error {
 		}
 	}
 
+	// Generate proto files (optional)
+	if g.config.GenerateProto {
+		protoPath := filepath.Join(projectPath, "proto", "payment")
+		if err := os.MkdirAll(protoPath, 0755); err != nil {
+			return fmt.Errorf("failed to create proto directory: %w", err)
+		}
+
+		protoFiles := []struct {
+			template string
+			output   string
+		}{
+			{"project/proto/payment/payment.proto.tmpl", "payment.proto"},
+			{"project/proto/payment/go.mod.tmpl", "go.mod"},
+			{"project/proto/payment/Makefile.tmpl", "Makefile"},
+			{"project/proto/payment/README.md.tmpl", "README.md"},
+		}
+
+		for _, f := range protoFiles {
+			if err := g.renderTemplate(protoPath, f.template, f.output, data); err != nil {
+				return fmt.Errorf("failed to generate proto file %s: %w", f.output, err)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -167,6 +192,7 @@ func (g *HTTPGenerator) templateData() map[string]interface{} {
 		"ProjectModule":      projectModule,
 		"OrgName":            g.config.OrgName,
 		"PkgFrameworkPath":   pkgFrameworkPath,
+		"GenerateProto":      g.config.GenerateProto,
 
 		// App level
 		"AppName":           g.config.AppName,

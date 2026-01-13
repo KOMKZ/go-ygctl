@@ -20,6 +20,9 @@ type AppConfig struct {
 
 	// Server config
 	ServerPort int
+
+	// Optional features
+	GenerateProto bool // generate proto example (DemoPaymentService)
 }
 
 // NewDefaultConfig returns a config with sensible defaults

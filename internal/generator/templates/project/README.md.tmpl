@@ -11,6 +11,9 @@ Multi-application project powered by [Yogan Framework](https://github.com/KOMKZ/
 │   └── {{.AppName}}/    # First HTTP application
 ├── domains/             # Shared domain packages
 ├── proto/               # Shared protobuf definitions
+{{- if .GenerateProto}}
+│   └── payment/         # Demo payment service (example)
+{{- end}}
 ├── pkg/                 # Shared utility packages
 │   ├── errdef/          # Error definitions
 │   └── apputil/         # Application utilities
@@ -41,7 +44,32 @@ cd apps/{{.AppName}} && go run main.go
 1. Create domain directory: `domains/user/`
 2. Add go.mod: `module {{.ProjectModule}}/domains/user`
 3. Add to go.work: `use ./domains/user`
+{{if .GenerateProto}}
+## Proto / gRPC
 
+### 依赖安装
+
+```bash
+# 安装 protoc 编译器
+brew install protobuf
+
+# 安装 Go 插件
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# 确保插件在 PATH 中
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+### 生成代码
+
+```bash
+cd proto/payment
+make gen
+```
+
+详见 `proto/payment/README.md`。
+{{end}}
 ## Configuration
 
 Each application has its own config in `apps/<app>/config/config.yaml`.

@@ -3,7 +3,10 @@ go 1.24
 use (
 	./apps/{{.AppName}}
 	./pkg
+{{- if .GenerateProto}}
+	./proto/payment
+{{- end}}
 	// Add more modules here:
 	// ./domains/user
-	// ./proto/auth
+	// ./proto/xxx
 )
