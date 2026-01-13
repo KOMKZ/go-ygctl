@@ -62,30 +62,47 @@ func runNewHTTP(cmd *cobra.Command, args []string) error {
 	}
 
 	// Generate
-	color.Cyan("\n🚀 Generating HTTP application: %s", config.AppName)
+	color.Cyan("\n🚀 Generating multi-app project: %s", config.ProjectName)
 
 	gen := generator.NewHTTPGenerator(config)
 	if err := gen.Generate(); err != nil {
 		return err
 	}
 
-	appPath := filepath.Join(config.OutputPath, config.AppName)
-	absPath, _ := filepath.Abs(appPath)
+	projectPath := filepath.Join(config.OutputPath, config.ProjectName)
+	appPath := filepath.Join(projectPath, "apps", config.AppName)
+	absProjectPath, _ := filepath.Abs(projectPath)
+	absAppPath, _ := filepath.Abs(appPath)
 
-	color.Green("✅ Application generated successfully!")
+	color.Green("✅ Project generated successfully!")
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Printf("  cd %s\n", absPath)
-
-	if config.UseLocalFramework {
-		fmt.Println("  go mod tidy")
-	} else {
-		fmt.Println("  go get github.com/KOMKZ/go-yogan-framework@latest")
-		fmt.Println("  go mod tidy")
-	}
-
-	fmt.Println("  go run main.go")
 	fmt.Println()
+	color.Yellow("  1. Install dependencies:")
+	fmt.Printf("     cd %s/pkg\n", absProjectPath)
+	if !config.UseLocalFramework {
+		fmt.Println("     go get github.com/KOMKZ/go-yogan-framework@latest")
+	}
+	fmt.Println("     go mod tidy")
+	fmt.Println()
+	fmt.Printf("     cd %s\n", absAppPath)
+	if !config.UseLocalFramework {
+		fmt.Println("     go get github.com/KOMKZ/go-yogan-framework@latest")
+	}
+	fmt.Println("     go mod tidy")
+	fmt.Println()
+	color.Yellow("  2. Run application:")
+	fmt.Printf("     cd %s\n", absAppPath)
+	fmt.Println("     go run main.go")
+	fmt.Println()
+
+	if config.GenerateProto {
+		color.Yellow("  3. Generate proto (optional):")
+		fmt.Printf("     cd %s\n", absProjectPath)
+		fmt.Println("     make proto-install  # Install protoc plugins")
+		fmt.Println("     make proto          # Generate Go code")
+		fmt.Println()
+	}
 
 	return nil
 }
