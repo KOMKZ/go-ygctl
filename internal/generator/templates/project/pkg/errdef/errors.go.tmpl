@@ -1,0 +1,36 @@
+package errdef
+
+import (
+	"net/http"
+
+	"github.com/KOMKZ/go-yogan-framework/errcode"
+)
+
+// Module codes
+const (
+	ModuleCommon = 0  // 通用错误 0xxx
+	ModuleUser   = 10 // 用户模块 10xxx
+	ModuleAuth   = 20 // 认证模块 20xxx
+	ModuleOrder  = 30 // 订单模块 30xxx
+)
+
+// Common errors (0xxx)
+var (
+	ErrInvalidInput = errcode.New(
+		1,
+		"common.invalid_input",
+		"无效的输入参数",
+	).WithHTTPStatus(http.StatusBadRequest)
+
+	ErrNotFound = errcode.New(
+		2,
+		"common.not_found",
+		"资源不存在",
+	).WithHTTPStatus(http.StatusNotFound)
+
+	ErrDatabaseError = errcode.New(
+		3,
+		"common.database_error",
+		"数据库操作失败",
+	).WithHTTPStatus(http.StatusInternalServerError)
+)

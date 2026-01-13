@@ -22,8 +22,8 @@ type {{.AppNamePascal}}App struct {
 // New creates {{.AppNamePascal}}App application instance (default config path)
 func New() *{{.AppNamePascal}}App {
 	return &{{.AppNamePascal}}App{
-		configPath: "./configs",
-		Core:       application.New("./configs", "{{.AppNameUpper}}", nil),
+		configPath: "./config",
+		Core:       application.New("./config", "{{.AppNameUpper}}", nil),
 		logger:     logger.GetLogger("{{.AppName}}"),
 	}
 }

@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "{{.ProjectModule}}/proto/payment";
+
+// DemoPaymentService - 演示支付服务
+// 这是一个示例 gRPC 服务定义，展示如何定义 proto 文件
+service DemoPaymentService {
+  // CreatePayment 创建支付订单
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  
+  // GetPayment 查询支付订单
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  
+  // ListPayments 列出支付订单
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+}
+
+// CreatePaymentRequest 创建支付请求
+message CreatePaymentRequest {
+  string order_id = 1;      // 订单ID
+  int64 amount = 2;         // 金额（分）
+  string currency = 3;      // 货币类型 (CNY, USD)
+  string description = 4;   // 支付描述
+}
+
+// CreatePaymentResponse 创建支付响应
+message CreatePaymentResponse {
+  string payment_id = 1;    // 支付ID
+  string status = 2;        // 状态 (pending, success, failed)
+  string pay_url = 3;       // 支付链接
+}
+
+// GetPaymentRequest 查询支付请求
+message GetPaymentRequest {
+  string payment_id = 1;    // 支付ID
+}
+
+// GetPaymentResponse 查询支付响应
+message GetPaymentResponse {
+  string payment_id = 1;    // 支付ID
+  string order_id = 2;      // 订单ID
+  int64 amount = 3;         // 金额（分）
+  string currency = 4;      // 货币类型
+  string status = 5;        // 状态
+  int64 created_at = 6;     // 创建时间 (unix timestamp)
+  int64 paid_at = 7;        // 支付时间 (unix timestamp)
+}
+
+// ListPaymentsRequest 列表请求
+message ListPaymentsRequest {
+  string order_id = 1;      // 按订单ID筛选（可选）
+  string status = 2;        // 按状态筛选（可选）
+  int32 page = 3;           // 页码
+  int32 page_size = 4;      // 每页数量
+}
+
+// ListPaymentsResponse 列表响应
+message ListPaymentsResponse {
+  repeated GetPaymentResponse payments = 1;  // 支付列表
+  int32 total = 2;                           // 总数
+}
