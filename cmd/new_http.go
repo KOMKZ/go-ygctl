@@ -10,10 +10,13 @@ import (
 )
 
 var (
-	testMode   bool
-	testName   string
-	testModule string
-	testOutput string
+	testMode    bool
+	testName    string
+	testModule  string
+	testOutput  string
+	testProject string
+	testOrg     string
+	testPort    int
 )
 
 var newHTTPCmd = &cobra.Command{
@@ -36,10 +39,16 @@ func init() {
 	newHTTPCmd.Flags().StringVar(&testName, "test-name", "", "App name for test mode")
 	newHTTPCmd.Flags().StringVar(&testModule, "test-module", "", "Module name for test mode")
 	newHTTPCmd.Flags().StringVar(&testOutput, "test-output", ".", "Output path for test mode")
+	newHTTPCmd.Flags().StringVar(&testProject, "test-project", "", "Project name for test mode")
+	newHTTPCmd.Flags().StringVar(&testOrg, "test-org", "", "Org name for test mode")
+	newHTTPCmd.Flags().IntVar(&testPort, "test-port", 8080, "Server port for test mode")
 	newHTTPCmd.Flags().MarkHidden("test")
 	newHTTPCmd.Flags().MarkHidden("test-name")
 	newHTTPCmd.Flags().MarkHidden("test-module")
 	newHTTPCmd.Flags().MarkHidden("test-output")
+	newHTTPCmd.Flags().MarkHidden("test-project")
+	newHTTPCmd.Flags().MarkHidden("test-org")
+	newHTTPCmd.Flags().MarkHidden("test-port")
 }
 
 func runNewHTTP(cmd *cobra.Command, args []string) error {
@@ -52,6 +61,9 @@ func runNewHTTP(cmd *cobra.Command, args []string) error {
 		config.AppName = testName
 		config.ModuleName = testModule
 		config.OutputPath = testOutput
+		config.ProjectName = testProject
+		config.OrgName = testOrg
+		config.ServerPort = testPort
 		config.Description = fmt.Sprintf("%s HTTP API", generator.ToPascalCase(testName))
 	} else {
 		// Interactive mode
