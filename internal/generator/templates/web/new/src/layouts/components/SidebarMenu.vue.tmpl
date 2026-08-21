@@ -62,16 +62,20 @@ const menuOptions = computed<MenuOption[]>(() => {
     meta?: { title?: string; icon?: string }
   }>
 
-  return children.map((child) => {
-    const option: MenuOption = {
-      key: String(child.name),
-      label: String(child.meta?.title || child.name),
-    }
-    if (child.meta?.icon) {
-      option.icon = renderIcon(child.meta.icon)
-    }
-    return option
-  })
+  // 只有配置了 icon 的路由才进入侧边菜单：新建/编辑等子页面（无 icon）
+  // 是导航可达的页面而非菜单入口，不显示在侧边栏
+  return children
+    .filter((child) => child.meta?.icon)
+    .map((child) => {
+      const option: MenuOption = {
+        key: String(child.name),
+        label: String(child.meta?.title || child.name),
+      }
+      if (child.meta?.icon) {
+        option.icon = renderIcon(child.meta.icon)
+      }
+      return option
+    })
 })
 </script>
 
