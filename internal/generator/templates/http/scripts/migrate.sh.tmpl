@@ -21,7 +21,8 @@ APP_NAME="{{.AppName}}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-3306}"
 DB_USER="${DB_USER:-root}"
-DB_PASS="${DB_PASS:-123456}"
+# 无默认密码：必须显式传 DB_PASS（本地开发空密码可传 DB_PASS=""）
+DB_PASS="${DB_PASS:-}"
 DB_NAME="${DB_NAME:-{{.AppNameSnake}}}"
 
 # 显示帮助
@@ -44,7 +45,7 @@ show_help() {
     echo "  DB_HOST        数据库主机 (default: localhost)"
     echo "  DB_PORT        数据库端口 (default: 3306)"
     echo "  DB_USER        数据库用户 (default: root)"
-    echo "  DB_PASS        数据库密码 (default: 123456)"
+    echo "  DB_PASS        数据库密码（无默认值，必须显式传入；本地开发可用空密码）"
     echo "  DB_NAME        数据库名称 (default: {{.AppNameSnake}})"
     echo ""
     echo "Examples:"
