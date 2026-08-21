@@ -56,8 +56,6 @@ func (g *RPCGenerator) Generate() error {
 		"",
 		"config",
 		"internal/app",
-		"internal/config",
-		"internal/module/" + serviceLower,
 	}
 
 	for _, dir := range appDirs {
@@ -111,11 +109,10 @@ func (g *RPCGenerator) Generate() error {
 		{"rpc/go.mod.tmpl", "go.mod"},
 		{"rpc/Makefile.tmpl", "Makefile"},
 		{"rpc/config/config.yaml.tmpl", "config/config.yaml"},
+		{"rpc/config/test.yaml.tmpl", "config/test.yaml"},
 		{"rpc/internal/app/app.go.tmpl", "internal/app/app.go"},
 		{"rpc/internal/app/callbacks.go.tmpl", "internal/app/callbacks.go"},
-		{"rpc/internal/app/components.go.tmpl", "internal/app/components.go"},
-		{"rpc/internal/config/config.go.tmpl", "internal/config/config.go"},
-		{"rpc/internal/module/handler.go.tmpl", "internal/module/" + serviceLower + "/handler.go"},
+		{"rpc/internal/app/app_test.go.tmpl", "internal/app/app_test.go"},
 	}
 
 	for _, f := range appFiles {
@@ -154,11 +151,11 @@ func (g *RPCGenerator) templateData() map[string]interface{} {
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
-	// Framework path for pkg (relative to project root)
-	pkgFrameworkPath := "../go-yogan-framework"
-	if g.config.FrameworkPath != "" {
-		pkgFrameworkPath = strings.TrimPrefix(g.config.FrameworkPath, "../../")
-	}
+	// Framework path for pkg: in workspace mode, relative replace directives in
+	// non-main modules resolve against the MAIN module (the app) directory, so
+	// pkg must use the SAME path value as the app to reach the same framework
+	// directory (go.work rejects conflicting replacements otherwise).
+	pkgFrameworkPath := g.config.FrameworkPath
 
 	return map[string]interface{}{
 		// Project level

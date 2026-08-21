@@ -1,80 +1,46 @@
-// Package app encapsulates the CLI application logic
 package app
 
 import (
+	"{{.ModuleName}}/internal/command"
 	"github.com/KOMKZ/go-yogan-framework/application"
 	"github.com/KOMKZ/go-yogan-framework/logger"
 	"github.com/spf13/cobra"
 )
 
-// {{.AppNamePascal}}App CLI application instance
-type {{.AppNamePascal}}App struct {
-	Core       *application.CLIApplication // CLI application core
-	rootCmd    *cobra.Command              // Cobra root command
-	configPath string                      // Config directory path
-	logger     *logger.CtxZapLogger        // Application logger
+// {{.AppNamePascal}} is a CLI application hosted by the {{.ProjectName}} workspace.
+type {{.AppNamePascal}} struct {
+	Core       *application.CLIApplication
+	configPath string
+	logger     *logger.CtxZapLogger
 }
 
-// New creates CLI application instance (using default config path)
-func New() *{{.AppNamePascal}}App {
-	rootCmd := &cobra.Command{
-		Use:     "{{.AppName}}",
-		Short:   "{{.Description}}",
-		Version: "v0.1.0",
-	}
-	return &{{.AppNamePascal}}App{
-		configPath: "./config",
-		rootCmd:    rootCmd,
-		Core:       application.NewCLI("./config", "{{.AppNameUpper}}", rootCmd),
-		logger:     logger.GetLogger("{{.AppNameSnake}}"),
-	}
+// New creates an application with the default config directory.
+func New() *{{.AppNamePascal}} {
+	return NewWithConfig("./config")
 }
 
-// NewWithConfig creates CLI application instance (with custom config path)
-func NewWithConfig(configPath string) *{{.AppNamePascal}}App {
-	rootCmd := &cobra.Command{
-		Use:     "{{.AppName}}",
-		Short:   "{{.Description}}",
-		Version: "v0.1.0",
-	}
-	return &{{.AppNamePascal}}App{
+// NewWithConfig creates an application with an explicit config directory.
+func NewWithConfig(configPath string) *{{.AppNamePascal}} {
+	return &{{.AppNamePascal}}{
 		configPath: configPath,
-		rootCmd:    rootCmd,
-		Core:       application.NewCLI(configPath, "{{.AppNameUpper}}", rootCmd),
+		Core:       application.NewCLI(configPath, "{{.AppNameUpper}}", command.NewRootCmd()),
 		logger:     logger.GetLogger("{{.AppNameSnake}}"),
 	}
 }
 
-// Setup initializes components and commands (for testing)
-func (c *{{.AppNamePascal}}App) Setup() error {
-	// Register components
-	c.RegisterComponents()
-
-	// Register commands
-	c.RegisterCommands()
-
-	// Trigger setup (initialize only, don't execute)
-	return c.Core.Setup()
+// Execute runs the CLI command synchronously (cleans up resources on exit).
+func (a *{{.AppNamePascal}}) Execute() error {
+	a.Core.OnReady(a.onReady)
+	return a.Core.Execute()
 }
 
-// Run starts the application (blocking)
-func (c *{{.AppNamePascal}}App) Run() error {
-	// Register components
-	c.RegisterComponents()
-
-	// Register commands
-	c.RegisterCommands()
-
-	// Execute command
-	return c.Core.Execute()
+// GetRootCmd returns the root cobra command (for tests).
+func (a *{{.AppNamePascal}}) GetRootCmd() *cobra.Command {
+	return a.Core.GetRootCmd()
 }
 
-// GetApp returns internal application instance (for testing)
-func (c *{{.AppNamePascal}}App) GetApp() *application.CLIApplication {
-	return c.Core
-}
-
-// GetRootCmd returns root command (for testing)
-func (c *{{.AppNamePascal}}App) GetRootCmd() *cobra.Command {
-	return c.rootCmd
+// onReady runs after the application finishes setup.
+func (a *{{.AppNamePascal}}) onReady(core *application.CLIApplication) error {
+	a.logger.DebugCtx(core.Context(), "{{.AppNamePascal}} ready")
+	return nil
 }

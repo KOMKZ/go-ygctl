@@ -1,49 +1,10 @@
-# {{.AppName}} Cron application configuration
+# {{.AppName}} configuration
 
-# Logger configuration
 logger:
-  base_log_dir: "./logs"
-  logger_name: "logger"
+  base_log_dir: "logs"
   app_name: "{{.AppName}}"
-  module_number: 20
-  level: "debug"
+  logger_name: "{{.AppNameSnake}}"
+  log_dir_mode: "single"
+  level: "info"
   encoding: "json"
-  console_encoding: "console_pretty"
-  render_style: "single_line"
   enable_console: true
-  enable_level_in_filename: true
-  enable_date_in_filename: true
-  date_format: "2006-01-02"
-  max_size: 100
-  max_backups: 3
-  max_age: 28
-  compress: true
-  enable_caller: true
-  enable_stacktrace: true
-  stacktrace_level: "error"
-  stacktrace_depth: 5
-  enable_trace_id: true
-  trace_id_key: "trace_id"
-  trace_id_field_name: "trace_id"
-
-# Cron configuration
-cron:
-  timezone: "Asia/Shanghai"
-  shutdown_timeout: 30    # Graceful shutdown timeout (seconds)
-
-# Redis (uncomment for distributed lock)
-# redis:
-#   instances:
-#     main:
-#       mode: "standalone"
-#       addrs:
-#         - "localhost:6379"
-#       password: ""
-#       db: 0
-
-# Database (uncomment when needed)
-# database:
-#   connections:
-#     master:
-#       driver: "mysql"
-#       dsn: "root:password@tcp(localhost:3306)/{{.AppNameSnake}}?charset=utf8mb4&parseTime=True&loc=Local"

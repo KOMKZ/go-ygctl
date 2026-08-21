@@ -1,65 +1,80 @@
-// Package app encapsulates the gRPC application logic
 package app
 
 import (
-	"sync"
-
-	"{{.ModuleName}}/internal/config"
 	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/di"
+	frameworkgrpc "github.com/KOMKZ/go-yogan-framework/grpc"
 	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/samber/do/v2"
 )
 
-// {{.AppNamePascal}}App gRPC application instance
-type {{.AppNamePascal}}App struct {
-	Core       *application.GRPCApplication // gRPC application core
-	cfg        *config.{{.AppNamePascal}}Config
-	cfgMu      sync.RWMutex
+// {{.AppNamePascal}} is a gRPC application hosted by the {{.ProjectName}} workspace.
+type {{.AppNamePascal}} struct {
+	Core       *application.GRPCApplication
 	configPath string
-	flags      *application.AppFlags
 	logger     *logger.CtxZapLogger
-	version    string
 }
 
-// NewWithFlags creates application instance with command line flags
-func NewWithFlags(flags *application.AppFlags) *{{.AppNamePascal}}App {
-	return &{{.AppNamePascal}}App{
+// New creates an application with the default config directory.
+func New() *{{.AppNamePascal}} {
+	return NewWithConfig("./config")
+}
+
+// NewWithConfig creates an application with an explicit config directory.
+func NewWithConfig(configPath string) *{{.AppNamePascal}} {
+	return &{{.AppNamePascal}}{
+		configPath: configPath,
+		Core:       application.NewGRPC(configPath, "{{.AppNameUpper}}", nil),
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}
+}
+
+// NewWithFlags creates an application with parsed command line flags.
+func NewWithFlags(flags *application.AppFlags) *{{.AppNamePascal}} {
+	return &{{.AppNamePascal}}{
 		configPath: flags.ConfigDir,
-		flags:      flags,
 		Core:       application.NewGRPC(flags.ConfigDir, "{{.AppNameUpper}}", flags),
 		logger:     logger.GetLogger("{{.AppNameSnake}}"),
 	}
 }
 
-// WithVersion sets application version (chainable)
-func (a *{{.AppNamePascal}}App) WithVersion(version string) *{{.AppNamePascal}}App {
-	a.version = version
+// WithVersion sets the application version (chaining call).
+func (a *{{.AppNamePascal}}) WithVersion(version string) *{{.AppNamePascal}} {
+	a.Core.WithVersion(version)
 	return a
 }
 
-// Run starts the application (blocking)
-func (a *{{.AppNamePascal}}App) Run() error {
-	// Register components
-	a.RegisterComponents(a.Core)
-
-	// Setup callbacks
-	a.SetupCallbacks()
-
-	// Run application (blocking until shutdown signal)
-	a.Core.Run()
-
-	return nil
+// Run starts the application and blocks until shutdown.
+func (a *{{.AppNamePascal}}) Run() error {
+	a.setupCallbacks()
+	return a.Core.Run()
 }
 
-// SetupCallbacks registers all callbacks
-func (a *{{.AppNamePascal}}App) SetupCallbacks() {
-	a.Core.OnSetup(a.onSetup)
+// RunNonBlocking starts the application without waiting for shutdown signals.
+func (a *{{.AppNamePascal}}) RunNonBlocking() error {
+	a.setupCallbacks()
+	return a.Core.RunNonBlocking()
+}
+
+// Shutdown stops the application gracefully.
+func (a *{{.AppNamePascal}}) Shutdown() error {
+	return a.Core.Shutdown()
+}
+
+// GetGRPCServer returns the gRPC server (available after startup).
+func (a *{{.AppNamePascal}}) GetGRPCServer() *frameworkgrpc.Server {
+	return a.Core.GetGRPCServer()
+}
+
+func (a *{{.AppNamePascal}}) setupCallbacks() {
+	a.initDI()
 	a.Core.OnReady(a.onReady)
 	a.Core.OnShutdown(a.onShutdown)
 }
 
-// GetConfig returns current config (thread-safe)
-func (a *{{.AppNamePascal}}App) GetConfig() *config.{{.AppNamePascal}}Config {
-	a.cfgMu.RLock()
-	defer a.cfgMu.RUnlock()
-	return a.cfg
+// initDI registers application providers. ProvideGRPCServer wires the gRPC
+// server provider into the DI container; the framework starts the server
+// automatically on Run (grpc.server.enabled in config).
+func (a *{{.AppNamePascal}}) initDI() {
+	do.Provide(a.Core.GetInjector(), di.ProvideGRPCServer)
 }

@@ -1,122 +1,79 @@
-// Package app encapsulates the Cron application logic
 package app
 
 import (
-	"fmt"
+	"context"
 
+	"{{.ModuleName}}/internal/task"
 	"github.com/KOMKZ/go-yogan-framework/application"
 	"github.com/KOMKZ/go-yogan-framework/logger"
-	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
-// {{.AppNamePascal}}App Cron application instance
-type {{.AppNamePascal}}App struct {
-	Core       *application.CronApplication // Cron application core
-	rootCmd    *cobra.Command               // Cobra root command
-	configPath string                       // Config directory path
-	logger     *logger.CtxZapLogger         // Application logger
+// {{.AppNamePascal}} is a Cron application hosted by the {{.ProjectName}} workspace.
+type {{.AppNamePascal}} struct {
+	Core       *application.CronApplication
+	configPath string
+	logger     *logger.CtxZapLogger
 }
 
-// New creates Cron application instance (using default config path)
-func New() (*{{.AppNamePascal}}App, error) {
-	rootCmd := &cobra.Command{
-		Use:     "{{.AppName}}",
-		Short:   "{{.Description}}",
-		Version: "v0.1.0",
-		Long: `{{.Description}}
-
-Commands:
-  start  - Start cron scheduler (run all tasks)
-  run    - Run single task manually`,
-	}
-
-	app, err := application.NewCron("./config", "{{.AppNameUpper}}")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Cron application: %w", err)
-	}
-
-	return &{{.AppNamePascal}}App{
-		configPath: "./config",
-		rootCmd:    rootCmd,
-		Core:       app,
-		logger:     logger.GetLogger("{{.AppNameSnake}}"),
-	}, nil
+// New creates an application with the default config directory.
+func New() (*{{.AppNamePascal}}, error) {
+	return NewWithConfig("./config")
 }
 
-// MustNew creates Cron application instance (panics on failure)
-func MustNew() *{{.AppNamePascal}}App {
-	app, err := New()
+// NewWithConfig creates an application with an explicit config directory.
+func NewWithConfig(configPath string) (*{{.AppNamePascal}}, error) {
+	core, err := application.NewCron(configPath, "{{.AppNameUpper}}")
 	if err != nil {
-		panic(err)
-	}
-	return app
-}
-
-// NewWithConfig creates Cron application instance (with custom config path)
-func NewWithConfig(configPath string) (*{{.AppNamePascal}}App, error) {
-	rootCmd := &cobra.Command{
-		Use:     "{{.AppName}}",
-		Short:   "{{.Description}}",
-		Version: "v0.1.0",
-		Long: `{{.Description}}
-
-Commands:
-  start  - Start cron scheduler (run all tasks)
-  run    - Run single task manually`,
+		return nil, err
 	}
 
-	app, err := application.NewCron(configPath, "{{.AppNameUpper}}")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Cron application: %w", err)
-	}
-
-	return &{{.AppNamePascal}}App{
+	return &{{.AppNamePascal}}{
 		configPath: configPath,
-		rootCmd:    rootCmd,
-		Core:       app,
+		Core:       core,
 		logger:     logger.GetLogger("{{.AppNameSnake}}"),
 	}, nil
 }
 
-// MustNewWithConfig creates Cron application instance (panics on failure)
-func MustNewWithConfig(configPath string) *{{.AppNamePascal}}App {
-	app, err := NewWithConfig(configPath)
-	if err != nil {
-		panic(err)
-	}
-	return app
+// WithVersion sets the application version (chaining call).
+func (a *{{.AppNamePascal}}) WithVersion(version string) *{{.AppNamePascal}} {
+	a.Core.WithVersion(version)
+	return a
 }
 
-// Setup initializes components and commands (for testing)
-func (c *{{.AppNamePascal}}App) Setup() error {
-	// Register components
-	c.RegisterComponents()
-
-	// Register commands
-	c.RegisterCommands()
-
-	// Trigger setup (initialize only, don't start scheduler)
-	return c.Core.RunNonBlocking()
+// Run starts the application and blocks until shutdown.
+func (a *{{.AppNamePascal}}) Run() error {
+	a.setupCallbacks()
+	return a.Core.Run()
 }
 
-// Run starts the application (blocking)
-func (c *{{.AppNamePascal}}App) Run() error {
-	// Register components
-	c.RegisterComponents()
-
-	// Register commands
-	c.RegisterCommands()
-
-	// Execute command
-	return c.rootCmd.Execute()
+// RunNonBlocking starts the application without waiting for shutdown signals.
+func (a *{{.AppNamePascal}}) RunNonBlocking() error {
+	a.setupCallbacks()
+	return a.Core.RunNonBlocking()
 }
 
-// GetApp returns internal application instance (for testing)
-func (c *{{.AppNamePascal}}App) GetApp() *application.CronApplication {
-	return c.Core
+// Shutdown stops the application gracefully.
+func (a *{{.AppNamePascal}}) Shutdown() error {
+	return a.Core.Shutdown()
 }
 
-// GetRootCmd returns root command (for testing)
-func (c *{{.AppNamePascal}}App) GetRootCmd() *cobra.Command {
-	return c.rootCmd
+func (a *{{.AppNamePascal}}) setupCallbacks() {
+	// Register scheduled tasks before startup.
+	a.Core.RegisterTasks(task.NewRegistrar())
+	a.Core.OnReady(a.onReady)
+	a.Core.OnShutdown(a.onShutdown)
+}
+
+// onReady runs after the scheduler starts.
+func (a *{{.AppNamePascal}}) onReady(core *application.CronApplication) error {
+	a.logger.InfoCtx(context.Background(), "{{.AppNamePascal}} started",
+		zap.String("config_path", a.configPath))
+	return nil
+}
+
+// onShutdown runs before the application stops.
+func (a *{{.AppNamePascal}}) onShutdown(core *application.CronApplication) error {
+	a.logger.InfoCtx(context.Background(), "{{.AppNamePascal}} shutting down")
+	return nil
 }

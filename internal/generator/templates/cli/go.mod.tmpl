@@ -6,17 +6,13 @@ require (
 {{- if .UseLocalFramework}}
 	github.com/KOMKZ/go-yogan-framework v0.0.0
 {{- end}}
-	{{.ProjectModule}}/pkg v0.0.0
-	github.com/spf13/cobra v1.8.0
-	go.uber.org/zap v1.27.0
+	github.com/spf13/cobra v1.10.2
+	go.uber.org/zap v1.27.1
 )
-
-replace (
-	{{.ProjectModule}}/pkg => ../../pkg
 {{- if .UseLocalFramework}}
-	github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
+
+replace github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
 {{- end}}
-)
 {{- if not .UseLocalFramework}}
 
 // Remote mode: run `go get -u github.com/KOMKZ/go-yogan-framework@latest` to install framework

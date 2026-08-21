@@ -1,0 +1,15 @@
+package app
+
+import (
+	"testing"
+)
+
+func TestCLIAppExecute(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+
+	app := NewWithConfig("../../config")
+	app.GetRootCmd().SetArgs([]string{"home"})
+	if err := app.Execute(); err != nil {
+		t.Fatalf("execute failed: %v", err)
+	}
+}

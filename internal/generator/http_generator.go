@@ -190,11 +190,11 @@ func (g *HTTPGenerator) templateData() map[string]any {
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
-	// Framework path for pkg (relative to pkg/, one level below project root).
-	// The app path (apps/<app>/ => ../../../go-yogan-framework) and the pkg path
-	// (pkg/ => ../../go-yogan-framework) must resolve to the SAME directory,
-	// otherwise go.work reports conflicting replacements.
-	pkgFrameworkPath := "../../go-yogan-framework"
+	// Framework path for pkg: in workspace mode, relative replace directives in
+	// non-main modules resolve against the MAIN module (the app) directory, so
+	// pkg must use the SAME path value as the app to reach the same framework
+	// directory (go.work rejects conflicting replacements otherwise).
+	pkgFrameworkPath := g.config.FrameworkPath
 
 	return map[string]any{
 		// Project level

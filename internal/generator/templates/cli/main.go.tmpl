@@ -1,22 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"{{.ModuleName}}/internal/app"
-	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"go.uber.org/zap"
 )
 
-const Version = "0.1.0"
+// Version is the current {{.AppName}} version.
+var Version = "0.1.0"
 
 func main() {
-	// Parse command line flags and environment variables
-	flags := application.ParseFlags("{{.AppName}}", "./config")
+	application := app.New()
 
-	// Start CLI application
-	if err := app.NewWithConfig(flags.ConfigDir).Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
-		os.Exit(1)
+	if err := application.Execute(); err != nil {
+		logger.Fatal("main", "CLI application failed", zap.Error(err))
 	}
 }

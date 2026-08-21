@@ -2,70 +2,24 @@ package app
 
 import (
 	"context"
-	"fmt"
 
-	"{{.ModuleName}}/internal/config"
-	{{.ServiceNameLower}}Module "{{.ModuleName}}/internal/module/{{.ServiceNameLower}}"
-	pb "{{.ProjectModule}}/proto/{{.ServiceNameLower}}"
 	"github.com/KOMKZ/go-yogan-framework/application"
-	"github.com/KOMKZ/go-yogan-framework/component"
-	pkgGrpc "github.com/KOMKZ/go-yogan-framework/grpc"
-	"github.com/KOMKZ/go-yogan-framework/registry"
 	"go.uber.org/zap"
 )
 
-// onSetup initialization phase (register gRPC services)
-func (a *{{.AppNamePascal}}App) onSetup(core *application.GRPCApplication) error {
-	// Load business config
-	cfg, err := config.LoadWithLoader(core.GetConfigLoader())
-	if err != nil {
-		return err
-	}
-
-	// Save config to instance
-	a.cfgMu.Lock()
-	a.cfg = cfg
-	a.cfgMu.Unlock()
-
-	a.logger.DebugCtx(context.Background(), "✅ Config loaded",
-		zap.Int("grpc_port", cfg.Grpc.Server.Port))
-
-	// Get gRPC component via Registry
-	grpcComponent := registry.MustGetTyped[*pkgGrpc.Component](core.GetRegistry(), component.ComponentGRPC)
-
-	// Get gRPC server
-	grpcServer := grpcComponent.GetGRPCServer()
-	if grpcServer == nil {
-		return fmt.Errorf("gRPC Server not initialized")
-	}
-
-	// Register gRPC service implementation
-	handler := {{.ServiceNameLower}}Module.NewHandler(a.logger)
-	pb.Register{{.ServiceName}}ServiceServer(grpcServer, handler)
-	a.logger.DebugCtx(context.Background(), "✅ gRPC service registered")
-
-	// Start gRPC server
-	if err := grpcComponent.StartServer(context.Background()); err != nil {
-		return fmt.Errorf("failed to start gRPC Server: %w", err)
-	}
-	a.logger.DebugCtx(context.Background(), "✅ gRPC Server started")
-
+// onReady runs after the application finishes startup. The gRPC server is
+// started by the framework (grpc.server.enabled in config); register services
+// here once the proto code is generated:
+//
+//	pb.Register{{.ServiceName}}Server(a.GetGRPCServer().GetGRPCServer(), &{{.ServiceNameLower}}Handler{})
+func (a *{{.AppNamePascal}}) onReady(core *application.GRPCApplication) error {
+	a.logger.InfoCtx(context.Background(), "{{.AppNamePascal}} started",
+		zap.String("config_path", a.configPath))
 	return nil
 }
 
-// onReady application ready callback
-func (a *{{.AppNamePascal}}App) onReady(core *application.GRPCApplication) error {
-	cfg := a.GetConfig()
-
-	a.logger.InfoCtx(context.Background(), "✅ {{.AppName}} is ready",
-		zap.String("version", a.version),
-		zap.Int("grpc_port", cfg.Grpc.Server.Port))
-
-	return nil
-}
-
-// onShutdown graceful shutdown callback
-func (a *{{.AppNamePascal}}App) onShutdown(core *application.GRPCApplication) error {
-	a.logger.DebugCtx(context.Background(), "{{.AppName}} shutting down...")
+// onShutdown runs before the application stops.
+func (a *{{.AppNamePascal}}) onShutdown(core *application.GRPCApplication) error {
+	a.logger.InfoCtx(context.Background(), "{{.AppNamePascal}} shutting down")
 	return nil
 }

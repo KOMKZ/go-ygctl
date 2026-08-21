@@ -1,0 +1,26 @@
+package task
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"go.uber.org/zap"
+)
+
+// Registrar registers demo tasks into the cron application.
+type Registrar struct{}
+
+// NewRegistrar creates a task registrar.
+func NewRegistrar() *Registrar {
+	return &Registrar{}
+}
+
+// RegisterTasks implements application.TaskRegistrar.
+func (r *Registrar) RegisterTasks(app *application.CronApplication) error {
+	// Add scheduled tasks here:
+	//
+	// _, err := app.RegisterTask("*/5 * * * *", func() { ... })
+	// return err
+	log := logger.GetLogger("{{.AppNameSnake}}")
+	log.DebugCtx(app.Context(), "demo task registrar loaded", zap.String("app", "{{.AppName}}"))
+	return nil
+}

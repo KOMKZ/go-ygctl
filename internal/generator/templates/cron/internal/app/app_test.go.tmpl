@@ -1,0 +1,20 @@
+package app
+
+import (
+	"testing"
+)
+
+func TestCronAppLifecycle(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+
+	app, err := NewWithConfig("../../config")
+	if err != nil {
+		t.Fatalf("init failed: %v", err)
+	}
+	if err := app.WithVersion("test").RunNonBlocking(); err != nil {
+		t.Fatalf("boot failed: %v", err)
+	}
+	if err := app.Shutdown(); err != nil {
+		t.Fatalf("shutdown failed: %v", err)
+	}
+}

@@ -53,7 +53,6 @@ func (g *CLIGenerator) Generate() error {
 		"",
 		"config",
 		"internal/app",
-		"internal/config",
 		"internal/command",
 	}
 
@@ -103,10 +102,9 @@ func (g *CLIGenerator) Generate() error {
 		{"cli/go.mod.tmpl", "go.mod"},
 		{"cli/Makefile.tmpl", "Makefile"},
 		{"cli/config/config.yaml.tmpl", "config/config.yaml"},
+		{"cli/config/test.yaml.tmpl", "config/test.yaml"},
 		{"cli/internal/app/app.go.tmpl", "internal/app/app.go"},
-		{"cli/internal/app/commands.go.tmpl", "internal/app/commands.go"},
-		{"cli/internal/app/components.go.tmpl", "internal/app/components.go"},
-		{"cli/internal/config/config.go.tmpl", "internal/config/config.go"},
+		{"cli/internal/app/app_test.go.tmpl", "internal/app/app_test.go"},
 		{"cli/internal/command/home.go.tmpl", "internal/command/home.go"},
 	}
 
@@ -128,11 +126,11 @@ func (g *CLIGenerator) templateData() map[string]interface{} {
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
-	// Framework path for pkg (relative to project root)
-	pkgFrameworkPath := "../go-yogan-framework"
-	if g.config.FrameworkPath != "" {
-		pkgFrameworkPath = strings.TrimPrefix(g.config.FrameworkPath, "../../")
-	}
+	// Framework path for pkg: in workspace mode, relative replace directives in
+	// non-main modules resolve against the MAIN module (the app) directory, so
+	// pkg must use the SAME path value as the app to reach the same framework
+	// directory (go.work rejects conflicting replacements otherwise).
+	pkgFrameworkPath := g.config.FrameworkPath
 
 	return map[string]interface{}{
 		// Project level

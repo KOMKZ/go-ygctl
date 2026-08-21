@@ -53,9 +53,7 @@ func (g *CronGenerator) Generate() error {
 		"",
 		"config",
 		"internal/app",
-		"internal/config",
-		"internal/command",
-		"internal/handler",
+		"internal/task",
 	}
 
 	for _, dir := range appDirs {
@@ -104,13 +102,10 @@ func (g *CronGenerator) Generate() error {
 		{"cron/go.mod.tmpl", "go.mod"},
 		{"cron/Makefile.tmpl", "Makefile"},
 		{"cron/config/config.yaml.tmpl", "config/config.yaml"},
+		{"cron/config/test.yaml.tmpl", "config/test.yaml"},
 		{"cron/internal/app/app.go.tmpl", "internal/app/app.go"},
-		{"cron/internal/app/commands.go.tmpl", "internal/app/commands.go"},
-		{"cron/internal/app/components.go.tmpl", "internal/app/components.go"},
-		{"cron/internal/config/config.go.tmpl", "internal/config/config.go"},
-		{"cron/internal/command/start.go.tmpl", "internal/command/start.go"},
-		{"cron/internal/command/run.go.tmpl", "internal/command/run.go"},
-		{"cron/internal/handler/demo_handler.go.tmpl", "internal/handler/demo_handler.go"},
+		{"cron/internal/app/app_test.go.tmpl", "internal/app/app_test.go"},
+		{"cron/internal/task/demo.go.tmpl", "internal/task/demo.go"},
 	}
 
 	for _, f := range appFiles {
@@ -131,11 +126,11 @@ func (g *CronGenerator) templateData() map[string]interface{} {
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
-	// Framework path for pkg (relative to project root)
-	pkgFrameworkPath := "../go-yogan-framework"
-	if g.config.FrameworkPath != "" {
-		pkgFrameworkPath = strings.TrimPrefix(g.config.FrameworkPath, "../../")
-	}
+	// Framework path for pkg: in workspace mode, relative replace directives in
+	// non-main modules resolve against the MAIN module (the app) directory, so
+	// pkg must use the SAME path value as the app to reach the same framework
+	// directory (go.work rejects conflicting replacements otherwise).
+	pkgFrameworkPath := g.config.FrameworkPath
 
 	return map[string]interface{}{
 		// Project level

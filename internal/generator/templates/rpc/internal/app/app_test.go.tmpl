@@ -1,0 +1,20 @@
+package app
+
+import (
+	"testing"
+)
+
+func TestGRPCAppLifecycle(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+
+	app := NewWithConfig("../../config")
+	if err := app.WithVersion("test").RunNonBlocking(); err != nil {
+		t.Fatalf("boot failed: %v", err)
+	}
+	if app.GetGRPCServer() == nil {
+		t.Fatal("gRPC server should not be nil after startup")
+	}
+	if err := app.Shutdown(); err != nil {
+		t.Fatalf("shutdown failed: %v", err)
+	}
+}
