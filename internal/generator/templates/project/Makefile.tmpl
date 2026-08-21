@@ -1,4 +1,4 @@
-.PHONY: build build-all proto proto-check proto-install help
+.PHONY: build build-all{{if .GenerateProto}} proto proto-check proto-install proto-clean{{end}} help
 
 # 默认目标
 all: build-all
