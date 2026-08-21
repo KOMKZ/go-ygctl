@@ -77,6 +77,20 @@ func runNewHTTP(cmd *cobra.Command, args []string) error {
 		}
 		config.OutputPath = httpOutput
 		config.ServerPort = httpPort
+		// 🎯 When --port is not given explicitly, auto-allocate a port that
+		// avoids conflicts with existing apps in the workspace (prevents
+		// runtime bind failures when multiple generated apps share a host).
+		if !cmd.Flags().Changed("port") {
+			allocated, err := generator.AllocateFreePort(httpOutput, httpProject, config.ServerPort)
+			if err != nil {
+				return err
+			}
+			if allocated != config.ServerPort {
+				fmt.Fprintf(cmd.OutOrStdout(), "💡 Port %d is used by an existing app, allocated %d\n",
+					config.ServerPort, allocated)
+			}
+			config.ServerPort = allocated
+		}
 		config.UseLocalFramework = httpLocalFW
 		config.FrameworkPath = httpFWPath
 		config.Description = fmt.Sprintf("%s HTTP API", generator.ToPascalCase(config.AppName))
