@@ -1,0 +1,53 @@
+package service
+
+import (
+	"context"
+	"testing"
+
+	"{{.DomainImport}}/model"
+)
+
+// stubRepo implements repository.{{.EntityPascal}}Repository for skeleton tests.
+// model 类型在此出现仅因 repo 接口签名要求。
+type stubRepo struct{}
+
+func (stubRepo) Create(ctx context.Context, e *model.{{.EntityPascal}}) error { return nil }
+func (stubRepo) FindByID(ctx context.Context, id uint) (*model.{{.EntityPascal}}, error) {
+	return nil, nil
+}
+func (stubRepo) Update(ctx context.Context, e *model.{{.EntityPascal}}) error { return nil }
+func (stubRepo) Delete(ctx context.Context, id uint) error                   { return nil }
+func (stubRepo) Paginate(ctx context.Context, page, pageSize int) ([]model.{{.EntityPascal}}, int64, error) {
+	return nil, 0, nil
+}
+{{- range .Queries}}
+func (stubRepo) {{.MethodName}}(ctx context.Context, {{.ParamName}} {{.ParamType}}) (*model.{{$.EntityPascal}}, error) {
+	return nil, nil
+}
+{{- end}}
+
+func TestNew{{.EntityPascal}}Service(t *testing.T) {
+	svc := New{{.EntityPascal}}Service(stubRepo{}, nil)
+	if svc == nil {
+		t.Fatal("New{{.EntityPascal}}Service returned nil")
+	}
+}
+
+func Test{{.EntityPascal}}Service_GetByID_NotFound(t *testing.T) {
+	svc := New{{.EntityPascal}}Service(stubRepo{}, nil)
+	_, err := svc.GetByID(context.Background(), 999)
+	if err == nil {
+		t.Fatal("expected error for missing record, got nil")
+	}
+}
+
+func Test{{.EntityPascal}}Service_Create_ReturnsItem(t *testing.T) {
+	svc := New{{.EntityPascal}}Service(stubRepo{}, nil)
+	item, err := svc.Create(context.Background(), Create{{.EntityPascal}}Input{})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if item == nil {
+		t.Fatal("Create() returned nil item")
+	}
+}

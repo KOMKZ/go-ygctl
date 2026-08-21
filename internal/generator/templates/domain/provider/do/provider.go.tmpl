@@ -1,0 +1,41 @@
+package do
+
+import (
+{{- if .Pure}}
+	"{{.DomainImport}}/service"
+{{- else}}
+	"{{.DomainImport}}/repository"
+	"{{.DomainImport}}/service"
+{{- end}}
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/samber/do/v2"
+{{- if not .Pure}}
+	"gorm.io/gorm"
+{{- end}}
+)
+
+{{if not .Pure}}
+// Provide{{.EntityPascal}}Repository registers the repository in the DI container.
+func Provide{{.EntityPascal}}Repository(i do.Injector) (repository.{{.EntityPascal}}Repository, error) {
+	db, err := do.Invoke[*gorm.DB](i)
+	if err != nil {
+		return nil, err
+	}
+	return repository.New{{.EntityPascal}}MySQLRepository(db), nil
+}
+
+{{end}}
+// Provide{{.EntityPascal}}Service registers the service in the DI container.
+func Provide{{.EntityPascal}}Service(i do.Injector) (*service.{{.EntityPascal}}Service, error) {
+{{- if .Pure}}
+	log := do.MustInvokeNamed[*logger.CtxZapLogger](i, "{{.DomainKey}}")
+	return service.New{{.EntityPascal}}Service(log), nil
+{{- else}}
+	repo, err := do.Invoke[repository.{{.EntityPascal}}Repository](i)
+	if err != nil {
+		return nil, err
+	}
+	log := do.MustInvokeNamed[*logger.CtxZapLogger](i, "{{.DomainKey}}")
+	return service.New{{.EntityPascal}}Service(repo, log), nil
+{{- end}}
+}

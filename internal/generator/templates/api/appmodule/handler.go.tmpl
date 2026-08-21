@@ -1,0 +1,66 @@
+package {{.EntitySnake}}
+
+import (
+	"{{.DomainImport}}/service"
+	"github.com/KOMKZ/go-yogan-framework/httpx/types"
+	"github.com/gin-gonic/gin"
+)
+
+// {{.EntityPascal}}Handler serves the {{.TableName}} CRUD endpoints（由 ygctl api gen 生成）。
+// 只依赖 service 层结构体，不接触 model 层。
+type {{.EntityPascal}}Handler struct {
+	svc *service.{{.EntityPascal}}Service
+}
+
+// New{{.EntityPascal}}Handler creates the handler.
+func New{{.EntityPascal}}Handler(svc *service.{{.EntityPascal}}Service) *{{.EntityPascal}}Handler {
+	return &{{.EntityPascal}}Handler{svc: svc}
+}
+
+// List handles GET /api/{{.TableName}}/page.
+func (h *{{.EntityPascal}}Handler) List(c *gin.Context, req *List{{.EntityPascal}}Request) (*{{.EntityPascal}}PageResponse, error) {
+	req.ApplyDefaults()
+	items, total, err := h.svc.Paginate(c.Request.Context(), req.Current, req.Size)
+	if err != nil {
+		return nil, err
+	}
+	return &{{.EntityPascal}}PageResponse{
+		PageMeta: types.NewPageMeta(total, req.Current, req.Size),
+		Records:  items,
+	}, nil
+}
+
+// GetByID handles GET /api/{{.TableName}}/:id.
+func (h *{{.EntityPascal}}Handler) GetByID(c *gin.Context, req *{{.EntityPascal}}GetRequest) (*service.{{.EntityPascal}}Item, error) {
+	return h.svc.GetByID(c.Request.Context(), req.ID)
+}
+
+// Create handles POST /api/{{.TableName}}.
+func (h *{{.EntityPascal}}Handler) Create(c *gin.Context, req *Create{{.EntityPascal}}Request) (*service.{{.EntityPascal}}Item, error) {
+	return h.svc.Create(c.Request.Context(), service.Create{{.EntityPascal}}Input{
+{{- range .Fields}}
+		{{.PascalName}}: req.{{.PascalName}},
+{{- end}}
+	})
+}
+
+// Update handles PUT /api/{{.TableName}}/:id.
+func (h *{{.EntityPascal}}Handler) Update(c *gin.Context, req *{{.EntityPascal}}UpdateRequest) (*service.{{.EntityPascal}}Item, error) {
+	if err := h.svc.Update(c.Request.Context(), service.Update{{.EntityPascal}}Input{
+		ID: req.ID,
+{{- range .Fields}}
+		{{.PascalName}}: req.{{.PascalName}},
+{{- end}}
+	}); err != nil {
+		return nil, err
+	}
+	return h.svc.GetByID(c.Request.Context(), req.ID)
+}
+
+// Delete handles DELETE /api/{{.TableName}}/:id.
+func (h *{{.EntityPascal}}Handler) Delete(c *gin.Context, req *{{.EntityPascal}}DeleteRequest) (*{{.EntityPascal}}DeleteResponse, error) {
+	if err := h.svc.Delete(c.Request.Context(), req.ID); err != nil {
+		return nil, err
+	}
+	return &{{.EntityPascal}}DeleteResponse{ID: req.ID}, nil
+}

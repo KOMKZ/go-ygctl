@@ -1,0 +1,43 @@
+# {{.DomainKey}} 域契约
+
+> 面向 app 层的领域契约（由 ygctl api gen 生成，人工核对）。
+> 修改本文件须与代码同步，API 变更必须同步此契约。
+
+## 服务
+
+| 服务 | 方法 | 输入 | 输出 | 说明 |
+|------|------|------|------|------|
+| {{.EntityPascal}}Service | Create | *model.{{.EntityPascal}} | *model.{{.EntityPascal}}, error | 创建（业务规则 TODO） |
+| {{.EntityPascal}}Service | GetByID | id | *model.{{.EntityPascal}}, error | 不存在返回 Err{{.EntityPascal}}NotFound |
+| {{.EntityPascal}}Service | Update | *model.{{.EntityPascal}} | error | 更新（业务规则 TODO） |
+| {{.EntityPascal}}Service | Delete | id | error | 删除 |
+| {{.EntityPascal}}Service | Paginate | page, pageSize | []model.{{.EntityPascal}}, int64, error | 分页 |
+{{- range .Queries}}
+| {{$.EntityPascal}}Service | {{.MethodName}} | {{.ParamName}} | *model.{{$.EntityPascal}}, error | 按 {{.ColumnName}} 查询 |
+{{- end}}
+
+## HTTP 端点
+
+| 方法 | 路径 | Handler |
+|------|------|---------|
+{{- range .Endpoints}}
+{{- if eq . "list"}}
+| GET | /api/{{$.TableName}}/page | List |
+{{- else if eq . "get"}}
+| GET | /api/{{$.TableName}}/:id | GetByID |
+{{- else if eq . "create"}}
+| POST | /api/{{$.TableName}} | Create |
+{{- else if eq . "update"}}
+| PUT | /api/{{$.TableName}}/:id | Update |
+{{- else if eq . "delete"}}
+| DELETE | /api/{{$.TableName}}/:id | Delete |
+{{- end}}
+{{- end}}
+
+## 权限码
+
+见 `permissions/declared_permissions.go`。
+
+## 错误码
+
+模块号 `{{.ErrModule}}`，业务码见 `errors/errors.go`。

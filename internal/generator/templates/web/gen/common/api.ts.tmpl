@@ -1,0 +1,90 @@
+// 由 ygctl web gen 生成（[[.Style]] 风格）。勿手改；重新生成会覆盖。
+// 依赖应用骨架：@/api/adapter（extractData/fromBackendPageResponse）、@/api/types（BackendPageResponse/PaginatedResult）。
+import type { HttpClient } from '@rong/admin-ui/app-request'
+import type { BackendPageResponse, PaginatedResult } from '@/api/types'
+import { extractData, fromBackendPageResponse } from '@/api/adapter'
+
+/** 后端原始记录（PascalCase 序列化契约，adapter 归一化用） */
+export interface Backend[[.EntityPascal]]Item {
+  ID: number
+[[.BackendItemFieldsTS]]  CreatedAt: string
+  UpdatedAt: string
+}
+
+/** 前端统一记录模型（snake_case，与 defs DSL 字段名一致） */
+export interface [[.EntityPascal]]Record {
+  id: number
+[[.RecordFieldsTS]]  created_at: string
+  updated_at: string
+}
+
+/** 表单模型（新建/编辑） */
+export interface [[.EntityPascal]]FormModel {
+[[.FormModelFieldsTS]]}
+
+export interface [[.EntityPascal]]ListParams {
+  current: number
+  size: number
+  /** 契约缺口：后端 /page 暂不支持搜索参数，签名保留供后续透传 */
+  query?: Record<string, unknown>
+}
+
+function normalize[[.EntityPascal]]Record(raw: Backend[[.EntityPascal]]Item): [[.EntityPascal]]Record {
+  return {
+    id: raw.ID,
+[[.NormalizeAssignmentsTS]]    created_at: raw.CreatedAt,
+    updated_at: raw.UpdatedAt,
+  }
+}
+
+export function create[[.EntityPascal]]Api(http: HttpClient) {
+  return {
+    /** GET /api/[[.Table]]/page?current=&size= */
+    async page(params: [[.EntityPascal]]ListParams): Promise<PaginatedResult<[[.EntityPascal]]Record>> {
+      const query: Record<string, string> = {
+        current: String(params.current),
+        size: String(params.size),
+      }
+      void params.query
+      const response = await http.get<BackendPageResponse<Backend[[.EntityPascal]]Item>>(
+        `/api/[[.Table]]/page?${new URLSearchParams(query).toString()}`,
+      )
+      const data = extractData(response)
+      return {
+        ...fromBackendPageResponse(data),
+        list: data.records.map(normalize[[.EntityPascal]]Record),
+      }
+    },
+
+    /** GET /api/[[.Table]]/:id */
+    async getById(id: number): Promise<[[.EntityPascal]]Record> {
+      const response = await http.get<Backend[[.EntityPascal]]Item>(`/api/[[.Table]]/${id}`)
+      return normalize[[.EntityPascal]]Record(extractData(response))
+    },
+
+    /** POST /api/[[.Table]] */
+    async create(params: [[.EntityPascal]]FormModel): Promise<[[.EntityPascal]]Record> {
+      const response = await http.post<Backend[[.EntityPascal]]Item>('/api/[[.Table]]', params)
+      return normalize[[.EntityPascal]]Record(extractData(response))
+    },
+
+    /** PUT /api/[[.Table]]/:id（create-only 字段不参与更新） */
+    async update(id: number, params: [[.EntityPascal]]FormModel): Promise<[[.EntityPascal]]Record> {
+      const response = await http.put<Backend[[.EntityPascal]]Item>(`/api/[[.Table]]/${id}`, params)
+      return normalize[[.EntityPascal]]Record(extractData(response))
+    },
+
+    /** DELETE /api/[[.Table]]/:id */
+    async remove(id: number): Promise<number> {
+      const response = await http.delete<{ id: number }>(`/api/[[.Table]]/${id}`)
+      return extractData(response).id
+    },
+
+    /** 批量删除：后端无批量端点（契约缺口），客户端并行 DELETE */
+    async batchRemove(ids: number[]): Promise<void> {
+      await Promise.all(ids.map((id) => this.remove(id)))
+    },
+  }
+}
+
+export type [[.EntityPascal]]Api = ReturnType<typeof create[[.EntityPascal]]Api>

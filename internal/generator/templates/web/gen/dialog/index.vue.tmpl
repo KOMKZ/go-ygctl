@@ -1,0 +1,260 @@
+<template>
+  <div class="ra-page" data-testid="[[.Entity]]-list-page">
+    <div class="ra-page-header">
+      <h2 class="ra-page-header__title">[[.MenuTitle]]</h2>
+      <p class="ra-page-header__desc">[[.MenuTitle]]列表管理</p>
+    </div>
+
+    <RFilterBarPro
+      v-model="filterValues"
+      :schema="filterSchema"
+      :collapsible="false"
+      search-label="搜索"
+      reset-label="重置"
+      data-testid="[[.Entity]]-filter-bar"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
+
+    <div class="ra-card ra-card--flush">
+      <RTableToolbarPro
+        :title="'[[.MenuTitle]]列表'"
+        :loading="loading"
+        :refreshable="true"
+        data-testid="[[.Entity]]-toolbar"
+        @refresh="loadData"
+      >
+        <template #extra>
+          <n-space size="small">
+            <n-button type="primary" size="small" data-testid="[[.Entity]]-add-btn" @click="handleAdd">
+              <template #icon>
+                <n-icon :size="14"><PlusIcon /></n-icon>
+              </template>
+              新增[[.MenuTitle]]
+            </n-button>
+          </n-space>
+        </template>
+      </RTableToolbarPro>
+
+      <RDataTable
+        :columns="columns"
+        :data="filteredRows"
+        :loading="loading"
+        :pagination="pagination"
+        row-key="id"
+        :selectable="true"
+        :checked-row-keys="checkedRowKeys"
+        :bordered="false"
+        :striped="true"
+        data-testid="[[.Entity]]-table"
+        @update:checked-row-keys="handleCheck"
+        @update:page="handlePageChange"
+        @update:page-size="handlePageSizeChange"
+      >
+        <template #empty>
+          <REmptyState
+            icon="inbox"
+            :title="error ? '加载失败' : '暂无数据'"
+            :description="error ? `${error}，点击下方按钮重试` : '点击上方按钮新增第一条数据'"
+            :action-label="error ? '重试' : '新增'"
+            data-testid="[[.Entity]]-empty"
+            @action="error ? loadData() : handleAdd()"
+          />
+        </template>
+        <template #batchToolbar="{ selectedCount, selectedKeys }">
+          <RBatchActionBar
+            :selected-count="selectedCount"
+            :selected-keys="selectedKeys"
+            :actions="batchActions"
+            data-testid="[[.Entity]]-batch-bar"
+            @clear="handleClearSelection"
+            @action="handleBatchAction"
+          />
+        </template>
+      </RDataTable>
+    </div>
+
+    <[[.EntityPascal]]FormDialog ref="formDialogRef" @success="handleFormSuccess" />
+  </div>
+</template>
+
+<script setup lang="ts">
+// 由 ygctl web gen 生成（[[.Style]] 风格）。勿手改；重新生成会覆盖。
+import { ref, reactive, computed, h, onMounted, type VNode } from 'vue'
+import { NButton, NSpace, NTag, NIcon, useMessage, useDialog } from '@rong/admin-ui/naive'
+import { Plus as PlusIcon } from 'lucide-vue-next'
+import {
+  RFilterBarPro,
+  RTableToolbarPro,
+  RDataTable,
+  RBatchActionBar,
+  REmptyState,
+} from '@rong/admin-ui'
+import type { FormFieldSchema, DataTableColumn, BatchAction, DataTableRowKey } from '@rong/admin-ui'
+import type { [[.EntityPascal]]Record } from '@/api/[[.Entity]]'
+import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
+import { getHttpClient } from '@/app'
+import { parseErrorMessage } from '@/api/adapter'
+import [[.EntityPascal]]FormDialog from './form-dialog.vue'
+
+/**
+ * 状态机：idle → loading → success(rows) / empty / error(可重试)。
+ * 契约缺口：后端 /page 无搜索参数，搜索为当前页客户端过滤。
+ */
+const message = useMessage()
+const dialog = useDialog()
+
+// httpClient 必须在 setup 阶段获取（inject 仅 setup/生命周期内有效）
+const httpClient = getHttpClient()
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+const rows = ref<[[.EntityPascal]]Record[]>([])
+const total = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
+const checkedRowKeys = ref<DataTableRowKey[]>([])
+const filterValues = reactive<Record<string, unknown>>({
+[[.FilterValuesTS]]})
+const formDialogRef = ref<InstanceType<typeof [[.EntityPascal]]FormDialog> | null>(null)
+
+[[.EnumLabelsTS]]
+const filterSchema: FormFieldSchema[] = [
+[[.FilterSchemaTS]]]
+
+const columns: DataTableColumn<[[.EntityPascal]]Record>[] = [
+[[.ColumnsTS]]]
+
+const batchActions: BatchAction[] = [
+  {
+    key: 'delete',
+    label: '批量删除',
+    icon: 'trash-2',
+    danger: true,
+    confirmMessage: '确定删除选中的数据？此操作不可恢复',
+  },
+]
+
+const pagination = computed(() => ({
+  page: page.value,
+  pageSize: pageSize.value,
+  total: total.value,
+  pageSizes: [10, 20, 50],
+}))
+
+const filteredRows = computed(() => {
+[[.FilterLocalsTS]][[.FilterGuardExpr]]  return rows.value.filter((row) => {
+[[.ClientFilterExpr]]    return true
+  })
+})
+
+function formatDateTime(value: string | null): string {
+  if (!value) return '—'
+  const m = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/)
+  return m ? `${m[1]} ${m[2]}` : value
+}
+
+async function loadData() {
+  loading.value = true
+  error.value = null
+  try {
+    const result = await create[[.EntityPascal]]Api(httpClient).page({
+      current: page.value,
+      size: pageSize.value,
+      query: { ...filterValues },
+    })
+    rows.value = result.list
+    total.value = result.total
+  } catch (err) {
+    error.value = parseErrorMessage(err)
+    rows.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleSearch() {
+  page.value = 1
+  void loadData()
+}
+
+function handleReset() {
+[[.ResetFilterCode]]  page.value = 1
+  void loadData()
+}
+
+function handlePageChange(next: number) {
+  page.value = next
+  void loadData()
+}
+
+function handlePageSizeChange(next: number) {
+  pageSize.value = next
+  page.value = 1
+  void loadData()
+}
+
+function handleCheck(keys: DataTableRowKey[]) {
+  checkedRowKeys.value = keys
+}
+
+function handleClearSelection() {
+  checkedRowKeys.value = []
+}
+
+function handleAdd() {
+  formDialogRef.value?.open('create')
+}
+
+function handleEdit(row: [[.EntityPascal]]Record) {
+  formDialogRef.value?.open('edit', row)
+}
+
+function handleDelete(row: [[.EntityPascal]]Record) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定删除该数据？此操作不可恢复`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await create[[.EntityPascal]]Api(httpClient).remove(row.id)
+        message.success('删除成功')
+        checkedRowKeys.value = checkedRowKeys.value.filter((k) => k !== row.id)
+        void loadData()
+      } catch (err) {
+        message.error(parseErrorMessage(err) || '删除失败')
+      }
+    },
+  })
+}
+
+async function handleBatchAction(key: string, selectedKeys: (string | number)[]) {
+  if (key !== 'delete' || selectedKeys.length === 0) return
+  try {
+    await create[[.EntityPascal]]Api(httpClient).batchRemove(selectedKeys.map(Number))
+    message.success(`已删除 ${selectedKeys.length} 条数据`)
+    handleClearSelection()
+    void loadData()
+  } catch (err) {
+    message.error(parseErrorMessage(err) || '批量删除失败')
+  }
+}
+
+function handleFormSuccess() {
+  handleClearSelection()
+  void loadData()
+}
+
+onMounted(() => {
+  void loadData()
+})
+</script>
+
+<style scoped>
+.cell-muted {
+  color: var(--ra-color-text-tertiary, #6e7389);
+  font-size: var(--ra-font-size-sm, 13px);
+}
+</style>

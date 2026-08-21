@@ -1,0 +1,62 @@
+package repository
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"{{.DomainImport}}/model"
+	"github.com/KOMKZ/go-yogan-framework/database"
+	"gorm.io/gorm"
+)
+
+// {{.EntityPascal}}MySQLRepository 基于 database.BaseRepository 的 MySQL 实现（由 ygctl dao gen 生成）。
+type {{.EntityPascal}}MySQLRepository struct {
+	base *database.BaseRepository[model.{{.EntityPascal}}]
+}
+
+// New{{.EntityPascal}}MySQLRepository creates the MySQL repository.
+func New{{.EntityPascal}}MySQLRepository(db *gorm.DB) *{{.EntityPascal}}MySQLRepository {
+	return &{{.EntityPascal}}MySQLRepository{base: database.NewBaseRepository[model.{{.EntityPascal}}](db)}
+}
+
+func (r *{{.EntityPascal}}MySQLRepository) Create(ctx context.Context, e *model.{{.EntityPascal}}) error {
+	return r.base.Create(ctx, e)
+}
+
+func (r *{{.EntityPascal}}MySQLRepository) FindByID(ctx context.Context, id uint) (*model.{{.EntityPascal}}, error) {
+	result, err := r.base.FindByID(ctx, id)
+	if errors.Is(err, database.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return result, err
+}
+
+func (r *{{.EntityPascal}}MySQLRepository) Update(ctx context.Context, e *model.{{.EntityPascal}}) error {
+	return r.base.Update(ctx, e)
+}
+
+func (r *{{.EntityPascal}}MySQLRepository) Delete(ctx context.Context, id uint) error {
+	return r.base.Delete(ctx, id)
+}
+
+func (r *{{.EntityPascal}}MySQLRepository) Paginate(ctx context.Context, page, pageSize int) ([]model.{{.EntityPascal}}, int64, error) {
+	return r.base.Paginate(ctx, page, pageSize)
+}
+
+{{range .Queries}}
+// {{.MethodName}} queries by the {{.ColumnName}} column.
+func (r *{{$.EntityPascal}}MySQLRepository) {{.MethodName}}(ctx context.Context, {{.ParamName}} {{.ParamType}}) (*model.{{$.EntityPascal}}, error) {
+	var e model.{{$.EntityPascal}}
+	result := r.base.DB().WithContext(ctx).Where("{{.ColumnName}} = ?", {{.ParamName}}).First(&e)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if result.Error != nil {
+		return nil, fmt.Errorf("query {{$.TableName}} by {{.ColumnName}} failed: %w", result.Error)
+	}
+	return &e, nil
+}
+{{end}}
+// 编译期断言：接口实现完整性（新增接口方法时此处会编译失败，提示补实现）
+var _ {{.EntityPascal}}Repository = (*{{.EntityPascal}}MySQLRepository)(nil)

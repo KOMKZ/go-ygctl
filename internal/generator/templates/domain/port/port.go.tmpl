@@ -1,0 +1,22 @@
+package port
+
+import "context"
+
+// {{.DomainKey}} 域的端口（port）定义。
+//
+// 端口 = "域定义、外部实现"的接口：app 层（或其他域）适配具体实现后经 DI 注入。
+// 域的默认实现也放在本包；若默认实现需要 DI 注册，在 provider/do/ 补充 ProvideXxx。
+
+// 示例端口结构（按需保留、修改或删除）：
+type {{.EntityPascal}}Provider interface {
+	FindByID(ctx context.Context, id uint) (*{{.EntityPascal}}Info, error)
+}
+
+// {{.EntityPascal}}Info 端口输出示例
+type {{.EntityPascal}}Info struct {
+	ID uint
+}
+
+// 编译期断言指引：当本包定义了默认实现时，按下面形式补断言（放实现文件底部）：
+//
+//	var _ {{.EntityPascal}}Provider = (*{{.EntityPascal}}ProviderImpl)(nil)

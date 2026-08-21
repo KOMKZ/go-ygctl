@@ -1,0 +1,28 @@
+package do
+
+import (
+	"{{.DomainImport}}/repository"
+	"{{.DomainImport}}/service"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/samber/do/v2"
+	"gorm.io/gorm"
+)
+
+// Provide{{.EntityPascal}}Repository registers the repository in the DI container.
+func Provide{{.EntityPascal}}Repository(i do.Injector) (repository.{{.EntityPascal}}Repository, error) {
+	db, err := do.Invoke[*gorm.DB](i)
+	if err != nil {
+		return nil, err
+	}
+	return repository.New{{.EntityPascal}}MySQLRepository(db), nil
+}
+
+// Provide{{.EntityPascal}}Service registers the service in the DI container.
+func Provide{{.EntityPascal}}Service(i do.Injector) (*service.{{.EntityPascal}}Service, error) {
+	repo, err := do.Invoke[repository.{{.EntityPascal}}Repository](i)
+	if err != nil {
+		return nil, err
+	}
+	log := do.MustInvokeNamed[*logger.CtxZapLogger](i, "{{.DomainKey}}")
+	return service.New{{.EntityPascal}}Service(repo, log), nil
+}

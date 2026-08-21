@@ -1,0 +1,19 @@
+package model
+
+import "time"
+
+// {{.EntityPascal}} 表实体（由 ygctl dao gen 生成，表：{{.TableName}}）。
+// 生成后人工核对字段与标签；业务方法（IsActive 等）按需补充。
+type {{.EntityPascal}} struct {
+	ID uint `gorm:"primarykey" json:"id"`
+{{- range .Fields}}
+	{{.PascalName}} {{.GoType}} {{.StructTag}}{{if .Comment}} // {{.Comment}}{{end}}
+{{- end}}
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TableName returns the MySQL table name.
+func ({{.EntityPascal}}) TableName() string {
+	return "{{.TableName}}"
+}

@@ -1,0 +1,66 @@
+# {{.DomainKey}} 域
+
+> 位置：`domains/{{.DomainKey}}/`（**独立 go module** `{{.DomainImport}}`，已注册 go.work）
+> 错误码模块号：**{{.ErrModule}}**（`errors/errors.go` 中 `Module{{.DomainPascal}}`，已分配，禁止修改）
+> 依赖管理：本域 `go.mod` 独立声明依赖；新增依赖后运行 `go mod tidy`（在本域目录）
+
+## 职责
+
+（TODO：一句话说明本域管理什么业务）
+
+## 目录结构
+
+| 目录 | 职责 |
+|------|------|
+| errors/ | 领域错误码（业务码从 1001 递增，注册进框架 errcode） |
+{{- if not .Pure}}
+| model/ | gorm 实体（可用 `ygctl model from-table <table> --domain {{.DomainKey}}` 生成） |
+| repository/ | 数据访问接口 + MySQL 实现（基于 framework database.BaseRepository） |
+{{- end}}
+| service/ | 领域业务规则（骨架无逻辑，按需添加） |
+| port/ | 端口定义："域定义、外部实现"的接口 + 域默认实现（app 层适配注入） |
+| provider/do/ | DI 注册（{{if .Pure}}service{{else}}repo/service{{end}}；app 侧 `do.Invoke` 使用） |
+| event/ | 领域事件（经 framework event.Dispatcher 分发，app 层订阅） |
+| permissions/ | 权限码字典（域内声明，API 侧自动 upsert，禁止 app 手写权限 SQL） |
+| policy/ | 策略定义（访问控制、业务规则） |
+| assembler/ | model ↔ DTO 转换 |
+| contract/ | 领域契约文档 |
+
+{{if .Pure}}> 本域为**纯逻辑域（--pure）**：无数据表、无 model/repository。业务对象由其他域提供（接口注入）。
+
+{{end}}
+## 铁律
+
+1. **域根目录不放置代码**：根目录只有 go.mod/.gitignore/CLAUDE.md；一切代码进子包（errors/model/repository/service/port/provider/event/permissions/policy/assembler）
+2. **migration 不属于域**：所有 SQL 集中在 `apps/<app>/migrations/`，用 `ygctl migrate create <desc> --domain {{.DomainKey}}` 创建，禁止在域内放 SQL
+3. **model 变更必须有迁移**：加/改字段同步补 migration SQL
+4. **错误码**：模块号固定；新增业务码扫描 errors/errors.go 取 max+1
+5. **权限码**：只在 permissions/declared_permissions.go 声明
+6. **质量**：`go test ./domains/{{.DomainKey}}/...` 100% 通过，覆盖率不低于项目门禁
+
+## 常用命令
+
+```bash
+# 本域测试
+go test ./domains/{{.DomainKey}}/...
+
+{{if not .Pure}}# 从数据表生成 model（生成后人工核对字段与标签）
+ygctl model from-table <table> --domain {{.DomainKey}}
+
+{{end}}# 创建集中式 migration
+ygctl migrate create <desc> --domain {{.DomainKey}}
+
+# 全 workspace 构建
+go build ./...
+```
+
+## 修改流程
+
+{{if .Pure}}1. 改 service/port，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
+2. 权限相关 → 更新 permissions/declared_permissions.go
+3. 事件相关 → 在 event/ 定义，app 层 subscriber 订阅
+{{else}}1. 改 model/repository/service，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
+2. model 变更 → `ygctl migrate create` 补 SQL
+3. 权限相关 → 更新 permissions/declared_permissions.go
+4. 事件相关 → 在 event/ 定义，app 层 subscriber 订阅
+{{end}}

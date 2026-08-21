@@ -1,0 +1,39 @@
+package service
+
+import (
+{{- if not .Pure}}
+	"{{.DomainImport}}/repository"
+{{- end}}
+	"github.com/KOMKZ/go-yogan-framework/logger"
+)
+
+// {{.EntityPascal}}Service 领域服务：承载 {{.DomainKey}} 域的业务规则。
+// 骨架不含业务逻辑，按需添加方法。
+type {{.EntityPascal}}Service struct {
+{{- if not .Pure}}
+	repo repository.{{.EntityPascal}}Repository
+{{- end}}
+	log *logger.CtxZapLogger
+}
+
+// New{{.EntityPascal}}Service creates the domain service.
+func New{{.EntityPascal}}Service({{if not .Pure}}repo repository.{{.EntityPascal}}Repository, {{end}}log *logger.CtxZapLogger) *{{.EntityPascal}}Service {
+{{- if .Pure}}
+	return &{{.EntityPascal}}Service{log: log}
+{{- else}}
+	return &{{.EntityPascal}}Service{repo: repo, log: log}
+{{- end}}
+}
+
+// TODO: 在此添加领域方法，例如：
+{{- if .Pure}}
+//
+//	func (s *{{.EntityPascal}}Service) Do(ctx context.Context, in port.SomeInput) (*port.SomeOutput, error) {
+//		// 调用 s 注入的端口，编排领域规则
+//	}
+{{- else}}
+//
+//	func (s *{{.EntityPascal}}Service) Get(ctx context.Context, id uint) (*model.{{.EntityPascal}}, error) {
+//		return s.repo.FindByID(ctx, id)
+//	}
+{{- end}}

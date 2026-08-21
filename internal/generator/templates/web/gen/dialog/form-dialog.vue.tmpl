@@ -1,0 +1,120 @@
+<template>
+  <RCrudFormDialog
+    :visible="visible"
+    :mode="mode"
+    :schema="activeSchema"
+    :model="model"
+    :title="title"
+    :loading="submitting || detailLoading"
+    :cols="1"
+    data-testid="[[.Entity]]-form-dialog"
+    @update:visible="handleVisibleChange"
+    @update:model="handleModelChange"
+    @submit="handleSubmit"
+    @cancel="handleCancel"
+  />
+</template>
+
+<script setup lang="ts">
+// 由 ygctl web gen 生成（[[.Style]] 风格）。勿手改；重新生成会覆盖。
+import { ref, reactive, computed } from 'vue'
+import { NInput, useMessage } from '@rong/admin-ui/naive'
+import { RCrudFormDialog } from '@rong/admin-ui'
+import type { CrudMode, FormFieldSchema } from '@rong/admin-ui'
+import type { [[.EntityPascal]]FormModel, [[.EntityPascal]]Record } from '@/api/[[.Entity]]'
+import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
+import { getHttpClient } from '@/app'
+import { parseErrorMessage } from '@/api/adapter'
+
+const emit = defineEmits<{
+  success: []
+}>()
+
+const message = useMessage()
+
+// httpClient 必须在 setup 阶段获取（inject 仅 setup/生命周期内有效）
+const httpClient = getHttpClient()
+
+const visible = ref(false)
+const mode = ref<CrudMode>('create')
+const submitting = ref(false)
+const detailLoading = ref(false)
+const editId = ref<number | null>(null)
+
+const model = reactive<Record<string, unknown>>(buildEmptyModel())
+
+function buildEmptyModel(): Record<string, unknown> {
+  return {
+[[.EmptyModelTS]]  }
+}
+
+const title = computed(() => (mode.value === 'create' ? '新建[[.MenuTitle]]' : '编辑[[.MenuTitle]]'))
+
+const createSchema: FormFieldSchema[] = [
+[[.CreateSchemaTS]]]
+
+const editSchema: FormFieldSchema[] = [
+[[.EditSchemaTS]]]
+
+const activeSchema = computed(() => (mode.value === 'create' ? createSchema : editSchema))
+
+function handleVisibleChange(value: boolean) {
+  visible.value = value
+}
+
+function handleModelChange(next: Record<string, unknown>) {
+  Object.assign(model, next)
+}
+
+function handleCancel() {
+  visible.value = false
+}
+
+async function open(nextMode: CrudMode, record?: [[.EntityPascal]]Record) {
+  mode.value = nextMode
+  editId.value = record?.id ?? null
+  Object.assign(model, buildEmptyModel())
+
+  if (nextMode === 'edit' && record) {
+    // 编辑前拉取详情完整 DTO（列表 summary 可能缺字段，模板铁律）
+    detailLoading.value = true
+    try {
+      const detail = await create[[.EntityPascal]]Api(httpClient).getById(record.id)
+      Object.assign(model, {
+[[.RecordFillAssignmentsTS]]      })
+    } catch (error) {
+      message.error(parseErrorMessage(error) || '获取详情失败')
+      return
+    } finally {
+      detailLoading.value = false
+    }
+  }
+  visible.value = true
+}
+
+async function handleSubmit(payload: Record<string, unknown>, submitMode: CrudMode) {
+  submitting.value = true
+  try {
+    const api = create[[.EntityPascal]]Api(httpClient)
+    if (submitMode === 'create') {
+      await api.create(payload as unknown as [[.EntityPascal]]FormModel)
+      message.success('创建成功')
+    } else if (editId.value != null) {
+      await api.update(editId.value, payload as unknown as [[.EntityPascal]]FormModel)
+      message.success('保存成功')
+    }
+    visible.value = false
+    emit('success')
+  } catch (error) {
+    message.error(parseErrorMessage(error) || '操作失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+function close() {
+  visible.value = false
+}
+
+defineExpose({ open, close })
+</script>

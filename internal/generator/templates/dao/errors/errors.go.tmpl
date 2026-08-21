@@ -1,0 +1,27 @@
+package errors
+
+import (
+	"net/http"
+
+	"github.com/KOMKZ/go-yogan-framework/errcode"
+)
+
+// Module{{.DomainPascal}} 模块号：{{.DomainKey}} 域。
+// 由 ygctl 扫描分配，禁止手工修改。
+const Module{{.DomainPascal}} = {{.ErrModule}}
+
+var (
+	// 业务码从 1001 递增；由 ygctl dao gen 生成，可增删改：
+	Err{{.EntityPascal}}NotFound = errcode.Register(errcode.New(
+		Module{{.DomainPascal}}, 1001, "{{.DomainKey}}",
+		"error.{{.DomainKey}}.not_found", "{{.EntityPascal}}不存在",
+		http.StatusNotFound,
+	))
+{{- range $i, $f := .UniqueFields}}
+	Err{{$f.PascalName}}Exists = errcode.Register(errcode.New(
+		Module{{$.DomainPascal}}, {{inc 1002 $i}}, "{{$.DomainKey}}",
+		"error.{{$.DomainKey}}.{{$f.Name}}_exists", "{{if $f.Comment}}{{$f.Comment}}{{else}}{{$f.PascalName}}{{end}}已存在",
+		http.StatusConflict,
+	))
+{{- end}}
+)

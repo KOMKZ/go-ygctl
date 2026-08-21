@@ -1,0 +1,15 @@
+package {{.EntitySnake}}
+
+import (
+	"{{.DomainImport}}/service"
+	"github.com/samber/do/v2"
+)
+
+// Provide{{.EntityPascal}}Handler registers the handler in the DI container.
+func Provide{{.EntityPascal}}Handler(i do.Injector) (*{{.EntityPascal}}Handler, error) {
+	svc, err := do.Invoke[*service.{{.EntityPascal}}Service](i)
+	if err != nil {
+		return nil, err
+	}
+	return New{{.EntityPascal}}Handler(svc), nil
+}

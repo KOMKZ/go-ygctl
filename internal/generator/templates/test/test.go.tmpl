@@ -1,0 +1,30 @@
+package {{.ModuleName}}_test
+
+import (
+	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/testutil"
+	"{{.AppModule}}/test/testhelper"
+)
+
+// e2e 测试骨架（由 ygctl test gen 生成）。
+// 覆盖正常流程：按下方 TODO 填充请求路径/参数与断言。
+// 测试数据约定：动态唯一值（时间后缀），e2e_ 前缀便于清理。
+
+func Test{{.ModulePascal}}_NormalFlow(t *testing.T) {
+	s := testhelper.GetServer(t)
+
+	// TODO: 正常流程请求，例如：
+	// resp := testutil.POST("/api/xxx").WithJSON(map[string]interface{}{...}).Do(s.Engine)
+	// 断言：Status()==200；响应 data 必填字段存在且类型正确。
+
+	_ = s
+}
+
+func Test{{.ModulePascal}}_InvalidInput(t *testing.T) {
+	s := testhelper.GetServer(t)
+
+	// TODO: 非法输入流程：错误凭证/缺字段 → 断言业务错误码（非 500）。
+
+	_ = s
+}

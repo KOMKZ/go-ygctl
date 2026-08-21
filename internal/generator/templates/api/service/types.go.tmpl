@@ -1,0 +1,30 @@
+package service
+
+import "time"
+
+// —— service 层结构体：公共 API 的输入输出，不暴露 model 层 ——
+
+// Create{{.EntityPascal}}Input is the input of Create.
+type Create{{.EntityPascal}}Input struct {
+{{- range .Fields}}
+	{{.PascalName}} {{.GoType}}
+{{- end}}
+}
+
+// Update{{.EntityPascal}}Input is the input of Update.
+type Update{{.EntityPascal}}Input struct {
+	ID uint
+{{- range .Fields}}
+	{{.PascalName}} {{.GoType}}
+{{- end}}
+}
+
+// {{.EntityPascal}}Item is the public representation of one {{.EntityName}}.
+type {{.EntityPascal}}Item struct {
+	ID uint
+{{- range .Fields}}
+	{{.PascalName}} {{.GoType}}
+{{- end}}
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}

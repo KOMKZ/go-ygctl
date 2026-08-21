@@ -1,0 +1,35 @@
+package router
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/httpx"
+	{{.EntitySnake}}Module "{{.AppModule}}/internal/module/{{.EntitySnake}}"
+	"github.com/gin-gonic/gin"
+	"github.com/samber/do/v2"
+)
+
+// Register{{.EntityPascal}}Routes registers the {{.TableName}} CRUD routes of {{.AppName}}.
+func Register{{.EntityPascal}}Routes(engine *gin.Engine, app *application.Application) {
+	injector := app.GetInjector()
+	handler := do.MustInvoke[*{{.EntitySnake}}Module.{{.EntityPascal}}Handler](injector)
+
+	api := engine.Group("/api")
+	group := api.Group("/{{.TableName}}")
+	{
+{{- range .Endpoints}}
+{{- if eq . "list"}}
+		group.GET("/page", httpx.Wrap(handler.List))
+{{- else if eq . "get"}}
+		group.GET("/:id", httpx.Wrap(handler.GetByID))
+{{- else if eq . "create"}}
+		group.POST("", httpx.Wrap(handler.Create))
+{{- else if eq . "update"}}
+		group.PUT("/:id", httpx.Wrap(handler.Update))
+{{- else if eq . "delete"}}
+		group.DELETE("/:id", httpx.Wrap(handler.Delete))
+{{- end}}
+{{- end}}
+	}
+
+	app.MustGetLogger().DebugCtx(app.Context(), "{{.EntityPascal}} routes registered")
+}

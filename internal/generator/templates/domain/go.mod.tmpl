@@ -1,0 +1,9 @@
+module {{.DomainImport}}
+
+go 1.24.1
+
+require github.com/KOMKZ/go-yogan-framework v0.0.0
+
+// 本地框架引用：workspace 内由 go.work 单点 replace 接管；
+// 此相对 replace 保证 workspace 外可独立构建。
+replace github.com/KOMKZ/go-yogan-framework => ../../../go-yogan-framework

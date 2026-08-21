@@ -1,0 +1,94 @@
+package {{.EntitySnake}}
+
+import (
+{{- if .NeedsTimePkg}}
+	"time"
+{{- end}}
+	"{{.DomainImport}}/service"
+	"github.com/KOMKZ/go-yogan-framework/httpx/types"
+{{- if .HasValidate}}
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+{{- if .HasEmailRule}}
+	"github.com/go-ozzo/ozzo-validation/v4/is"
+{{- end}}
+{{- end}}
+)
+
+// 本文件只定义 HTTP 请求/分页 DTO；单项响应直接使用 service 层结构体。
+// 请求 DTO 实现 Validate()（框架 Validatable 接口），httpx.Wrap 自动调用。
+
+// List{{.EntityPascal}}Request is the request payload of GET /api/{{.TableName}}/page.
+type List{{.EntityPascal}}Request struct {
+	Current int `form:"current" json:"current"`
+	Size    int `form:"size" json:"size"`
+}
+
+// ApplyDefaults fills default pagination values.
+func (r *List{{.EntityPascal}}Request) ApplyDefaults() {
+	if r.Current <= 0 {
+		r.Current = 1
+	}
+	if r.Size <= 0 {
+		r.Size = 10
+	}
+}
+
+// {{.EntityPascal}}GetRequest is the request payload of GET /api/{{.TableName}}/:id.
+type {{.EntityPascal}}GetRequest struct {
+	ID uint `uri:"id" binding:"required"`
+}
+
+// Create{{.EntityPascal}}Request is the request payload of POST /api/{{.TableName}}.
+type Create{{.EntityPascal}}Request struct {
+{{- range .Fields}}
+	{{.PascalName}} {{.GoType}} `json:"{{.Name}}"`{{if .Comment}} // {{.Comment}}{{end}}
+{{- end}}
+}
+
+// {{.EntityPascal}}UpdateRequest is the request payload of PUT /api/{{.TableName}}/:id.
+type {{.EntityPascal}}UpdateRequest struct {
+	ID uint `uri:"id" binding:"required"`
+{{- range .Fields}}
+	{{.PascalName}} {{.GoType}} `json:"{{.Name}}"`{{if .Comment}} // {{.Comment}}{{end}}
+{{- end}}
+}
+
+{{if .HasValidate}}
+// Validate implements the framework Validatable interface (httpx auto-invokes).
+func (r *Create{{.EntityPascal}}Request) Validate() error {
+	return validation.ValidateStruct(r,
+{{- range .Fields}}
+{{- if .ValidationRules}}
+		validation.Field(&r.{{.PascalName}}, {{join .ValidationRules ", "}}),
+{{- end}}
+{{- end}}
+	)
+}
+
+// Validate implements the framework Validatable interface (httpx auto-invokes).
+func (r *{{.EntityPascal}}UpdateRequest) Validate() error {
+	return validation.ValidateStruct(r,
+{{- range .Fields}}
+{{- if .ValidationRules}}
+		validation.Field(&r.{{.PascalName}}, {{join .ValidationRules ", "}}),
+{{- end}}
+{{- end}}
+	)
+}
+{{end}}
+
+// {{.EntityPascal}}DeleteRequest is the request payload of DELETE /api/{{.TableName}}/:id.
+type {{.EntityPascal}}DeleteRequest struct {
+	ID uint `uri:"id" binding:"required"`
+}
+
+// {{.EntityPascal}}DeleteResponse is the response payload of the delete endpoint.
+type {{.EntityPascal}}DeleteResponse struct {
+	ID uint `json:"id"`
+}
+
+// {{.EntityPascal}}PageResponse is the response payload of the list endpoint.
+type {{.EntityPascal}}PageResponse struct {
+	PageMeta types.PageMeta           `json:"page_meta"`
+	Records  []service.{{.EntityPascal}}Item `json:"records"`
+}

@@ -1,0 +1,88 @@
+<template>
+  <div class="ra-page" data-testid="[[.Entity]]-create-page">
+    <div class="ra-page-header">
+      <h2 class="ra-page-header__title">新建[[.MenuTitle]]</h2>
+      <p class="ra-page-header__desc">填写信息后保存，保存成功自动返回列表</p>
+    </div>
+
+    <div class="ra-card">
+      <RFormRenderer
+        ref="formRef"
+        :schema="createSchema"
+        :model="model"
+        :label-width="120"
+        :cols="1"
+        data-testid="[[.Entity]]-create-form"
+        @update:model="handleModelChange"
+      />
+      <n-space justify="end" class="form-actions">
+        <n-button data-testid="[[.Entity]]-create-cancel" @click="goBack">取消</n-button>
+        <n-button
+          type="primary"
+          :loading="submitting"
+          data-testid="[[.Entity]]-create-submit"
+          @click="handleSubmit"
+        >
+          保存
+        </n-button>
+      </n-space>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+// 由 ygctl web gen 生成（[[.Style]] 风格）。勿手改；重新生成会覆盖。
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+[[if .HasCreateOnlyFields]]import { NInput, NSpace, NButton, useMessage } from '@rong/admin-ui/naive'[[else]]import { NSpace, NButton, useMessage } from '@rong/admin-ui/naive'[[end]]
+import { RFormRenderer } from '@rong/admin-ui'
+import type { FormFieldSchema, FormRendererExpose } from '@rong/admin-ui'
+import type { [[.EntityPascal]]FormModel } from '@/api/[[.Entity]]'
+import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
+import { getHttpClient } from '@/app'
+import { parseErrorMessage } from '@/api/adapter'
+
+const router = useRouter()
+const message = useMessage()
+
+// httpClient 必须在 setup 阶段获取（inject 仅 setup/生命周期内有效）
+const httpClient = getHttpClient()
+
+const formRef = ref<FormRendererExpose | null>(null)
+const submitting = ref(false)
+
+const model = reactive<Record<string, unknown>>({
+[[.EmptyModelTS]]})
+
+const createSchema: FormFieldSchema[] = [
+[[.CreateSchemaTS]]]
+
+function handleModelChange(next: Record<string, unknown>) {
+  Object.assign(model, next)
+}
+
+function goBack() {
+  router.push({ name: '[[.RouteName]]' })
+}
+
+async function handleSubmit() {
+  const valid = (await formRef.value?.validate()) ?? false
+  if (!valid) return
+  submitting.value = true
+  try {
+    await create[[.EntityPascal]]Api(httpClient).create(model as unknown as [[.EntityPascal]]FormModel)
+    message.success('创建成功')
+    goBack()
+  } catch (error) {
+    message.error(parseErrorMessage(error) || '操作失败')
+  } finally {
+    submitting.value = false
+  }
+}
+</script>
+
+<style scoped>
+.form-actions {
+  margin-top: var(--ra-spacing-6);
+}
+</style>

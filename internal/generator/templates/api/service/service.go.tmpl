@@ -1,0 +1,114 @@
+package service
+
+import (
+	"context"
+
+	domainerrors "{{.DomainImport}}/errors"
+	"{{.DomainImport}}/model"
+	"{{.DomainImport}}/repository"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+)
+
+// 结构体定义见 <entity>_types.go；本文件只含服务逻辑。
+
+// {{.EntityPascal}}Service 领域服务：CRUD 骨架（由 ygctl api gen 生成）。
+// 业务规则在骨架方法内填充（TODO 标注处）。
+type {{.EntityPascal}}Service struct {
+	repo repository.{{.EntityPascal}}Repository
+	log  *logger.CtxZapLogger
+}
+
+// New{{.EntityPascal}}Service creates the domain service.
+func New{{.EntityPascal}}Service(repo repository.{{.EntityPascal}}Repository, log *logger.CtxZapLogger) *{{.EntityPascal}}Service {
+	return &{{.EntityPascal}}Service{repo: repo, log: log}
+}
+
+// Create creates a new {{.EntityName}}.
+func (s *{{.EntityPascal}}Service) Create(ctx context.Context, input Create{{.EntityPascal}}Input) (*{{.EntityPascal}}Item, error) {
+	// TODO: 业务规则（唯一性检查、密码哈希等）
+	m := s.toModelFromCreate(input)
+	if err := s.repo.Create(ctx, m); err != nil {
+		return nil, err
+	}
+	return s.toItem(m), nil
+}
+
+// GetByID returns one {{.EntityName}} by ID.
+func (s *{{.EntityPascal}}Service) GetByID(ctx context.Context, id uint) (*{{.EntityPascal}}Item, error) {
+	m, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if m == nil {
+		return nil, domainerrors.Err{{.EntityPascal}}NotFound
+	}
+	return s.toItem(m), nil
+}
+
+// Update updates an existing {{.EntityName}}.
+func (s *{{.EntityPascal}}Service) Update(ctx context.Context, input Update{{.EntityPascal}}Input) error {
+	// TODO: 业务规则（存在性检查、状态机等）
+	m := s.toModelFromUpdate(input)
+	return s.repo.Update(ctx, m)
+}
+
+// Delete deletes one {{.EntityName}}.
+func (s *{{.EntityPascal}}Service) Delete(ctx context.Context, id uint) error {
+	return s.repo.Delete(ctx, id)
+}
+
+// Paginate lists {{.EntityName}}s by page.
+func (s *{{.EntityPascal}}Service) Paginate(ctx context.Context, page, pageSize int) ([]{{.EntityPascal}}Item, int64, error) {
+	records, total, err := s.repo.Paginate(ctx, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+	items := make([]{{.EntityPascal}}Item, 0, len(records))
+	for i := range records {
+		items = append(items, *s.toItem(&records[i]))
+	}
+	return items, total, nil
+}
+
+{{range .Queries}}
+// {{.MethodName}} queries by {{.ColumnName}}.
+func (s *{{$.EntityPascal}}Service) {{.MethodName}}(ctx context.Context, {{.ParamName}} {{.ParamType}}) (*{{$.EntityPascal}}Item, error) {
+	m, err := s.repo.{{.MethodName}}(ctx, {{.ParamName}})
+	if err != nil {
+		return nil, err
+	}
+	if m == nil {
+		return nil, domainerrors.Err{{$.EntityPascal}}NotFound
+	}
+	return s.toItem(m), nil
+}
+{{end}}
+// —— 私有转换：service → model（仅此处接触 model 层）——
+
+func (s *{{.EntityPascal}}Service) toModelFromCreate(input Create{{.EntityPascal}}Input) *model.{{.EntityPascal}} {
+	return &model.{{.EntityPascal}}{
+{{- range .Fields}}
+		{{.PascalName}}: input.{{.PascalName}},
+{{- end}}
+	}
+}
+
+func (s *{{.EntityPascal}}Service) toModelFromUpdate(input Update{{.EntityPascal}}Input) *model.{{.EntityPascal}} {
+	return &model.{{.EntityPascal}}{
+		ID: input.ID,
+{{- range .Fields}}
+		{{.PascalName}}: input.{{.PascalName}},
+{{- end}}
+	}
+}
+
+func (s *{{.EntityPascal}}Service) toItem(m *model.{{.EntityPascal}}) *{{.EntityPascal}}Item {
+	return &{{.EntityPascal}}Item{
+		ID: m.ID,
+{{- range .Fields}}
+		{{.PascalName}}: m.{{.PascalName}},
+{{- end}}
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+	}
+}

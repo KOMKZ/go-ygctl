@@ -1,0 +1,25 @@
+  {
+    path: '[[.Entity]]',
+    name: '[[.RouteName]]',
+    component: () => import('@/views/[[.Entity]]/index.vue'),
+    meta: {
+      title: '[[.MenuTitle]]',
+      icon: '[[.MenuIcon]]',
+    },
+  },
+  {
+    path: '[[.Entity]]/create',
+    name: '[[.EntityPascal]]Create',
+    component: () => import('@/views/[[.Entity]]/create.vue'),
+    meta: {
+      title: '新建[[.MenuTitle]]',
+    },
+  },
+  {
+    path: '[[.Entity]]/:id/edit',
+    name: '[[.EntityPascal]]Edit',
+    component: () => import('@/views/[[.Entity]]/edit.vue'),
+    meta: {
+      title: '编辑[[.MenuTitle]]',
+    },
+  },

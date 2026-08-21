@@ -1,0 +1,17 @@
+package repository
+
+import (
+	"context"
+
+	"{{.DomainImport}}/model"
+)
+
+// {{.EntityPascal}}Repository 数据访问接口。
+// 业务所需查询方法在此声明，MySQL 实现见 repository_mysql.go。
+type {{.EntityPascal}}Repository interface {
+	Create(ctx context.Context, e *model.{{.EntityPascal}}) error
+	FindByID(ctx context.Context, id uint) (*model.{{.EntityPascal}}, error)
+	Update(ctx context.Context, e *model.{{.EntityPascal}}) error
+	Delete(ctx context.Context, id uint) error
+	Paginate(ctx context.Context, page, pageSize int) ([]model.{{.EntityPascal}}, int64, error)
+}

@@ -1,0 +1,16 @@
+package model
+
+import "time"
+
+// {{.EntityPascal}} {{.DomainKey}} 域的实体占位。
+// 用 `ygctl model from-table <table> --domain {{.DomainKey}}` 从数据表生成正式模型。
+type {{.EntityPascal}} struct {
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TableName 表名占位，按实际表名修改。
+func ({{.EntityPascal}}) TableName() string {
+	return "{{.TableName}}"
+}

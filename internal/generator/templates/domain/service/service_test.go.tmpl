@@ -1,0 +1,14 @@
+package service
+
+import "testing"
+
+func TestNew{{.EntityPascal}}Service(t *testing.T) {
+{{- if .Pure}}
+	svc := New{{.EntityPascal}}Service(nil)
+{{- else}}
+	svc := New{{.EntityPascal}}Service(nil, nil)
+{{- end}}
+	if svc == nil {
+		t.Fatal("New{{.EntityPascal}}Service returned nil")
+	}
+}
