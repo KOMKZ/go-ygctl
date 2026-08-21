@@ -101,6 +101,14 @@ else
     exit 1
 fi
 
+# 校验版本注入生效（-X 对 const 或不存在变量会静默失效，历史上真实发生过）
+INJECTED=$(go version -m "${OUTPUT_FILE}" | grep -oE "main.Version|main.BuildTime|main.GitCommit" | sort -u | wc -l)
+if [ "${INJECTED}" -lt 3 ]; then
+    echo -e "${RED}❌ 版本注入校验失败（仅 ${INJECTED}/3 个变量生效），检查 main.go 中 Version/BuildTime/GitCommit 是否为 var${NC}" >&2
+    exit 1
+fi
+echo -e "${GREEN}✅ 版本注入校验通过（${INJECTED}/3）${NC}"
+
 echo -e "${BLUE}================================================${NC}"
 
 # 编译后运行

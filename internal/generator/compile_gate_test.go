@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -135,5 +136,44 @@ func TestGeneratedAppsCompile(t *testing.T) {
 			runGo(t, appDir, "build", "./...")
 			runGo(t, appDir, "test", "./...")
 		})
+	}
+}
+
+// TestGeneratedHTTPBuildScript verifies that scripts/build.sh injects
+// version/build-time/commit into the binary (-X against a const fails
+// silently — this is the regression guard for that).
+func TestGeneratedHTTPBuildScript(t *testing.T) {
+	framework := frameworkAbsPath(t)
+	output := t.TempDir()
+
+	cfg := NewDefaultConfig()
+	cfg.ProjectName, cfg.AppName = "gen-proj-build", "demo-http"
+	cfg.ModuleName = "github.com/KOMKZ/gen-proj-build/apps/demo-http"
+	cfg.OrgName = "github.com/KOMKZ"
+	cfg.OutputPath = output
+	cfg.FrameworkPath = framework
+	if err := NewHTTPGenerator(cfg).Generate(); err != nil {
+		t.Fatalf("generate failed: %v", err)
+	}
+
+	appDir := filepath.Join(output, cfg.ProjectName, "apps", cfg.AppName)
+	runGo(t, appDir, "mod", "tidy")
+
+	cmd := exec.Command(filepath.Join(appDir, "scripts", "build.sh"))
+	cmd.Dir = appDir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("build.sh failed: %v\n%s", err, out)
+	}
+
+	binary := filepath.Join(appDir, "build", cfg.AppName)
+	verCmd := exec.Command("go", "version", "-m", binary)
+	verOut, err := verCmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go version -m failed: %v\n%s", err, verOut)
+	}
+	for _, want := range []string{"main.Version", "main.BuildTime", "main.GitCommit"} {
+		if !strings.Contains(string(verOut), want) {
+			t.Fatalf("build settings missing %s:\n%s", want, verOut)
+		}
 	}
 }

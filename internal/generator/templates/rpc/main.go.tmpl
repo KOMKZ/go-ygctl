@@ -7,8 +7,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// Version is the current {{.AppName}} version.
+// Version is the current {{.AppName}} version. It is injected at build time
+// by scripts/build.sh via -ldflags — keep it a var, not a const (the linker
+// silently ignores -X targeting consts).
 var Version = "0.1.0"
+
+// BuildTime is injected by scripts/build.sh via -ldflags.
+var BuildTime = ""
+
+// GitCommit is injected by scripts/build.sh via -ldflags.
+var GitCommit = ""
 
 func main() {
 	// Parse command line flags and environment variables
