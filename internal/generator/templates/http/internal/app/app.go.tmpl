@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/KOMKZ/go-yogan-framework/application"
 	"github.com/KOMKZ/go-yogan-framework/database"
 	"github.com/KOMKZ/go-yogan-framework/logger"
@@ -78,19 +80,26 @@ func (a *{{.AppNamePascal}}) GetHTTPServer() interface{ GetEngine() *gin.Engine 
 	return a.Core.GetHTTPServer()
 }
 
-// GetDBManager returns the database manager (nil when no database is configured).
+// GetDBManager returns the database manager (nil when no database is
+// configured). Initialization failures panic instead of returning a silent
+// nil, so component misconfiguration surfaces instead of being masked.
 func (a *{{.AppNamePascal}}) GetDBManager() *database.Manager {
-	injector := a.Core.GetInjector()
-	mgr, err := do.Invoke[*database.Manager](injector)
+	mgr, err := do.Invoke[*database.Manager](a.Core.GetInjector())
 	if err != nil {
-		return nil
+		panic(fmt.Errorf("database manager init failed: %w", err))
 	}
 	return mgr
 }
 
-// GetRedisManager returns the Redis manager (nil when no Redis is configured).
+// GetRedisManager returns the Redis manager (nil when no Redis is
+// configured). Initialization failures panic instead of returning a silent
+// nil, so component misconfiguration surfaces instead of being masked.
 func (a *{{.AppNamePascal}}) GetRedisManager() *redis.Manager {
-	return nil
+	mgr, err := do.Invoke[*redis.Manager](a.Core.GetInjector())
+	if err != nil {
+		panic(fmt.Errorf("redis manager init failed: %w", err))
+	}
+	return mgr
 }
 
 // Shutdown stops the application gracefully.
