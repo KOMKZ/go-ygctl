@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Managed by ygctl (web new / web ensure); regenerate to update.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

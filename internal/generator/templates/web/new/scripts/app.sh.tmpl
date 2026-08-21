@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Managed by ygctl (web new / web ensure); regenerate to update.
 
 set -euo pipefail
 
@@ -11,7 +12,7 @@ cmd="${1:-}"
 shift || true
 
 show_help() {
-  local project="${1:-hrise-admin-web}"
+  local project="${1:-[[.AppName]]}"
   printf "\n"
   printf "%s Make targets\n" "${project}"
   printf "  make install                Install dependencies\n"
@@ -24,6 +25,8 @@ show_help() {
   printf "  make logs                   Tail managed log files\n"
   printf "  make typecheck              Run TypeScript checks\n"
   printf "  make lint                   Run ESLint\n"
+  printf "  make test                   Run unit tests\n"
+  printf "  make test-e2e-smoke         Run e2e smoke tests\n"
   printf "  make build                  Build app\n"
   printf "  make clean                  Stop services and remove runtime files\n"
   printf "  make merge-main-report      Commit workspace and merge branch into main\n"
@@ -50,12 +53,18 @@ case "${cmd}" in
   lint)
     pnpm lint
     ;;
+  test)
+    pnpm test
+    ;;
+  test-e2e-smoke)
+    pnpm test:e2e:smoke
+    ;;
   build)
     pnpm build
     ;;
   *)
     printf "Unknown command: %s\n" "${cmd}" >&2
-    printf "Usage: %s <help|install|dev|preview|typecheck|lint|build>\n" "$(basename "$0")" >&2
+    printf "Usage: %s <help|install|dev|preview|typecheck|lint|test|test-e2e-smoke|build>\n" "$(basename "$0")" >&2
     exit 1
     ;;
 esac

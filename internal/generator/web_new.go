@@ -22,6 +22,7 @@ type WebNewConfig struct {
 	AppPort        int    // dev server port; default 3100
 	APIProxyTarget string // vite /api proxy target; default http://localhost:9201
 	StoragePrefix  string // localStorage key prefix; default first segment of name
+	BackendAppDir  string // startall/stopall 后端目录名; default ../hrise-admin-api
 }
 
 // WebNewResult reports the generation result.
@@ -30,7 +31,7 @@ type WebNewResult struct {
 	Files   int
 }
 
-// webNewData is the template data for web new.
+// webNewData is the template data for web new (and web ensure).
 type webNewData struct {
 	AppName        string
 	AppTitle       string
@@ -38,6 +39,7 @@ type webNewData struct {
 	AppPort        int
 	APIProxyTarget string
 	StoragePrefix  string
+	BackendAppDir  string
 	HomePath       string
 	LoginPath      string
 }
@@ -70,6 +72,9 @@ func (c *WebNewConfig) Generate() (*WebNewResult, error) {
 		seg := strings.Split(c.AppName, "-")
 		c.StoragePrefix = seg[0]
 	}
+	if c.BackendAppDir == "" {
+		c.BackendAppDir = "hrise-admin-api"
+	}
 
 	data := &webNewData{
 		AppName:        c.AppName,
@@ -78,6 +83,7 @@ func (c *WebNewConfig) Generate() (*WebNewResult, error) {
 		AppPort:        c.AppPort,
 		APIProxyTarget: c.APIProxyTarget,
 		StoragePrefix:  c.StoragePrefix,
+		BackendAppDir:  c.BackendAppDir,
 		HomePath:       "/dashboard",
 		LoginPath:      "/login",
 	}

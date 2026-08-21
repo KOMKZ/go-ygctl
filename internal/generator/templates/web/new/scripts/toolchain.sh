@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Managed by ygctl (web new / web ensure); regenerate to update.
 
 load_toolchain() {
   if command -v pnpm >/dev/null 2>&1; then

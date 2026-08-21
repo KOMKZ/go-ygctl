@@ -38,6 +38,7 @@ var (
 	webNewPort      int
 	webNewProxy     string
 	webNewPrefix    string
+	webNewBackend   string
 	webNewOut       string
 )
 
@@ -60,6 +61,7 @@ var webNewCmd = &cobra.Command{
 			AppPort:        webNewPort,
 			APIProxyTarget: webNewProxy,
 			StoragePrefix:  webNewPrefix,
+			BackendAppDir:  webNewBackend,
 		}
 		result, err := cfg.Generate()
 		if err != nil {
@@ -75,16 +77,58 @@ var webNewCmd = &cobra.Command{
 	},
 }
 
+var (
+	ensureAppPath     string
+	ensureProject     string
+	ensurePort        int
+	ensureBackendApp  string
+)
+
+var webEnsureCmd = &cobra.Command{
+	Use:   "ensure --app <path>",
+	Short: "Ensure Makefile + runtime scripts exist in an existing web app (idempotent)",
+	Long: `为已有 web 应用补齐/刷新生命周期文件（参考 rong-admin-web）：
+
+  Makefile + scripts/{app,runtime,toolchain}.sh
+
+- 已存在且含 ygctl 标记的文件会被刷新；无标记的手写文件拒绝覆盖
+- 适合存量应用（如 rong-admin-webdemo）补齐生命周期`,
+	Args: cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := &generator.EnsureWebLifecycleConfig{
+			AppPath:       ensureAppPath,
+			Project:       ensureProject,
+			AppPort:       ensurePort,
+			BackendAppDir: ensureBackendApp,
+		}
+		result, err := cfg.Generate()
+		if err != nil {
+			return err
+		}
+		color.Green("✅ Lifecycle ensured for %s:", ensureAppPath)
+		for _, f := range result.Files {
+			fmt.Println("  -", f)
+		}
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(webCmd)
 	webCmd.AddCommand(webNewCmd)
 	webCmd.AddCommand(webGenCmd)
+	webCmd.AddCommand(webEnsureCmd)
 	webNewCmd.Flags().StringVar(&webNewOut, "out", "", "Output directory (default: current dir/<app-name>)")
 	webNewCmd.Flags().StringVar(&webNewTitle, "title", "", "Display title (default: derived from app name)")
 	webNewCmd.Flags().StringVar(&webNewUILink, "ui-link", "", "UI framework link path (required), e.g. link:../rong-admin-ui")
 	webNewCmd.Flags().IntVar(&webNewPort, "port", 0, "Dev server port (default 3100)")
 	webNewCmd.Flags().StringVar(&webNewProxy, "api-proxy", "", "Vite /api proxy target (default http://localhost:9201)")
 	webNewCmd.Flags().StringVar(&webNewPrefix, "storage-prefix", "", "localStorage key prefix (default: first segment of app name)")
+	webNewCmd.Flags().StringVar(&webNewBackend, "backend-app", "", "startall/stopall backend dir name (default hrise-admin-api)")
+	webEnsureCmd.Flags().StringVar(&ensureAppPath, "app", "", "Existing web app root (required)")
+	webEnsureCmd.Flags().StringVar(&ensureProject, "project", "", "Makefile PROJECT (default: base name of app path)")
+	webEnsureCmd.Flags().IntVar(&ensurePort, "port", 0, "Dev server port (default 3100)")
+	webEnsureCmd.Flags().StringVar(&ensureBackendApp, "backend-app", "", "startall/stopall backend dir name (default hrise-admin-api)")
 	webGenCmd.Flags().StringVar(&webAppPath, "app", "", "Target admin app root (contains src/)")
 	webGenCmd.Flags().StringVarP(&webDefFile, "file", "f", "", "Backend def file (defs/<entity>.yaml)")
 	webGenCmd.Flags().StringVar(&webUIFile, "ui", "", "Frontend ui def file (default: defs/<entity>.ui.yaml)")
