@@ -3,7 +3,7 @@
 api_server:
   host: "0.0.0.0"
   port: {{.ServerPort}}
-  mode: "debug"
+  mode: "release"  # production default; use APP_ENV=test or a local dev.yaml for debug
   read_timeout: 60
   write_timeout: 60
 
@@ -15,3 +15,16 @@ logger:
   level: "info"
   encoding: "json"
   enable_console: true
+
+middleware:
+  trace_id:
+    enable: true
+  request_log:
+    enable: true
+    skip_paths: ["/health"]
+    enable_body: false
+
+httpx:
+  enable: true
+  full_error_chain: false
+  log_level: "error"
