@@ -1,7 +1,6 @@
 package app
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -9,17 +8,8 @@ import (
 )
 
 func TestNewDefaultConstruction(t *testing.T) {
-	// New() uses the default "./config" directory; chdir to the app root so
-	// config loading succeeds during lazy construction.
-	orig, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir("../.."); err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = os.Chdir(orig) }()
-
+	// Lazy construction only: config loading tolerates a missing default
+	// config directory at this stage; no chdir tricks required.
 	a := New()
 	if a == nil || a.Core == nil {
 		t.Fatal("New() returned nil application")
@@ -27,7 +17,7 @@ func TestNewDefaultConstruction(t *testing.T) {
 }
 
 func TestAppLifecycle(t *testing.T) {
-	os.Setenv("APP_ENV", "test")
+	t.Setenv("APP_ENV", "test")
 
 	// NewWithConfig + full non-blocking boot
 	app := NewWithConfig("../../config")

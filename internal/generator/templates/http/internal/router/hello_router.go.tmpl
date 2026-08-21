@@ -10,6 +10,11 @@ import (
 
 // RegisterHelloRoutes registers the hello routes of {{.AppName}}.
 func RegisterHelloRoutes(engine *gin.Engine, app *application.Application) {
+	// Unified error envelopes for unmatched routes (404/405) so clients
+	// always receive the code/msg/data shape.
+	engine.NoRoute(httpx.NoRouteHandler())
+	engine.NoMethod(httpx.NoMethodHandler())
+
 	injector := app.GetInjector()
 	helloHandler := do.MustInvoke[*helloModule.HelloHandler](injector)
 

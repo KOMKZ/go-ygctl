@@ -36,3 +36,21 @@ func TestHello(t *testing.T) {
 		t.Fatalf("unexpected message: %v", data["message"])
 	}
 }
+
+// TestHelloUnknownRoute covers the error path: unknown routes return the
+// unified 404 envelope instead of gin's default text body.
+func TestHelloUnknownRoute(t *testing.T) {
+	s := testhelper.GetServer(t)
+	resp := testutil.GET("/api/does-not-exist").Do(s.Engine)
+	if resp.Status() != 404 {
+		t.Fatalf("unexpected status: %d, body: %s", resp.Status(), resp.Body())
+	}
+
+	var result map[string]interface{}
+	if err := resp.JSON(&result); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+	if result["code"] != float64(404) {
+		t.Fatalf("unexpected code: %v", result["code"])
+	}
+}

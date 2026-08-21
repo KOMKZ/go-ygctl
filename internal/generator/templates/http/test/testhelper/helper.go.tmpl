@@ -1,7 +1,6 @@
 package testhelper
 
 import (
-	"os"
 	"sync"
 	"testing"
 
@@ -14,13 +13,19 @@ var (
 	testServer *testutil.TestServer
 	testApp    *app.{{.AppNamePascal}}
 	initOnce   sync.Once
+	// initErr holds the boot error so failures surface on EVERY GetServer
+	// call instead of being swallowed inside sync.Once.
+	initErr error
 )
 
 // GetServer returns the shared test server of {{.AppName}}.
 func GetServer(t *testing.T) *testutil.TestServer {
 	t.Helper()
+
+	// Restore the previous env value after this test automatically.
+	t.Setenv("APP_ENV", "test")
+
 	initOnce.Do(func() {
-		os.Setenv("APP_ENV", "test")
 		gin.SetMode(gin.TestMode)
 
 		testApp = app.NewWithConfig("../../config")
@@ -28,9 +33,14 @@ func GetServer(t *testing.T) *testutil.TestServer {
 		var err error
 		testServer, err = testutil.NewTestServer(testApp)
 		if err != nil {
-			t.Fatalf("failed to create test server: %v", err)
+			initErr = err
+			return
 		}
 	})
+
+	if initErr != nil {
+		t.Fatalf("failed to create test server: %v", initErr)
+	}
 	return testServer
 }
 
