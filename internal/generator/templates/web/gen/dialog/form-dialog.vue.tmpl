@@ -48,7 +48,7 @@ function buildEmptyModel(): Record<string, unknown> {
 [[.EmptyModelTS]]  }
 }
 
-const title = computed(() => (mode.value === 'create' ? '新建[[.MenuTitle]]' : '编辑[[.MenuTitle]]'))
+const title = computed(() => (mode.value === 'create' ? '新建[[.EntityLabel]]' : '编辑[[.EntityLabel]]'))
 
 const createSchema: FormFieldSchema[] = [
 [[.CreateSchemaTS]]]

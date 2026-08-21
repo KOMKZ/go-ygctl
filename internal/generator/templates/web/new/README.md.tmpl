@@ -1,0 +1,52 @@
+# [[.AppName]]
+
+[[.AppTitle]] 后台管理前端(Vue 3 + TypeScript + Vite + @rong/admin-ui 框架),工程结构参考 rong-admin-web。
+
+## 快速开始
+
+```bash
+pnpm install
+make dev        # 前台启动,http://localhost:[[.AppPort]]
+make dev-bg     # 后台启动(日志在 .runtime/dev.log)
+```
+
+> API 代理:`/api` → `http://localhost:9201`(hrise-admin-api 新后端)。
+
+## 常用命令
+
+| 命令                | 说明             |
+| ------------------- | ---------------- |
+| `make dev`          | 启动开发服务器   |
+| `make dev-bg`       | 后台启动开发服务器 |
+| `make stop`         | 停止并回收端口   |
+| `make typecheck`    | TypeScript 类型检查 |
+| `make lint`         | ESLint 检查      |
+| `make build`        | 类型检查 + 构建  |
+| `make clean`        | 停止服务并清理运行时文件 |
+
+## 目录结构
+
+```
+src/
+├── main.ts              # 应用 bootstrap(createRongAdminApp + 插件)
+├── app.ts               # 应用运行时上下文(inject/provide)
+├── App.vue              # 根组件(naive providers + 主题)
+├── router/              # 静态路由 + 页面标题
+├── store/               # pinia(user store:登录/登出/用户信息)
+├── api/                 # types / adapter / auth / profile
+├── composables/         # usePermissionInit(权限载荷初始化)
+├── config/              # captcha 配置
+├── layouts/             # AdminLayout + SidebarMenu + TopbarActions
+├── views/
+│   ├── login/           # 登录页(邮箱/手机双方式)
+│   ├── dashboard/       # 首页(占位)
+│   └── error/           # 403 / 404
+└── utils/storage.ts     # localStorage 工具
+```
+
+## 说明
+
+- **版本锁定**:vue 等依赖必须与 rong-admin-ui 的解析版本一致(见 package.json 精确版本),否则会出现双实例类型冲突
+- 登录接口走 `/api/auth/login`,权限载荷走 `/api/admin/profile/permissions`(与 rong-admin-web 相同)
+- 登录页默认关闭人机验证(`src/config/captcha.ts` 中 `enabled: false`)
+- 接入自有后端后,修改 `vite.config.ts` 的 proxy target 即可

@@ -1,0 +1,100 @@
+SHELL := /bin/bash
+
+.DEFAULT_GOAL := help
+
+PROJECT := [[.AppName]]
+SCRIPTS_DIR := scripts
+APP_SCRIPT := $(SCRIPTS_DIR)/app.sh
+RUNTIME_SCRIPT := $(SCRIPTS_DIR)/runtime.sh
+GIT_SCRIPT := $(SCRIPTS_DIR)/git_merge_to_main_report.sh
+GIT_PUSH_SCRIPT := $(SCRIPTS_DIR)/git-commit-merge-main-push.sh
+RUNTIME_DIR := .runtime
+DEV_PID_FILE := $(RUNTIME_DIR)/dev.pid
+DEV_LOG_FILE := $(RUNTIME_DIR)/dev.log
+PREVIEW_PID_FILE := $(RUNTIME_DIR)/preview.pid
+PREVIEW_LOG_FILE := $(RUNTIME_DIR)/preview.log
+
+DEV_PORT ?= [[.AppPort]]
+PREVIEW_PORT ?= 4173
+PORTS ?= $(DEV_PORT) $(PREVIEW_PORT)
+
+.PHONY: help install dev dev-bg preview preview-bg stop stop-dev stop-preview kill-ports status ports logs typecheck lint build clean-runtime clean merge-main-report git-commit-merge-main git-commit-merge-main-push startall stopall
+
+help:
+	@$(APP_SCRIPT) help "$(PROJECT)"
+
+install:
+	@$(APP_SCRIPT) install
+
+$(RUNTIME_DIR):
+	@$(RUNTIME_SCRIPT) ensure-runtime-dir "$(RUNTIME_DIR)"
+
+dev:
+	@$(APP_SCRIPT) dev "$(DEV_PORT)"
+
+dev-bg: $(RUNTIME_DIR)
+	@$(RUNTIME_SCRIPT) start-dev-bg "$(RUNTIME_DIR)" "$(DEV_PID_FILE)" "$(DEV_LOG_FILE)" "$(DEV_PORT)"
+
+preview:
+	@$(APP_SCRIPT) preview "$(PREVIEW_PORT)"
+
+preview-bg: $(RUNTIME_DIR)
+	@$(RUNTIME_SCRIPT) start-preview-bg "$(RUNTIME_DIR)" "$(PREVIEW_PID_FILE)" "$(PREVIEW_LOG_FILE)" "$(PREVIEW_PORT)"
+
+stop: stop-dev stop-preview kill-ports
+
+stop-dev:
+	@$(RUNTIME_SCRIPT) stop-pidfile "$(DEV_PID_FILE)"
+
+stop-preview:
+	@$(RUNTIME_SCRIPT) stop-pidfile "$(PREVIEW_PID_FILE)"
+
+kill-ports:
+	@$(RUNTIME_SCRIPT) kill-ports "$(CURDIR)" $(PORTS)
+
+status: ports
+	@$(RUNTIME_SCRIPT) show-status "$(DEV_PID_FILE)" "$(PREVIEW_PID_FILE)"
+
+ports:
+	@$(RUNTIME_SCRIPT) show-ports $(PORTS)
+
+logs:
+	@$(RUNTIME_SCRIPT) show-logs "$(DEV_LOG_FILE)" "$(PREVIEW_LOG_FILE)"
+
+typecheck:
+	@$(APP_SCRIPT) typecheck
+
+lint:
+	@$(APP_SCRIPT) lint
+
+build:
+	@$(APP_SCRIPT) build
+
+clean-runtime:
+	@$(RUNTIME_SCRIPT) clean-runtime "$(RUNTIME_DIR)"
+
+clean: stop clean-runtime
+
+merge-main-report:
+	@$(GIT_SCRIPT)
+
+git-commit-merge-main:
+	@$(GIT_SCRIPT)
+
+git-commit-merge-main-push:
+	@$(GIT_PUSH_SCRIPT)
+
+# --- 全栈启停 ---
+
+startall:
+	@echo "=== 启动后端 (hrise-admin-api) ==="
+	@$(MAKE) -C ../hrise-admin-api start
+	@sleep 2
+	@echo "=== 启动前端 (hrise-admin-web) ==="
+	@$(MAKE) dev-bg
+
+stopall:
+	@echo "=== 停止前端 (hrise-admin-web) ==="
+	@$(MAKE) stop
+	@echo "=== 停止后端 (hrise-admin-api) ==="
+	@$(MAKE) -C ../hrise-admin-api stop

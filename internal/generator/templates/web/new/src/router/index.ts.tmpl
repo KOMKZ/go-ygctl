@@ -1,0 +1,64 @@
+import type { RouteRecordRaw } from 'vue-router'
+
+export const staticRoutes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: {
+      title: '登录',
+      public: true,
+    },
+  },
+  {
+    path: '/403',
+    name: 'Forbidden',
+    component: () => import('@/views/error/403.vue'),
+    meta: {
+      title: '无权限访问',
+      public: true,
+    },
+  },
+  {
+    path: '/',
+    name: 'Layout',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: {
+          title: '首页',
+          icon: 'LayoutDashboard',
+        },
+      },
+      // @ygctl-web-gen:routes - 由 ygctl web gen 管理，勿手改
+      {
+        path: 'admin',
+        name: 'AdminList',
+        component: () => import('@/views/admin/index.vue'),
+        meta: {
+          title: '管理员管理',
+          icon: 'Users',
+        },
+      },
+      // @ygctl-web-gen:routes:end
+    ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/error/404.vue'),
+    meta: {
+      title: '页面不存在',
+      public: true,
+    },
+  },
+]
+
+export function resolvePageTitle(rawTitle: unknown): string {
+  const title = typeof rawTitle === 'string' ? rawTitle : ''
+  return title ? `${title} - [[.AppTitle]]` : '[[.AppTitle]]'
+}

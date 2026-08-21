@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/toolchain.sh"
+load_toolchain
+
+cmd="${1:-}"
+shift || true
+
+show_help() {
+  local project="${1:-hrise-admin-web}"
+  printf "\n"
+  printf "%s Make targets\n" "${project}"
+  printf "  make install                Install dependencies\n"
+  printf "  make dev                    Start Vite dev server (foreground)\n"
+  printf "  make dev-bg                 Start Vite dev server (background)\n"
+  printf "  make preview                Start preview server (foreground)\n"
+  printf "  make preview-bg             Start preview server (background)\n"
+  printf "  make stop                   Stop all managed processes and reclaim ports\n"
+  printf "  make status                 Show managed process and port status\n"
+  printf "  make logs                   Tail managed log files\n"
+  printf "  make typecheck              Run TypeScript checks\n"
+  printf "  make lint                   Run ESLint\n"
+  printf "  make build                  Build app\n"
+  printf "  make clean                  Stop services and remove runtime files\n"
+  printf "  make merge-main-report      Commit workspace and merge branch into main\n"
+  printf "  make git-commit-merge-main  Commit workspace and merge branch into main\n"
+  printf "  make git-commit-merge-main-push  Commit/merge to main then push after upstream safety checks\n"
+}
+
+case "${cmd}" in
+  help)
+    show_help "$@"
+    ;;
+  install)
+    pnpm install
+    ;;
+  dev)
+    pnpm dev --port "$1"
+    ;;
+  preview)
+    pnpm preview --port "$1"
+    ;;
+  typecheck)
+    pnpm typecheck
+    ;;
+  lint)
+    pnpm lint
+    ;;
+  build)
+    pnpm build
+    ;;
+  *)
+    printf "Unknown command: %s\n" "${cmd}" >&2
+    printf "Usage: %s <help|install|dev|preview|typecheck|lint|build>\n" "$(basename "$0")" >&2
+    exit 1
+    ;;
+esac

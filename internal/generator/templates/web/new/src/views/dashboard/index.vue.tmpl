@@ -1,0 +1,32 @@
+<template>
+  <div class="dashboard-home">
+    <h1 class="dashboard-home__title">Hello World</h1>
+    <p class="dashboard-home__subtitle">[[.AppTitle]] 骨架已就绪，从这里开始开发业务页面。</p>
+  </div>
+</template>
+
+<script setup lang="ts"></script>
+
+<style scoped>
+.dashboard-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ra-spacing-3, 12px);
+  min-height: 360px;
+  background: var(--ra-color-bg-surface, #fff);
+  border: 1px solid var(--ra-color-border-light, #eef0f6);
+  border-radius: var(--ra-radius-lg, 12px);
+}
+
+.dashboard-home__title {
+  font-size: 28px;
+  color: var(--ra-color-brand-primary, #18a058);
+}
+
+.dashboard-home__subtitle {
+  font-size: 14px;
+  color: var(--ra-color-text-secondary, #666);
+}
+</style>

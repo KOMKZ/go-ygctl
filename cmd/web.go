@@ -31,6 +31,66 @@ CRUD 模板多风格（默认 dialog，可扩展）：
   page    列表页 + 独立新建/编辑页面路由（create/edit）`,
 }
 
+var (
+	webNewAppName   string
+	webNewTitle     string
+	webNewUILink    string
+	webNewPort      int
+	webNewProxy     string
+	webNewPrefix    string
+	webNewOut       string
+)
+
+var webNewCmd = &cobra.Command{
+	Use:   "new <app-name>",
+	Short: "Generate a complete admin web app skeleton (login + layout + markers)",
+	Long: `从金样反推的骨架模板生成完整 admin 前端（确定性渲染）：
+
+  ygctl web new hrise-admin-web-demo --ui-link link:../rong-admin-ui
+
+包含：登录/登出/续期/守卫封装、layout、dashboard、@ygctl-web-gen marker。
+生成后：pnpm install && make dev，再 ygctl web gen <entity> 生成 CRUD 模块。`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := &generator.WebNewConfig{
+			AppPath:        webNewOut,
+			AppName:        args[0],
+			AppTitle:       webNewTitle,
+			UILink:         webNewUILink,
+			AppPort:        webNewPort,
+			APIProxyTarget: webNewProxy,
+			StoragePrefix:  webNewPrefix,
+		}
+		result, err := cfg.Generate()
+		if err != nil {
+			return err
+		}
+		color.Green("✅ Admin web app generated: %s（%d files）", result.AppPath, result.Files)
+		fmt.Println()
+		color.Yellow("Next steps:")
+		fmt.Println("  cd " + result.AppPath + " && pnpm install")
+		fmt.Println("  make dev-bg        # dev server")
+		fmt.Println("  ygctl web gen <entity> -f defs/<entity>.yaml --app " + result.AppPath)
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(webCmd)
+	webCmd.AddCommand(webNewCmd)
+	webCmd.AddCommand(webGenCmd)
+	webNewCmd.Flags().StringVar(&webNewOut, "out", "", "Output directory (default: current dir/<app-name>)")
+	webNewCmd.Flags().StringVar(&webNewTitle, "title", "", "Display title (default: derived from app name)")
+	webNewCmd.Flags().StringVar(&webNewUILink, "ui-link", "", "UI framework link path (required), e.g. link:../rong-admin-ui")
+	webNewCmd.Flags().IntVar(&webNewPort, "port", 0, "Dev server port (default 3100)")
+	webNewCmd.Flags().StringVar(&webNewProxy, "api-proxy", "", "Vite /api proxy target (default http://localhost:9201)")
+	webNewCmd.Flags().StringVar(&webNewPrefix, "storage-prefix", "", "localStorage key prefix (default: first segment of app name)")
+	webGenCmd.Flags().StringVar(&webAppPath, "app", "", "Target admin app root (contains src/)")
+	webGenCmd.Flags().StringVarP(&webDefFile, "file", "f", "", "Backend def file (defs/<entity>.yaml)")
+	webGenCmd.Flags().StringVar(&webUIFile, "ui", "", "Frontend ui def file (default: defs/<entity>.ui.yaml)")
+	webGenCmd.Flags().StringVar(&webStyle, "style", "", "Style override (dialog | page; default: ui def style)")
+}
+
 var webGenCmd = &cobra.Command{
 	Use:   "gen <entity> -f <def>",
 	Short: "Generate a CRUD module (api + views + route + menu) into a web app",
@@ -66,11 +126,3 @@ var webGenCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(webCmd)
-	webCmd.AddCommand(webGenCmd)
-	webGenCmd.Flags().StringVar(&webAppPath, "app", "", "Target admin app root (contains src/)")
-	webGenCmd.Flags().StringVarP(&webDefFile, "file", "f", "", "Backend def file (defs/<entity>.yaml)")
-	webGenCmd.Flags().StringVar(&webUIFile, "ui", "", "Frontend ui def file (default: defs/<entity>.ui.yaml)")
-	webGenCmd.Flags().StringVar(&webStyle, "style", "", "Style override (dialog | page; default: ui def style)")
-}

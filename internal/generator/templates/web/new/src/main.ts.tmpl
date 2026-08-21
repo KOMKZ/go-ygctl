@@ -1,0 +1,201 @@
+import { naive } from '@rong/admin-ui/naive'
+import { createRongAdminApp, type RongAdminAppInstance } from '@rong/admin-ui/app-preset'
+import { canAccessRoute } from '@rong/admin-ui/app-permission'
+import type { AppPlugin } from '@rong/admin-ui/app-core'
+import App from './App.vue'
+import { resolvePageTitle, staticRoutes } from './router'
+import { pinia, useUserStore } from './store'
+import { installAppRuntime, type AppRuntimeContext } from './app'
+import { storage } from './utils/storage'
+import { isUnauthorized, parseErrorMessage } from './api/adapter'
+import type { ApiResponse, RefreshTokenResponse } from './api/types'
+import { createPermissionInit } from './composables/usePermissionInit'
+
+import '@rong/admin-ui/style.css'
+
+const LOGIN_HINT_KEY = '[[.StoragePrefix]]-login-hint'
+
+async function bootstrap() {
+  let appRuntime: AppRuntimeContext | null = null
+  const appRef: { current: RongAdminAppInstance | null } = { current: null }
+  let redirectingToLogin = false
+  let permissionInit: ReturnType<typeof createPermissionInit> | null = null
+
+  function forceLogout(hint?: string) {
+    if (redirectingToLogin) return
+    redirectingToLogin = true
+
+    if (hint) {
+      sessionStorage.setItem(LOGIN_HINT_KEY, hint)
+    }
+
+    const userStore = useUserStore()
+    userStore.logout()
+    permissionInit?.reset()
+
+    window.location.href = '/login'
+  }
+
+  const runtimePlugins: AppPlugin[] = [
+    {
+      name: 'pinia',
+      order: 20,
+      install: (app) => {
+        app.use(pinia)
+      },
+    },
+    {
+      name: 'app-runtime-context',
+      order: 30,
+      install: (app) => {
+        if (!appRef.current) return
+        appRuntime = installAppRuntime(app, appRef.current)
+      },
+    },
+    {
+      name: 'permission-guard',
+      order: 45,
+      install: () => {
+        const appInstance = appRef.current
+        const router = appInstance?.routerPipeline?.router
+        const permissionRuntime = permissionInit
+        if (!router || !appInstance || !permissionRuntime) return
+
+        router.beforeEach(async (to) => {
+          if (to.meta?.public) return true
+
+          const token = appInstance.tokenManager.getToken()
+          if (!token) {
+            permissionRuntime.reset()
+            return true
+          }
+
+          try {
+            await permissionRuntime.init()
+          } catch (error) {
+            const store = useUserStore()
+            if (!store.isLoggingIn) {
+              forceLogout(`${parseErrorMessage(error)}，请重新登录`)
+            }
+            return '/login'
+          }
+
+          if (!canAccessRoute(permissionRuntime.uiAuth.value, to.path)) {
+            return '/403'
+          }
+
+          return true
+        })
+      },
+    },
+    {
+      name: 'router-meta-effects',
+      order: 40,
+      install: () => {
+        const router = appRef.current?.routerPipeline?.router
+        if (!router) return
+
+        router.afterEach((to) => {
+          document.title = resolvePageTitle(to.meta?.title)
+        })
+      },
+    },
+    {
+      name: 'naive-ui',
+      order: 50,
+      install: (app) => {
+        app.use(naive)
+      },
+    },
+  ]
+
+  const appInstance = createRongAdminApp({
+    rootComponent: App,
+    rootContainer: '#app',
+    router: {
+      staticRoutes,
+      whiteList: ['/login'],
+      loginPath: '/login',
+      homePath: '/dashboard',
+    },
+    auth: {
+      storage,
+      enableCrossTabSync: true,
+      refreshThresholdMs: 15 * 60 * 1000,
+      refreshApi: {
+        refresh: async (refreshToken) => {
+          const response = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          })
+          const payload = (await response.json()) as ApiResponse<RefreshTokenResponse>
+          if (!response.ok || payload.code !== 0 || !payload.data) {
+            const message = payload.msg || payload.message || payload.error || '刷新 token 失败'
+            throw new Error(message)
+          }
+          return {
+            accessToken: payload.data.access_token,
+            refreshToken: payload.data.refresh_token,
+            expiresIn: payload.data.expires_in,
+          }
+        },
+      },
+      onTokenExpired: () => {
+        window.location.href = '/login'
+      },
+    },
+    request: {
+      baseURL: '',
+      timeout: 15000,
+      interceptors: [
+        {
+          onResponse: (response) => {
+            if (isUnauthorized(response)) {
+              const store = useUserStore()
+              if (!store.isLoggingIn) forceLogout()
+            }
+            return response
+          },
+          onError: (error) => {
+            if (error.status === 401) {
+              const store = useUserStore()
+              if (!store.isLoggingIn) forceLogout('登录态已过期，请重新登录')
+              return
+            }
+            console.error('[HTTP Error]', error)
+          },
+        },
+      ],
+    },
+    theme: {
+      defaultPreset: 'hirezy-soft',
+      defaultMode: 'light',
+      storageKey: '[[.StoragePrefix]]-web-theme',
+    },
+    plugins: runtimePlugins,
+    onReady: async () => {
+      const userStore = useUserStore()
+      userStore.setDependencies(appInstance.tokenManager, appInstance.httpClient, (_userId) => {
+        appRuntime?.apiCache.clear()
+        permissionInit?.reset()
+      })
+
+      if (appInstance.tokenManager.getToken()) {
+        try {
+          await permissionInit?.init()
+        } catch (error) {
+          forceLogout(`${parseErrorMessage(error)}，请重新登录`)
+        }
+      }
+    },
+  })
+
+  permissionInit = createPermissionInit(appInstance.httpClient, appInstance.permissionService)
+  appRef.current = appInstance
+  await appInstance.bootstrap()
+}
+
+bootstrap().catch(console.error)

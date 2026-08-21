@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# rong-admin-startall — 先启后端，再启前端，均放后台
+set -euo pipefail
+
+REAL_SCRIPT="$(readlink -f "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$REAL_SCRIPT")" && pwd)"
+WORKSPACE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "=== 启动后端 (hrise-admin-api) ==="
+make -C "$WORKSPACE_DIR/hrise-admin-api" start
+
+sleep 2
+
+echo "=== 启动前端 (hrise-admin-web) ==="
+make -C "$WORKSPACE_DIR/hrise-admin-web" dev-bg
+
+echo "=== 全部启动完成 ==="

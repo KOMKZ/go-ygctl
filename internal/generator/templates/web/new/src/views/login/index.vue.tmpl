@@ -1,0 +1,414 @@
+<template>
+  <div class="login-page">
+    <div class="login-background">
+      <div class="wave wave-1" />
+      <div class="wave wave-2" />
+      <div class="wave wave-3" />
+    </div>
+
+    <div class="login-container">
+      <div class="login-header">
+        <h1 class="login-title">[[.AppTitle]]</h1>
+        <p class="login-subtitle">管理后台系统</p>
+      </div>
+
+      <div class="login-card">
+        <h2 class="card-title">账号登录</h2>
+        <p class="card-desc">欢迎回来，请登录您的账号</p>
+
+        <n-form
+          ref="formRef"
+          :model="formData"
+          :rules="formRules"
+          label-placement="left"
+          size="large"
+          class="login-form"
+        >
+          <n-tabs v-model:value="loginType" animated class="form-item">
+            <n-tab-pane name="email" tab="邮箱登录" />
+            <n-tab-pane name="phone" tab="手机登录" />
+          </n-tabs>
+
+          <n-form-item v-if="loginType === 'email'" path="email" class="form-item">
+            <n-input
+              v-model:value="formData.email"
+              placeholder="请输入邮箱"
+              data-testid="login-email"
+              @keyup.enter="handleSubmit"
+            >
+              <template #prefix>
+                <n-icon :size="18" color="var(--ra-color-text-tertiary)">
+                  <MailIcon />
+                </n-icon>
+              </template>
+            </n-input>
+          </n-form-item>
+
+          <n-form-item v-else path="phone" class="form-item">
+            <n-input
+              v-model:value="formData.phone"
+              placeholder="请输入手机号"
+              data-testid="login-phone"
+              @keyup.enter="handleSubmit"
+            >
+              <template #prefix>
+                <n-icon :size="18" color="var(--ra-color-text-tertiary)">
+                  <PhoneIcon />
+                </n-icon>
+              </template>
+            </n-input>
+          </n-form-item>
+
+          <n-form-item v-if="loginType === 'phone'" path="verificationCode" class="form-item">
+            <RCodeVerify
+              v-model:model-value="formData.verificationCode"
+              :sending="sendingCode"
+              send-label="发送验证码"
+              resend-label="重发"
+              placeholder="请输入短信验证码"
+              style="width: 100%"
+              @send="handleSendCode"
+            />
+          </n-form-item>
+
+          <n-form-item path="password" class="form-item">
+            <n-input
+              v-model:value="formData.password"
+              type="password"
+              show-password-on="click"
+              placeholder="请输入密码"
+              data-testid="login-password"
+              @keyup.enter="handleSubmit"
+            >
+              <template #prefix>
+                <n-icon :size="18" color="var(--ra-color-text-tertiary)">
+                  <LockIcon />
+                </n-icon>
+              </template>
+            </n-input>
+          </n-form-item>
+
+          <n-form-item>
+            <n-button
+              type="primary"
+              block
+              :loading="isLoading"
+              data-testid="login-submit"
+              @click="handleSubmit"
+            >
+              登录
+            </n-button>
+          </n-form-item>
+        </n-form>
+
+        <RaCaptcha
+          v-if="captchaConfig.enabled"
+          ref="captchaRef"
+          :config="captchaConfig"
+          unique-id="login"
+          :on-verify="handleCaptchaVerify"
+          :on-biz-result="handleCaptchaBizResult"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+  import { ref, reactive, onMounted } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
+  import { useMessage, type FormInst, type FormRules } from '@rong/admin-ui/naive'
+  import { Mail as MailIcon, Lock as LockIcon, Phone as PhoneIcon } from 'lucide-vue-next'
+  import { useUserStore } from '@/store/modules/user'
+  import { RaCaptcha } from '@rong/admin-ui/app-captcha'
+  import type { CaptchaVerifyResult } from '@rong/admin-ui/app-captcha'
+  import { captchaConfig } from '@/config/captcha'
+  import { RCodeVerify } from '@rong/admin-ui'
+  import { createAuthApi } from '@/api/auth'
+  import { getHttpClient } from '@/app'
+  import { parseErrorMessage } from '@/api/adapter'
+
+  const LOGIN_HINT_KEY = '[[.StoragePrefix]]-login-hint'
+
+  const router = useRouter()
+  const route = useRoute()
+  const message = useMessage()
+  const userStore = useUserStore()
+
+  const formRef = ref<FormInst | null>(null)
+  const captchaRef = ref<InstanceType<typeof RaCaptcha> | null>(null)
+  const isLoading = ref(false)
+  const sendingCode = ref(false)
+  const loginType = ref<'email' | 'phone'>('email')
+  let pendingResolve: ((value: CaptchaVerifyResult) => void) | null = null
+
+  const formData = reactive({
+    email: '',
+    phone: '',
+    verificationCode: '',
+    password: '',
+  })
+
+  const formRules: FormRules = {
+    email: [
+      {
+        validator: (_rule, value: string) => {
+          if (loginType.value !== 'email') return true
+          if (!value) return new Error('请输入邮箱')
+          if (!/^\S+@\S+\.\S+$/.test(value)) return new Error('请输入正确的邮箱格式')
+          return true
+        },
+        trigger: ['blur', 'input'],
+      },
+    ],
+    phone: [
+      {
+        validator: (_rule, value: string) => {
+          if (loginType.value !== 'phone') return true
+          if (!value) return new Error('请输入手机号')
+          return true
+        },
+        trigger: ['blur', 'input'],
+      },
+    ],
+    verificationCode: [
+      {
+        validator: (_rule, value: string) => {
+          if (loginType.value !== 'phone') return true
+          if (!value) return new Error('请输入验证码')
+          return true
+        },
+        trigger: ['blur', 'input'],
+      },
+    ],
+    password: [
+      { required: true, message: '请输入密码', trigger: 'blur' },
+      { min: 6, message: '密码至少6位', trigger: 'blur' },
+    ],
+  }
+
+  async function handleSendCode() {
+    const target = loginType.value === 'email' ? formData.email : formData.phone
+    if (!target) {
+      message.warning(loginType.value === 'email' ? '请先输入邮箱' : '请先输入手机号')
+      return
+    }
+    const httpClient = getHttpClient()
+    if (!httpClient) return
+    sendingCode.value = true
+    try {
+      const authApi = createAuthApi(httpClient)
+      await authApi.sendVerificationCode({
+        type: loginType.value,
+        target,
+        trigger_code: 'user:login',
+      })
+      message.success('验证码已发送')
+    } catch (error) {
+      message.error(parseErrorMessage(error) || '验证码发送失败')
+    } finally {
+      sendingCode.value = false
+    }
+  }
+
+  onMounted(() => {
+    const hint = sessionStorage.getItem(LOGIN_HINT_KEY)
+    if (hint) {
+      message.warning(hint)
+      sessionStorage.removeItem(LOGIN_HINT_KEY)
+    }
+
+    setTimeout(() => {
+      const emailInput = document.querySelector('[data-testid="login-email"] input')
+      if (emailInput) {
+        ;(emailInput as HTMLElement).focus()
+      }
+    }, 300)
+  })
+
+  async function handleCaptchaVerify(captchaVerifyParam: string): Promise<CaptchaVerifyResult> {
+    console.log('[Captcha] onVerify callback, param:', captchaVerifyParam)
+    return new Promise((resolve) => {
+      pendingResolve = resolve
+      doLogin(captchaVerifyParam)
+    })
+  }
+
+  function handleCaptchaBizResult(bizResult: boolean) {
+    console.log('[Captcha] onBizResult callback, bizResult:', bizResult)
+    if (bizResult) {
+      message.success('登录成功')
+      const redirect = (route.query.redirect as string) || '/dashboard'
+      router.replace(redirect)
+    }
+  }
+
+  async function handleSubmit() {
+    try {
+      await formRef.value?.validate()
+    } catch {
+      return
+    }
+
+    if (captchaConfig.enabled && captchaRef.value) {
+      captchaRef.value.trigger()
+      return
+    }
+
+    await doLogin()
+  }
+
+  async function doLogin(captchaVerifyParam?: string) {
+    isLoading.value = true
+    message.loading('登录中...')
+
+    try {
+      const result = await userStore.login({
+        email: loginType.value === 'email' ? formData.email : undefined,
+        phone: loginType.value === 'phone' ? formData.phone : undefined,
+        login_type: loginType.value,
+        verification_code: loginType.value === 'phone' ? formData.verificationCode : undefined,
+        password: formData.password,
+        ...(captchaVerifyParam ? { captcha_verify_param: captchaVerifyParam } : {}),
+      })
+
+      message.destroyAll()
+
+      if (result.success) {
+        if (pendingResolve) {
+          pendingResolve({ captchaResult: true, bizResult: true })
+          pendingResolve = null
+        } else {
+          message.success('登录成功')
+          const redirect = (route.query.redirect as string) || '/dashboard'
+          router.replace(redirect)
+        }
+      } else {
+        if (pendingResolve) {
+          pendingResolve({ captchaResult: true, bizResult: false })
+          pendingResolve = null
+        }
+        message.error(result.error || '登录失败')
+      }
+    } finally {
+      isLoading.value = false
+    }
+  }
+</script>
+
+<style scoped>
+  .login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      135deg,
+      var(--ra-color-brand-primary, #6b93f5) 0%,
+      var(--ra-color-brand-active, #4b72da) 100%
+    );
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1000% 1000% 0 0;
+  }
+
+  .wave-1 {
+    animation: wave 8s ease-in-out infinite;
+    height: 120px;
+  }
+
+  .wave-2 {
+    animation: wave 6s ease-in-out infinite reverse;
+    height: 100px;
+    opacity: 0.5;
+  }
+
+  .wave-3 {
+    animation: wave 10s ease-in-out infinite;
+    height: 80px;
+    opacity: 0.3;
+  }
+
+  @keyframes wave {
+    0%,
+    100% {
+      border-radius: 1000% 1000% 0 0;
+    }
+    50% {
+      border-radius: 800% 800% 0 0;
+    }
+  }
+
+  .login-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    padding: 0 var(--ra-spacing-5, 20px);
+  }
+
+  .login-header {
+    text-align: center;
+    margin-bottom: var(--ra-spacing-8, 32px);
+  }
+
+  .login-title {
+    font-size: var(--ra-font-size-5xl, 32px);
+    font-weight: var(--ra-font-weight-bold, 700);
+    color: var(--ra-color-text-on-brand, #fff);
+    margin: 0 0 var(--ra-spacing-2, 8px) 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .login-subtitle {
+    font-size: var(--ra-font-size-base, 14px);
+    color: var(--ra-color-text-on-brand, rgba(255, 255, 255, 0.8));
+    margin: 0;
+  }
+
+  .login-card {
+    background: var(--ra-color-bg-surface, #fff);
+    border-radius: var(--ra-radius-lg, 16px);
+    padding: var(--ra-spacing-10, 40px);
+    box-shadow: var(--ra-shadow-xl, 0 20px 30px -6px rgb(0 0 0 / 0.06));
+  }
+
+  .card-title {
+    font-size: var(--ra-font-size-3xl, 24px);
+    font-weight: var(--ra-font-weight-semibold, 600);
+    color: var(--ra-color-text-primary, #1e2235);
+    text-align: center;
+    margin: 0 0 var(--ra-spacing-2, 8px) 0;
+  }
+
+  .card-desc {
+    font-size: var(--ra-font-size-base, 14px);
+    color: var(--ra-color-text-tertiary, #6e7389);
+    text-align: center;
+    margin: 0 0 var(--ra-spacing-8, 32px) 0;
+  }
+
+  .login-form {
+    width: 100%;
+  }
+
+  .form-item {
+    margin-bottom: var(--ra-spacing-6, 24px);
+  }
+</style>

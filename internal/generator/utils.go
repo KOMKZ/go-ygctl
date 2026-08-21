@@ -6,10 +6,10 @@ import (
 	"unicode"
 )
 
-// ToPascalCase converts kebab-case to PascalCase
-// e.g., "http-demo-app" -> "HttpDemoApp"
+// ToPascalCase converts kebab-case or snake_case to PascalCase
+// e.g., "http-demo-app" -> "HttpDemoApp"; "avatar_storage_id" -> "AvatarStorageID"
 func ToPascalCase(s string) string {
-	parts := strings.Split(s, "-")
+	parts := strings.FieldsFunc(s, func(r rune) bool { return r == '-' || r == '_' })
 	for i, part := range parts {
 		if len(part) > 0 {
 			parts[i] = strings.ToUpper(part[:1]) + part[1:]

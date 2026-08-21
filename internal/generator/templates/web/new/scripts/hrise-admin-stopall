@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# rong-admin-stopall — 先停前端，再停后端
+set -euo pipefail
+
+REAL_SCRIPT="$(readlink -f "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$REAL_SCRIPT")" && pwd)"
+WORKSPACE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "=== 停止前端 (hrise-admin-web) ==="
+make -C "$WORKSPACE_DIR/hrise-admin-web" stop
+
+echo "=== 停止后端 (hrise-admin-api) ==="
+make -C "$WORKSPACE_DIR/hrise-admin-api" stop
+
+echo "=== 全部停止完成 ==="

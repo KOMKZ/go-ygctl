@@ -1,0 +1,157 @@
+<template>
+  <aside class="admin-sider" :class="{ 'admin-sider--collapsed': collapsed }">
+    <div class="sider-header">
+      <div class="logo">
+        <span v-if="!collapsed" class="logo-text">[[.AppTitle]]</span>
+        <span v-else class="logo-icon">H</span>
+      </div>
+    </div>
+    <n-menu
+      :collapsed="collapsed"
+      :collapsed-width="64"
+      :collapsed-icon-size="22"
+      :options="menuOptions"
+      :value="activeMenu"
+      class="sider-menu"
+      @update:value="(key: string) => emit('select', key)"
+    />
+    <div class="sider-footer">
+      <button class="sider-trigger" aria-label="切换侧边栏" @click="emit('update:collapsed', !collapsed)">
+        <n-icon :size="14"><ChevronLeftIcon v-if="!collapsed" /><ChevronRightIcon v-else /></n-icon>
+      </button>
+    </div>
+  </aside>
+</template>
+
+<script setup lang="ts">
+import { h, computed, type Component } from 'vue'
+import { type MenuOption, NIcon } from '@rong/admin-ui/naive'
+import { LayoutDashboard, Users, FileText, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-vue-next'
+import { staticRoutes } from '@/router'
+
+defineProps<{
+  collapsed: boolean
+  activeMenu: string
+}>()
+
+const emit = defineEmits<{
+  'update:collapsed': [value: boolean]
+  select: [key: string]
+}>()
+
+const iconMap: Record<string, Component> = {
+  LayoutDashboard,
+  // @ygctl-web-gen:icons - 由 ygctl web gen 管理，勿手改
+  Users,
+  // @ygctl-web-gen:icons:end
+}
+
+function renderIcon(iconName: string) {
+  const IconComponent = iconMap[iconName] || FileText
+  return () => h(NIcon, null, { default: () => h(IconComponent) })
+}
+
+/**
+ * 侧边栏菜单由静态路由生成（AdminLayout 的子路由）。
+ * 接入后端菜单/权限过滤时，可在此处替换数据源。
+ */
+const menuOptions = computed<MenuOption[]>(() => {
+  const layoutRoute = staticRoutes.find((r) => r.name === 'Layout')
+  const children = (layoutRoute?.children ?? []) as Array<{
+    name?: string
+    meta?: { title?: string; icon?: string }
+  }>
+
+  return children.map((child) => {
+    const option: MenuOption = {
+      key: String(child.name),
+      label: String(child.meta?.title || child.name),
+    }
+    if (child.meta?.icon) {
+      option.icon = renderIcon(child.meta.icon)
+    }
+    return option
+  })
+})
+</script>
+
+<style scoped>
+.admin-sider {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--layout-sider-width);
+  flex-shrink: 0;
+  background: var(--ra-color-bg-surface, #fff);
+  border: 1px solid var(--ra-color-border-light, #eef0f6);
+  border-radius: var(--layout-card-radius);
+  box-shadow: var(--ra-shadow-card, 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-sider--collapsed {
+  width: 64px;
+}
+
+.sider-header {
+  height: var(--layout-header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--ra-color-border-light, #eef0f6);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--ra-spacing-2, 8px);
+}
+
+.logo-text {
+  font-size: var(--ra-font-size-lg, 16px);
+  font-weight: var(--ra-font-weight-semibold, 600);
+  color: var(--ra-color-text-primary, #1e2235);
+  white-space: nowrap;
+}
+
+.logo-icon {
+  font-size: var(--ra-font-size-2xl, 20px);
+  font-weight: var(--ra-font-weight-bold, 700);
+  color: var(--ra-color-brand-primary, #6b93f5);
+}
+
+.sider-menu {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sider-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--ra-color-border-light, #eef0f6);
+}
+
+.sider-trigger {
+  width: 100%;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ra-color-border-light, #eef0f6);
+  border-radius: var(--ra-radius-md, 8px);
+  background: var(--ra-color-bg-surface, #fff);
+  cursor: pointer;
+  color: var(--ra-color-text-tertiary, #6e7389);
+  transition: all 0.15s ease;
+}
+
+.sider-trigger:hover {
+  color: var(--ra-color-brand-primary, #6b93f5);
+  border-color: var(--ra-color-brand-primary, #6b93f5);
+  background: var(--ra-color-bg-hover, #f0f2ff);
+}
+</style>

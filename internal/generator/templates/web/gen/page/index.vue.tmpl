@@ -1,10 +1,5 @@
 <template>
   <div class="ra-page" data-testid="[[.Entity]]-list-page">
-    <div class="ra-page-header">
-      <h2 class="ra-page-header__title">[[.MenuTitle]]</h2>
-      <p class="ra-page-header__desc">[[.MenuTitle]]列表管理</p>
-    </div>
-
     <RFilterBarPro
       v-model="filterValues"
       :schema="filterSchema"
@@ -18,7 +13,6 @@
 
     <div class="ra-card ra-card--flush">
       <RTableToolbarPro
-        :title="'[[.MenuTitle]]列表'"
         :loading="loading"
         :refreshable="true"
         data-testid="[[.Entity]]-toolbar"
@@ -30,7 +24,7 @@
               <template #icon>
                 <n-icon :size="14"><PlusIcon /></n-icon>
               </template>
-              新增[[.MenuTitle]]
+              新增[[.EntityLabel]]
             </n-button>
           </n-space>
         </template>
@@ -250,5 +244,10 @@ onMounted(() => {
 .cell-muted {
   color: var(--ra-color-text-tertiary, #6e7389);
   font-size: var(--ra-font-size-sm, 13px);
+}
+
+/* ra-card--flush 下分页区贴边，补内边距 */
+:deep(.n-data-table__pagination) {
+  padding: var(--ra-spacing-3) var(--ra-spacing-4);
 }
 </style>

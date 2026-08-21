@@ -1,0 +1,40 @@
+import type { App, InjectionKey } from 'vue'
+import { inject } from 'vue'
+import type { RongAdminAppInstance } from '@rong/admin-ui/app-preset'
+import type { HttpClient } from '@rong/admin-ui/app-request'
+
+export interface AppRuntimeContext {
+  appInstance: RongAdminAppInstance
+  apiCache: Map<string, unknown>
+}
+
+const APP_RUNTIME_KEY: InjectionKey<AppRuntimeContext> = Symbol('[[.StoragePrefix]]-runtime')
+
+export function installAppRuntime(app: App, appInstance: RongAdminAppInstance): AppRuntimeContext {
+  const context: AppRuntimeContext = {
+    appInstance,
+    apiCache: new Map<string, unknown>(),
+  }
+  app.provide(APP_RUNTIME_KEY, context)
+  return context
+}
+
+export function useAppRuntime(): AppRuntimeContext {
+  const context = inject(APP_RUNTIME_KEY)
+  if (!context) {
+    throw new Error('App runtime not provided')
+  }
+  return context
+}
+
+export function getHttpClient(): HttpClient {
+  return useAppRuntime().appInstance.httpClient
+}
+
+export function getTokenManager() {
+  return useAppRuntime().appInstance.tokenManager
+}
+
+export function getThemeProvider() {
+  return useAppRuntime().appInstance.themeProvider
+}

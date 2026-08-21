@@ -225,6 +225,10 @@ func buildWebGenData(def *Def, ui *UIDef) (*webGenData, error) {
 		return nil, err
 	}
 
+	entityLabel := ui.Menu.EntityLabel
+	if entityLabel == "" {
+		entityLabel = ui.Menu.Title
+	}
 	data := &webGenData{
 		Entity:       def.Entity,
 		EntityPascal: ToPascalCase(def.Entity),
@@ -232,6 +236,7 @@ func buildWebGenData(def *Def, ui *UIDef) (*webGenData, error) {
 		RoutePath:    "/" + def.Entity,
 		RouteName:    ToPascalCase(def.Entity) + "List",
 		MenuTitle:    ui.Menu.Title,
+		EntityLabel:  entityLabel,
 		MenuIcon:     ui.Menu.Icon,
 		Style:        ui.Style,
 		Fields:       fields,
@@ -308,9 +313,12 @@ type webGenRule struct {
 func resolveWebFields(def *Def, ui *UIDef) ([]webGenField, error) {
 	fields := make([]webGenField, 0, len(def.Fields))
 	for _, f := range def.Fields {
+		// PascalName 必须用 GoFieldName（与后端 Go 结构体字段同名）：
+		// 后端 JSON 键来自 Go 字段名，前端 BackendItem 类型必须逐字对齐
+		// （含 commonInitialisms，如 avatar_storage_id -> AvatarStorageID）。
 		w := webGenField{
 			Name:       f.Name,
-			PascalName: ToPascalCase(f.Name),
+			PascalName: GoFieldName(f.Name),
 			Label:      f.Comment,
 			Comment:    f.Comment,
 			DSLType:    f.Type,
@@ -331,7 +339,9 @@ func resolveWebFields(def *Def, ui *UIDef) ([]webGenField, error) {
 		if isEnum {
 			w.ColumnOptions = optionMap(enumValues, nil)
 		}
-		w.SearchShow = f.JSON != "-" && f.Type == "string" && !isEnum
+		// 搜索默认 opt-in：只有 ui def 显式声明 search 段才进筛选栏
+		// （避免 phone/avatar 等字段被默认塞进搜索；最小惊讶原则）
+		w.SearchShow = false
 		w.SearchType = "input"
 		w.FormShow = f.Type != "datetime" && f.Type != "date" && f.Type != "blob"
 		if f.JSON == "-" {
@@ -344,7 +354,6 @@ func resolveWebFields(def *Def, ui *UIDef) ([]webGenField, error) {
 			w.FormType = "select"
 			w.FormOptions = optionMap(enumValues, nil)
 			w.SearchType = "select"
-			w.SearchShow = f.JSON != "-" && isEnum
 			w.SearchOptions = w.FormOptions
 		case f.Type == "text":
 			w.FormType = "textarea"
@@ -481,6 +490,7 @@ type webGenData struct {
 	RoutePath    string
 	RouteName    string
 	MenuTitle    string
+	EntityLabel  string
 	MenuIcon     string
 	Style        string
 	Fields       []webGenField

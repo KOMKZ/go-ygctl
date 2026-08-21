@@ -25,9 +25,10 @@ type UIDef struct {
 
 // UIMenu is the sidebar menu spec of the generated CRUD module.
 type UIMenu struct {
-	Title string `yaml:"title"` // 菜单标题（必填，若字段呈现被消费）
-	Icon  string `yaml:"icon"`  // 图标名（必须可被前端 iconMap 解析）
-	Order int    `yaml:"order"` // 菜单排序（可选，暂不消费）
+	Title       string `yaml:"title"`       // 菜单标题（必填）
+	EntityLabel string `yaml:"entityLabel"` // 实体单数名（按钮/对话框标题用，如「管理员」）；空 = 用 title
+	Icon        string `yaml:"icon"`        // 图标名（必须可被前端 iconMap 解析）
+	Order       int    `yaml:"order"`       // 菜单排序（可选，暂不消费）
 }
 
 // UIField is the presentation spec of one backend def field.

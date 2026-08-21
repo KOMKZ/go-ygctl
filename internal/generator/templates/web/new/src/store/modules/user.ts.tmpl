@@ -1,0 +1,124 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import type { TokenManagerInstance } from '@rong/admin-ui/app-auth'
+import type { HttpClient } from '@rong/admin-ui/app-request'
+import { createAuthApi } from '@/api/auth'
+import { isSuccess, parseErrorMessage } from '@/api/adapter'
+import type { LoginRequest, LoginResponse } from '@/api/types'
+import { jsonStorage } from '@/utils/storage'
+
+const CURRENT_USER_KEY = '[[.StoragePrefix]]_current_user'
+
+export interface UserInfo {
+  id: number
+  username: string
+  email: string
+  realName?: string
+  role?: number
+  permissions?: string[]
+}
+
+export const useUserStore = defineStore('user', () => {
+  // State
+  const userInfo = ref<UserInfo | null>(jsonStorage.get<UserInfo>(CURRENT_USER_KEY))
+  const isLoggingIn = ref(false)
+
+  // 依赖注入（由 app 初始化时设置）
+  let tokenManager: TokenManagerInstance | null = null
+  let httpClient: HttpClient | null = null
+  let clearRuntimeCaches: ((userId?: number | string) => void) | null = null
+
+  // Getters
+  const isLoggedIn = computed(() => !!userInfo.value && tokenManager?.isAuthenticated())
+  const username = computed(() => userInfo.value?.username ?? '')
+  const userId = computed(() => userInfo.value?.id ?? 0)
+
+  // Actions
+  function setDependencies(
+    tm: TokenManagerInstance,
+    http: HttpClient,
+    onSessionReset?: (userId?: number | string) => void,
+  ) {
+    tokenManager = tm
+    httpClient = http
+    clearRuntimeCaches = onSessionReset ?? null
+  }
+
+  async function login(params: LoginRequest): Promise<{ success: boolean; error?: string }> {
+    if (!httpClient) {
+      return { success: false, error: '应用未初始化' }
+    }
+
+    isLoggingIn.value = true
+    try {
+      const authApi = createAuthApi(httpClient)
+      const response = await authApi.login(params)
+
+      if (isSuccess(response) && response.data) {
+        const data = response.data as LoginResponse
+
+        // 保存 Token
+        tokenManager?.onLoginSuccess({
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          expiresIn: data.expires_in,
+        })
+
+        // 保存用户信息
+        const user: UserInfo = {
+          id: data.user_id,
+          username: data.username,
+          email: params.email || params.phone || '',
+        }
+        userInfo.value = user
+        jsonStorage.set(CURRENT_USER_KEY, user)
+        clearRuntimeCaches?.(user.id)
+
+        return { success: true }
+      }
+
+      return { success: false, error: parseErrorMessage(response) }
+    } catch (err: unknown) {
+      const reqErr = err as { responseBody?: Record<string, unknown>; message?: string }
+      const msg =
+        parseErrorMessage(reqErr.responseBody) !== '未知错误'
+          ? parseErrorMessage(reqErr.responseBody)
+          : reqErr.message || '登录失败'
+      return { success: false, error: msg }
+    } finally {
+      isLoggingIn.value = false
+    }
+  }
+
+  function logout() {
+    const currentUserId = userInfo.value?.id
+    userInfo.value = null
+    jsonStorage.remove(CURRENT_USER_KEY)
+    clearRuntimeCaches?.(currentUserId)
+    tokenManager?.onLogout()
+  }
+
+  function updateUserInfo(info: Partial<UserInfo>) {
+    if (userInfo.value) {
+      userInfo.value = { ...userInfo.value, ...info }
+      jsonStorage.set(CURRENT_USER_KEY, userInfo.value)
+    }
+  }
+
+  return {
+    // State
+    userInfo,
+    isLoggingIn,
+
+    // Getters
+    isLoggedIn,
+    username,
+    userId,
+
+    // Actions
+    setDependencies,
+    login,
+    logout,
+    updateUserInfo,
+  }
+})
