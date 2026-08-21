@@ -1,3 +1,7 @@
+// Package apputil provides shared helpers for accessing framework components
+// from apps. Only keep helpers here that MORE THAN ONE app consumes — app-local
+// helpers belong to the app; unused exported code is deleted rather than kept
+// as a sample (samples rot and mislead the next reader).
 package apputil
 
 import (

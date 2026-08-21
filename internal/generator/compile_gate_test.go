@@ -23,12 +23,6 @@ func frameworkAbsPath(t *testing.T) string {
 	return abs
 }
 
-// newAppConfig builds a base config for gate generation.
-func newAppConfig(t *testing.T, project, app string) (output string, framework string) {
-	t.Helper()
-	return t.TempDir(), frameworkAbsPath(t)
-}
-
 // runGo executes a go command in dir and fails the test on error.
 func runGo(t *testing.T, dir string, args ...string) {
 	t.Helper()
@@ -135,6 +129,10 @@ func TestGeneratedAppsCompile(t *testing.T) {
 			runGo(t, appDir, "mod", "tidy")
 			runGo(t, appDir, "build", "./...")
 			runGo(t, appDir, "test", "./...")
+
+			// The shared pkg module must compile as well (errdef/apputil).
+			pkgDir := filepath.Join(filepath.Dir(appDir), "..", "pkg")
+			runGo(t, pkgDir, "build", "./...")
 		})
 	}
 }

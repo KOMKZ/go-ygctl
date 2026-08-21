@@ -1,3 +1,10 @@
+// Package errdef declares shared errors consumed by the workspace apps.
+//
+// Contract (hrw-go-backend-good-style/errcode-and-errors):
+//   - every error must be registered via errcode.Register
+//   - business codes start from 1001; final code = module*10000 + business
+//   - only declare errors here when MORE THAN ONE app consumes them;
+//     app-local errors belong to the app or its domain
 package errdef
 
 import (
@@ -6,18 +13,18 @@ import (
 	"github.com/KOMKZ/go-yogan-framework/errcode"
 )
 
-// Module codes (business codes start from 1001 per module)
+// Module codes: business codes start from 1001 per module.
 const (
-	ModuleCommon = 0  // 通用错误 0xxx
-	ModuleUser   = 10 // 用户模块 10xxx
-	ModuleAuth   = 20 // 认证模块 20xxx
-	ModuleOrder  = 30 // 订单模块 30xxx
+	ModuleCommon = 0  // shared/common errors 0xxxx
+	ModuleUser   = 10 // user module 10xxxx
+	ModuleAuth   = 20 // auth module 20xxxx
+	ModuleOrder  = 30 // order module 30xxxx
 )
 
-// Common errors (0xxx)
+// Common errors (module 0 => codes 1001+).
 var (
 	ErrInvalidInput = errcode.Register(errcode.New(
-		ModuleCommon, 1,
+		ModuleCommon, 1001,
 		"common",
 		"error.common.invalid_input",
 		"无效的输入参数",
@@ -25,7 +32,7 @@ var (
 	))
 
 	ErrNotFound = errcode.Register(errcode.New(
-		ModuleCommon, 2,
+		ModuleCommon, 1002,
 		"common",
 		"error.common.not_found",
 		"资源不存在",
@@ -33,7 +40,7 @@ var (
 	))
 
 	ErrDatabaseError = errcode.Register(errcode.New(
-		ModuleCommon, 3,
+		ModuleCommon, 1003,
 		"common",
 		"error.common.database_error",
 		"数据库操作失败",
