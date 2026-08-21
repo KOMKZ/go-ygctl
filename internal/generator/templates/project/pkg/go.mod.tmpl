@@ -8,11 +8,11 @@ require (
 {{- end}}
 	gorm.io/gorm v1.31.1
 )
-{{- if .UseLocalFramework}}
 
-replace github.com/KOMKZ/go-yogan-framework => {{.PkgFrameworkPath}}
-{{- end}}
+// No replace directive here: the local framework path is provided by the
+// workspace-level replace in go.work (a per-module relative replace resolves
+// against THIS directory and conflicts with the app's replace). Building pkg
+// outside the workspace requires the framework module to be published.
 {{- if not .UseLocalFramework}}
-
 // Remote mode: run `go get -u github.com/KOMKZ/go-yogan-framework@latest` to install framework
 {{- end}}

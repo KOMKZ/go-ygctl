@@ -10,3 +10,11 @@ use (
 	// ./domains/user
 	// ./proto/xxx
 )
+{{- if .UseLocalFramework}}
+
+// Single replace point for the local framework: in workspace mode each
+// module's own relative replace resolves against ITS directory, so keeping
+// per-module replaces in sync is error-prone. The path is resolved relative
+// to this go.work directory.
+replace github.com/KOMKZ/go-yogan-framework => {{.WorkspaceFrameworkPath}}
+{{- end}}
