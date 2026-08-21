@@ -1,0 +1,12 @@
+package app
+
+import (
+	"{{.ModuleName}}/internal/router"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/gin-gonic/gin"
+)
+
+// RegisterRoutes registers all application routes on the HTTP engine.
+func (a *{{.AppNamePascal}}) RegisterRoutes(engine *gin.Engine, app *application.Application) {
+	router.RegisterHelloRoutes(engine, app)
+}

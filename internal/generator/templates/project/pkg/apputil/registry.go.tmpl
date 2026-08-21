@@ -1,0 +1,40 @@
+package apputil
+
+import (
+	"fmt"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/database"
+	"github.com/KOMKZ/go-yogan-framework/jwt"
+	"github.com/samber/do/v2"
+	"gorm.io/gorm"
+)
+
+// MustDB returns the default database connection or panics.
+func MustDB(app *application.Application) *gorm.DB {
+	return MustDBNamed(app, "master")
+}
+
+// MustDBNamed returns a named database connection or panics.
+func MustDBNamed(app *application.Application, name string) *gorm.DB {
+	injector := app.GetInjector()
+	mgr, err := do.Invoke[*database.Manager](injector)
+	if err != nil || mgr == nil {
+		panicf("database")
+	}
+	return mgr.DB(name)
+}
+
+// MustJWTManager returns the JWT token manager or panics.
+func MustJWTManager(app *application.Application) jwt.TokenManager {
+	injector := app.GetInjector()
+	tm, err := do.Invoke[jwt.TokenManager](injector)
+	if err != nil || tm == nil {
+		panicf("jwt")
+	}
+	return tm
+}
+
+func panicf(name string) {
+	panic(fmt.Sprintf("apputil: %s component is not initialized, please check the %s configuration", name, name))
+}

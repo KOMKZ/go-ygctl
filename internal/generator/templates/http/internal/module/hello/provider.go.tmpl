@@ -1,0 +1,8 @@
+package hello
+
+import "github.com/samber/do/v2"
+
+// ProvideHelloHandler registers the hello handler in the DI container.
+func ProvideHelloHandler(i do.Injector) (*HelloHandler, error) {
+	return NewHelloHandler(), nil
+}

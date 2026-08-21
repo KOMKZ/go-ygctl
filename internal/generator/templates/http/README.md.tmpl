@@ -1,0 +1,64 @@
+# {{.AppName}}
+
+{{.Description}}
+
+## 快速开始
+
+```bash
+# 安装依赖
+go mod tidy
+
+# 运行
+make run
+# 或
+go run .
+
+# 构建
+make build
+```
+
+## 项目结构
+
+```
+{{.AppName}}/
+├── main.go              # 入口
+├── Makefile             # 构建命令
+├── configs/             # 配置文件
+├── migrations/          # 数据库迁移
+├── scripts/             # 脚本
+├── internal/
+│   ├── app/             # 应用核心
+│   ├── config/          # 配置结构
+│   ├── domain/          # 领域层
+│   ├── module/          # 模块层
+│   └── router/          # 路由
+└── pkg/                 # 公共包
+```
+
+## 数据库迁移
+
+```bash
+# 安装 migrate 工具
+go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# 执行迁移
+make migrate-up
+
+# 回滚迁移
+make migrate-down
+
+# 创建新迁移
+make migrate-create NAME=add_orders_table
+```
+
+## 配置
+
+配置文件位于 `configs/config.yaml`，支持环境变量覆盖：
+
+```bash
+{{.AppNameUpper}}_SERVER_PORT=8080 go run .
+```
+
+## 开发
+
+基于 [Yogan Framework](https://github.com/KOMKZ/go-yogan-framework) 构建。

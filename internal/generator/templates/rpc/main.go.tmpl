@@ -1,0 +1,20 @@
+package main
+
+import (
+	"{{.ModuleName}}/internal/app"
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"go.uber.org/zap"
+)
+
+const Version = "0.1.0"
+
+func main() {
+	// Parse command line flags and environment variables
+	flags := application.ParseFlags("{{.AppName}}", "./config")
+
+	// Start gRPC application (version printed by framework)
+	if err := app.NewWithFlags(flags).WithVersion(Version).Run(); err != nil {
+		logger.Fatal("main", "Application start failed", zap.Error(err))
+	}
+}

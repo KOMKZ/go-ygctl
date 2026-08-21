@@ -1,0 +1,32 @@
+# pkg - Application-Level Shared Packages
+
+This directory contains shared packages specific to this application.
+
+## Guidelines
+
+- **Application scope**: Code here is shared within this app only
+- **No business logic**: Keep domain logic in `internal/domain/`
+- **Reusable utilities**: Helper functions, type conversions, etc.
+
+## Structure
+
+```
+pkg/
+└── util/
+    ├── string.go   # String utilities
+    └── ptr.go      # Pointer helpers
+```
+
+## Usage Example
+
+```go
+import "{{.ModuleName}}/pkg/util"
+
+// Create pointer from literal
+req := UpdateRequest{
+    Title: util.Ptr("New Title"),
+}
+
+// Safe dereference with default
+name := util.DerefOr(user.Nickname, "Anonymous")
+```

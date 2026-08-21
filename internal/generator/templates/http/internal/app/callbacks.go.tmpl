@@ -1,0 +1,30 @@
+package app
+
+import (
+	"context"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+	helloModule "{{.ModuleName}}/internal/module/hello"
+	"github.com/samber/do/v2"
+	"go.uber.org/zap"
+)
+
+// initDI registers all application providers in the DI container.
+func (a *{{.AppNamePascal}}) initDI() {
+	injector := a.Core.GetInjector()
+
+	do.Provide(injector, helloModule.ProvideHelloHandler)
+}
+
+// onReady runs after the application finishes startup.
+func (a *{{.AppNamePascal}}) onReady(core *application.Application) error {
+	a.logger.InfoCtx(context.Background(), "{{.AppNamePascal}} started",
+		zap.String("config_path", a.configPath))
+	return nil
+}
+
+// onShutdown runs before the application stops.
+func (a *{{.AppNamePascal}}) onShutdown(core *application.Application) error {
+	a.logger.InfoCtx(context.Background(), "{{.AppNamePascal}} shutting down")
+	return nil
+}

@@ -1,0 +1,34 @@
+package hello
+
+import (
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/samber/do/v2"
+)
+
+func TestHelloHandler(t *testing.T) {
+	h := NewHelloHandler()
+
+	resp, err := h.Hello(&gin.Context{}, &HelloRequest{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("response should not be nil")
+	}
+	if resp.Message != "hello" {
+		t.Fatalf("unexpected message: %s", resp.Message)
+	}
+}
+
+func TestProvideHelloHandler(t *testing.T) {
+	injector := do.New()
+	handler, err := ProvideHelloHandler(injector)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if handler == nil {
+		t.Fatal("handler should not be nil")
+	}
+}

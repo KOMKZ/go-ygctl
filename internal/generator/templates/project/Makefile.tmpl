@@ -1,0 +1,67 @@
+.PHONY: build build-all proto proto-check proto-install help
+
+# 默认目标
+all: build-all
+
+# 编译所有应用
+build-all:
+	@./scripts/build.sh
+
+# 编译指定应用
+build:
+	@if [ -z "$(APP)" ]; then echo "Usage: make build APP=<app-name>"; exit 1; fi
+	@./scripts/build.sh $(APP)
+{{if .GenerateProto}}
+# ========== Proto 相关命令 ==========
+
+# 检查 proto 工具是否安装
+proto-check:
+	@echo "Checking proto tools..."
+	@which protoc > /dev/null || (echo "❌ protoc not found. Install with: brew install protobuf" && exit 1)
+	@which protoc-gen-go > /dev/null || (echo "❌ protoc-gen-go not found. Run: make proto-install" && exit 1)
+	@which protoc-gen-go-grpc > /dev/null || (echo "❌ protoc-gen-go-grpc not found. Run: make proto-install" && exit 1)
+	@echo "✅ All proto tools are installed"
+
+# 安装 proto Go 插件
+proto-install:
+	@echo "Installing protoc-gen-go..."
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	@echo "Installing protoc-gen-go-grpc..."
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	@echo "✅ Proto plugins installed"
+	@echo ""
+	@echo "NOTE: Make sure $(go env GOPATH)/bin is in your PATH"
+	@echo "  export PATH=\"\$$PATH:\$$(go env GOPATH)/bin\""
+
+# 生成所有 proto
+proto: proto-check
+	@echo "Generating proto files..."
+	@for dir in proto/*/; do \
+		if [ -f "$$dir/Makefile" ]; then \
+			echo "  → $$dir"; \
+			$(MAKE) -C $$dir gen; \
+		fi \
+	done
+	@echo "✅ Proto generation complete"
+
+# 清理生成的 proto 文件
+proto-clean:
+	@for dir in proto/*/; do \
+		if [ -f "$$dir/Makefile" ]; then \
+			$(MAKE) -C $$dir clean; \
+		fi \
+	done
+{{end}}
+# 帮助信息
+help:
+	@echo "Available commands:"
+	@echo "  make build-all       - Build all applications"
+	@echo "  make build APP=xxx   - Build specific application"
+{{- if .GenerateProto}}
+	@echo ""
+	@echo "Proto commands:"
+	@echo "  make proto-check     - Check if proto tools are installed"
+	@echo "  make proto-install   - Install protoc-gen-go plugins"
+	@echo "  make proto           - Generate all proto files"
+	@echo "  make proto-clean     - Clean generated proto files"
+{{- end}}

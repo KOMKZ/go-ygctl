@@ -1,0 +1,26 @@
+.PHONY: build-all build clean help
+
+# Build all applications
+build-all:
+	@echo "Building all applications..."
+	./scripts/build.sh
+
+# Build specific application
+# Usage: make build APP=my-cron
+build:
+	@if [ -z "$(APP)" ]; then \
+		echo "Usage: make build APP=<app-name>"; \
+		exit 1; \
+	fi
+	./scripts/build.sh $(APP)
+
+# Clean all build artifacts
+clean:
+	rm -rf build/*
+
+# Help
+help:
+	@echo "Available commands:"
+	@echo "  make build-all      - Build all applications"
+	@echo "  make build APP=xxx  - Build specific application"
+	@echo "  make clean          - Clean build artifacts"

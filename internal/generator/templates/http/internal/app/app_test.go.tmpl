@@ -1,0 +1,34 @@
+package app
+
+import (
+	"os"
+	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+)
+
+// Note: the blocking Run() path is intentionally not exercised here:
+// graceful shutdown closes the DI container and currently triggers a
+// framework-side panic (limiter manager nil shutdown, see REVIEW.md).
+func TestAppLifecycle(t *testing.T) {
+	os.Setenv("APP_ENV", "test")
+
+	// NewWithConfig + full non-blocking boot
+	app := NewWithConfig("../../config")
+	if err := app.WithVersion("test").RunNonBlocking(); err != nil {
+		t.Fatalf("boot failed: %v", err)
+	}
+	if app.GetHTTPServer() == nil {
+		t.Fatal("HTTP server should not be nil")
+	}
+	_ = app.GetDBManager()
+	_ = app.GetRedisManager()
+	app.Shutdown()
+
+	// NewWithFlags construction path
+	flags := &application.AppFlags{ConfigDir: "../../config"}
+	app3 := NewWithFlags(flags)
+	if app3 == nil {
+		t.Fatal("NewWithFlags() returned nil application")
+	}
+}

@@ -1,0 +1,38 @@
+package hello_test
+
+import (
+	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/testutil"
+	"{{.ModuleName}}/test/testhelper"
+)
+
+func TestHello(t *testing.T) {
+	s := testhelper.GetServer(t)
+	resp := testutil.GET("/api/hello").Do(s.Engine)
+	if resp.Status() != 200 {
+		t.Fatalf("unexpected status: %d, body: %s", resp.Status(), resp.Body())
+	}
+
+	var result map[string]interface{}
+	if err := resp.JSON(&result); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if result["code"] != float64(0) {
+		t.Fatalf("unexpected code: %v", result["code"])
+	}
+
+	if result["msg"] != "success" {
+		t.Fatalf("unexpected msg: %v", result["msg"])
+	}
+
+	data, ok := result["data"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("unexpected data payload: %#v", result["data"])
+	}
+
+	if data["message"] != "hello" {
+		t.Fatalf("unexpected message: %v", data["message"])
+	}
+}

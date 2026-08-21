@@ -1,0 +1,117 @@
+# ==========================================
+# {{.AppName}} Makefile
+# 应用构建与管理
+# ==========================================
+
+.PHONY: build run start stop restart status clean test test-coverage
+.PHONY: migrate-up migrate-down migrate-create migrate-version migrate-goto migrate-drop migrate-force migrate-list
+.PHONY: help
+
+# 脚本路径
+SCRIPTS_DIR = ./scripts
+
+# ==================== 应用管理 ====================
+
+build: ## 编译应用
+	@$(SCRIPTS_DIR)/build.sh
+
+build-clean: ## 清理后编译
+	@$(SCRIPTS_DIR)/build.sh --clean
+
+run: ## 前台运行（开发模式）
+	@go run .
+
+start: ## 后台启动应用
+	@$(SCRIPTS_DIR)/start.sh -d
+
+start-build: ## 编译并后台启动
+	@$(SCRIPTS_DIR)/start.sh -d -b
+
+start-force: ## 强制重启（停止现有进程后启动）
+	@$(SCRIPTS_DIR)/start.sh -d -f
+
+stop: ## 停止应用
+	@$(SCRIPTS_DIR)/stop.sh
+
+stop-force: ## 强制停止
+	@$(SCRIPTS_DIR)/stop.sh -f
+
+stop-all: ## 停止所有 {{.AppName}} 进程
+	@$(SCRIPTS_DIR)/stop.sh -a
+
+restart: ## 重启应用
+	@$(SCRIPTS_DIR)/restart.sh
+
+status: ## 查看应用状态
+	@$(SCRIPTS_DIR)/status.sh
+
+# ==================== 数据库迁移 ====================
+
+migrate-up: ## 运行所有待执行的迁移
+	@$(SCRIPTS_DIR)/migrate.sh up
+
+migrate-down: ## 回滚最后一个迁移
+	@$(SCRIPTS_DIR)/migrate.sh down
+
+migrate-down-all: ## 回滚所有迁移
+	@$(SCRIPTS_DIR)/migrate.sh down -all
+
+migrate-version: ## 查看当前迁移版本
+	@$(SCRIPTS_DIR)/migrate.sh version
+
+migrate-goto: ## 迁移到指定版本 (make migrate-goto V=3)
+	@if [ -z "$(V)" ]; then echo "❌ 需要版本号. Usage: make migrate-goto V=3"; exit 1; fi
+	@$(SCRIPTS_DIR)/migrate.sh goto $(V)
+
+migrate-force: ## 强制设置版本 (make migrate-force V=3)
+	@if [ -z "$(V)" ]; then echo "❌ 需要版本号. Usage: make migrate-force V=3"; exit 1; fi
+	@$(SCRIPTS_DIR)/migrate.sh force $(V)
+
+migrate-drop: ## 删除所有表（危险！）
+	@$(SCRIPTS_DIR)/migrate.sh drop
+
+migrate-create: ## 创建新迁移 (make migrate-create NAME=add_orders)
+	@if [ -z "$(NAME)" ]; then echo "❌ 需要迁移名称. Usage: make migrate-create NAME=add_orders"; exit 1; fi
+	@$(SCRIPTS_DIR)/migrate.sh create $(NAME)
+
+migrate-list: ## 列出所有迁移文件
+	@$(SCRIPTS_DIR)/migrate.sh list
+
+# ==================== 开发与测试 ====================
+
+test: ## 运行测试
+	@echo "Running tests..."
+	@go test -v ./...
+
+test-coverage: ## 运行测试并生成覆盖率报告
+	@echo "Running tests with coverage..."
+	@go test -v -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report: coverage.html"
+
+clean: ## 清理编译产物和临时文件
+	@echo "Cleaning..."
+	@rm -rf ./build *.pid coverage.out coverage.html
+	@echo "Done."
+
+# ==================== 帮助 ====================
+
+help: ## 显示帮助信息
+	@echo ""
+	@echo "{{.AppName}} Makefile Commands"
+	@echo "==========================="
+	@echo ""
+	@echo "应用管理:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '(build|run|start|stop|restart|status|clean)' | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "数据库迁移:"
+	@grep -E '^migrate-[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "测试:"
+	@grep -E '^test[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "环境变量:"
+	@echo "  DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME"
+	@echo ""
+
+.DEFAULT_GOAL := help

@@ -1,0 +1,70 @@
+# Payment Proto
+
+演示支付服务的 Protocol Buffer 定义。
+
+## 依赖安装
+
+### 1. 安装 protoc 编译器
+
+```bash
+# macOS
+brew install protobuf
+
+# Ubuntu/Debian
+apt-get install -y protobuf-compiler
+
+# 验证安装
+protoc --version
+```
+
+### 2. 安装 Go 插件
+
+```bash
+# 安装 protoc-gen-go (生成 Go 结构体)
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+# 安装 protoc-gen-go-grpc (生成 gRPC 服务代码)
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# 确保 $GOPATH/bin 在 PATH 中
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+## 生成代码
+
+```bash
+# 在 proto/payment 目录下执行
+make gen
+
+# 或手动执行
+protoc --go_out=. --go_opt=paths=source_relative \
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+       payment.proto
+```
+
+## 生成的文件
+
+- `payment.pb.go` - 消息结构体定义
+- `payment_grpc.pb.go` - gRPC 服务接口和客户端
+
+## 使用示例
+
+```go
+import (
+    pb "{{.ProjectModule}}/proto/payment"
+)
+
+// 服务端实现
+type paymentServer struct {
+    pb.UnimplementedDemoPaymentServiceServer
+}
+
+func (s *paymentServer) CreatePayment(ctx context.Context, req *pb.CreatePaymentRequest) (*pb.CreatePaymentResponse, error) {
+    // 实现逻辑
+    return &pb.CreatePaymentResponse{
+        PaymentId: "pay_xxx",
+        Status:    "pending",
+        PayUrl:    "https://pay.example.com/xxx",
+    }, nil
+}
+```

@@ -1,0 +1,34 @@
+package router
+
+import (
+	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+	hello "{{.ModuleName}}/internal/module/hello"
+	"github.com/gin-gonic/gin"
+	"github.com/samber/do/v2"
+)
+
+func TestRegisterHelloRoutes(t *testing.T) {
+	app := application.New("../../config", "TEST_APP", nil)
+	injector := app.GetInjector()
+	do.Provide(injector, hello.ProvideHelloHandler)
+
+	engine := gin.New()
+	RegisterHelloRoutes(engine, app)
+
+	routes := engine.Routes()
+	if len(routes) == 0 {
+		t.Fatal("no routes registered")
+	}
+
+	found := false
+	for _, r := range routes {
+		if r.Method == "GET" && r.Path == "/api/hello" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("GET /api/hello not registered: %+v", routes)
+	}
+}

@@ -1,0 +1,110 @@
+# {{.ProjectName}}
+
+{{.Description}}
+
+## Project Structure
+
+```
+{{.ProjectName}}/
+├── go.work                    # Go workspace
+├── Makefile                   # Project-level commands
+├── apps/
+│   └── {{.AppName}}/          # Cron application
+│       ├── main.go
+│       ├── go.mod
+│       ├── config/
+│       └── internal/
+│           ├── app/           # Application layer
+│           ├── command/       # Commands (start, run)
+│           ├── config/        # Config structs
+│           └── handler/       # Task handlers
+├── domains/                   # Domain packages
+├── pkg/                       # Shared utilities
+│   ├── errdef/               # Error definitions
+│   └── apputil/              # App utilities
+└── scripts/                   # Build scripts
+```
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+# Install pkg dependencies
+cd pkg
+go mod tidy
+
+# Install app dependencies
+cd ../apps/{{.AppName}}
+{{- if not .UseLocalFramework}}
+go get github.com/KOMKZ/go-yogan-framework@latest
+{{- end}}
+go mod tidy
+```
+
+### 2. Start Scheduler
+
+```bash
+cd apps/{{.AppName}}
+
+# Start cron scheduler (runs all tasks)
+go run main.go start
+```
+
+### 3. Run Single Task
+
+```bash
+# Run demo task manually
+go run main.go run --task demo
+```
+
+### 4. Build
+
+```bash
+# From project root
+make build-all
+
+# Or build specific app
+make build APP={{.AppName}}
+```
+
+## Adding New Tasks
+
+1. Create handler in `apps/{{.AppName}}/internal/handler/`:
+
+```go
+package handler
+
+func (h *MyHandler) MyTask() {
+    // Task implementation
+}
+```
+
+2. Register task in `apps/{{.AppName}}/internal/command/start.go`:
+
+```go
+_, err := app.RegisterTask(
+    "0 */5 * * *",  // cron expression
+    myHandler.MyTask,
+    gocron.WithName("my_task"),
+    gocron.WithTags("mytag"),
+)
+```
+
+## Cron Expression Format
+
+```
+┌───────────── minute (0-59)
+│ ┌───────────── hour (0-23)
+│ │ ┌───────────── day of month (1-31)
+│ │ │ ┌───────────── month (1-12)
+│ │ │ │ ┌───────────── day of week (0-6, Sun=0)
+│ │ │ │ │
+* * * * *
+```
+
+Examples:
+- `*/1 * * * *` - Every minute
+- `0 * * * *` - Every hour
+- `0 0 * * *` - Every day at midnight
+- `0 0 * * 0` - Every Sunday at midnight

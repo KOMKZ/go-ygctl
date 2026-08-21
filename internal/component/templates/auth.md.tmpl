@@ -1,0 +1,57 @@
+# Auth 认证授权组件集成指南
+
+> 本文档将指导你一步步完成认证授权组件的集成。
+
+---
+
+## 📋 前置条件
+
+- [ ] 你的应用已经使用 `go-ygctl new http` 创建
+- [ ] Go 版本 >= 1.21
+
+---
+
+## 🚀 Step 1: 添加配置
+
+```yaml
+auth:
+  enabled: true
+  
+  password:
+    enabled: true
+    policy:
+      min_length: 8
+      require_uppercase: true
+      require_lowercase: true
+      require_number: true
+    bcrypt_cost: 10
+  
+{{- if .Config.enable_attempt_limit}}
+  login_attempt:
+    enabled: true
+    max_attempts: 5
+    lock_duration: 15m
+    storage: "memory"
+{{- end}}
+  
+  providers:
+{{- range .Config.auth_methods}}
+    - "{{.}}"
+{{- end}}
+```
+
+---
+
+## 🚀 Step 2: 注册组件
+
+```go
+import "github.com/KOMKZ/go-yogan-framework/auth"
+
+app.Register(
+    auth.NewComponent(),
+)
+```
+
+---
+
+*文档生成时间: 由 go-ygctl 自动生成*

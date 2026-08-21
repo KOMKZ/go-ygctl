@@ -1,0 +1,99 @@
+package app
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/database"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/KOMKZ/go-yogan-framework/redis"
+	"github.com/gin-gonic/gin"
+	"github.com/samber/do/v2"
+)
+
+// {{.AppNamePascal}} is an application hosted by the {{.ProjectName}} workspace.
+type {{.AppNamePascal}} struct {
+	Core       *application.Application
+	configPath string
+	flags      *application.AppFlags
+	logger     *logger.CtxZapLogger
+}
+
+// New creates an application with the default config directory.
+func New() *{{.AppNamePascal}} {
+	return &{{.AppNamePascal}}{
+		configPath: "./config",
+		Core:       application.New("./config", "{{.AppNameUpper}}", nil),
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}
+}
+
+// NewWithConfig creates an application with an explicit config directory.
+func NewWithConfig(configPath string) *{{.AppNamePascal}} {
+	return &{{.AppNamePascal}}{
+		configPath: configPath,
+		Core:       application.New(configPath, "{{.AppNameUpper}}", nil),
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}
+}
+
+// NewWithFlags creates an application with parsed command line flags.
+func NewWithFlags(flags *application.AppFlags) *{{.AppNamePascal}} {
+	return &{{.AppNamePascal}}{
+		configPath: flags.ConfigDir,
+		flags:      flags,
+		Core:       application.New(flags.ConfigDir, "{{.AppNameUpper}}", flags),
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}
+}
+
+// WithVersion sets the application version (chaining call).
+func (a *{{.AppNamePascal}}) WithVersion(version string) *{{.AppNamePascal}} {
+	a.Core.WithVersion(version)
+	return a
+}
+
+// Run starts the application and blocks until shutdown.
+func (a *{{.AppNamePascal}}) Run() error {
+	return a.run(true)
+}
+
+// RunNonBlocking starts the application without waiting for shutdown signals.
+func (a *{{.AppNamePascal}}) RunNonBlocking() error {
+	return a.run(false)
+}
+
+func (a *{{.AppNamePascal}}) run(blocking bool) error {
+	a.initDI()
+	a.Core.RegisterRoutes(a)
+	a.Core.OnReady(a.onReady)
+	a.Core.OnShutdown(a.onShutdown)
+
+	if blocking {
+		return a.Core.Run()
+	}
+	return a.Core.RunNonBlocking()
+}
+
+// GetHTTPServer returns the underlying HTTP server for testing.
+func (a *{{.AppNamePascal}}) GetHTTPServer() interface{ GetEngine() *gin.Engine } {
+	return a.Core.GetHTTPServer()
+}
+
+// GetDBManager returns the database manager (nil when no database is configured).
+func (a *{{.AppNamePascal}}) GetDBManager() *database.Manager {
+	injector := a.Core.GetInjector()
+	mgr, err := do.Invoke[*database.Manager](injector)
+	if err != nil {
+		return nil
+	}
+	return mgr
+}
+
+// GetRedisManager returns the Redis manager (nil when no Redis is configured).
+func (a *{{.AppNamePascal}}) GetRedisManager() *redis.Manager {
+	return nil
+}
+
+// Shutdown stops the application gracefully.
+func (a *{{.AppNamePascal}}) Shutdown() {
+	a.Core.Shutdown()
+}

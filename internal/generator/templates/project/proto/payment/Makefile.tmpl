@@ -1,0 +1,31 @@
+.PHONY: gen clean check
+
+# 生成 Go 代码
+gen: check
+	@echo "Generating Go code from proto..."
+	protoc --go_out=. --go_opt=paths=source_relative \
+	       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	       payment.proto
+	@echo "Done!"
+
+# 清理生成的文件
+clean:
+	rm -f *.pb.go
+
+# 检查依赖是否安装
+check:
+	@which protoc > /dev/null || (echo "Error: protoc not found. Install with: brew install protobuf" && exit 1)
+	@which protoc-gen-go > /dev/null || (echo "Error: protoc-gen-go not found. Install with: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest" && exit 1)
+	@which protoc-gen-go-grpc > /dev/null || (echo "Error: protoc-gen-go-grpc not found. Install with: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest" && exit 1)
+
+# 帮助信息
+help:
+	@echo "Proto Makefile Commands:"
+	@echo "  make gen    - Generate Go code from proto files"
+	@echo "  make clean  - Remove generated files"
+	@echo "  make check  - Check if required tools are installed"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  1. Install protoc:           brew install protobuf"
+	@echo "  2. Install protoc-gen-go:    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest"
+	@echo "  3. Install protoc-gen-go-grpc: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest"

@@ -1,0 +1,16 @@
+// Package app command registration
+package app
+
+import (
+	"{{.ModuleName}}/internal/command"
+)
+
+// RegisterCommands registers all commands
+//
+// Commands:
+//   1. Start - Start scheduler (run all cron tasks)
+//   2. Run   - Run single task manually
+func (c *{{.AppNamePascal}}App) RegisterCommands() {
+	command.RegisterStartCommand(c.rootCmd, c.Core)
+	command.RegisterRunCommand(c.rootCmd, c.Core)
+}

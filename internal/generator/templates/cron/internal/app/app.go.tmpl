@@ -1,0 +1,122 @@
+// Package app encapsulates the Cron application logic
+package app
+
+import (
+	"fmt"
+
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/spf13/cobra"
+)
+
+// {{.AppNamePascal}}App Cron application instance
+type {{.AppNamePascal}}App struct {
+	Core       *application.CronApplication // Cron application core
+	rootCmd    *cobra.Command               // Cobra root command
+	configPath string                       // Config directory path
+	logger     *logger.CtxZapLogger         // Application logger
+}
+
+// New creates Cron application instance (using default config path)
+func New() (*{{.AppNamePascal}}App, error) {
+	rootCmd := &cobra.Command{
+		Use:     "{{.AppName}}",
+		Short:   "{{.Description}}",
+		Version: "v0.1.0",
+		Long: `{{.Description}}
+
+Commands:
+  start  - Start cron scheduler (run all tasks)
+  run    - Run single task manually`,
+	}
+
+	app, err := application.NewCron("./config", "{{.AppNameUpper}}")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Cron application: %w", err)
+	}
+
+	return &{{.AppNamePascal}}App{
+		configPath: "./config",
+		rootCmd:    rootCmd,
+		Core:       app,
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}, nil
+}
+
+// MustNew creates Cron application instance (panics on failure)
+func MustNew() *{{.AppNamePascal}}App {
+	app, err := New()
+	if err != nil {
+		panic(err)
+	}
+	return app
+}
+
+// NewWithConfig creates Cron application instance (with custom config path)
+func NewWithConfig(configPath string) (*{{.AppNamePascal}}App, error) {
+	rootCmd := &cobra.Command{
+		Use:     "{{.AppName}}",
+		Short:   "{{.Description}}",
+		Version: "v0.1.0",
+		Long: `{{.Description}}
+
+Commands:
+  start  - Start cron scheduler (run all tasks)
+  run    - Run single task manually`,
+	}
+
+	app, err := application.NewCron(configPath, "{{.AppNameUpper}}")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Cron application: %w", err)
+	}
+
+	return &{{.AppNamePascal}}App{
+		configPath: configPath,
+		rootCmd:    rootCmd,
+		Core:       app,
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}, nil
+}
+
+// MustNewWithConfig creates Cron application instance (panics on failure)
+func MustNewWithConfig(configPath string) *{{.AppNamePascal}}App {
+	app, err := NewWithConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+	return app
+}
+
+// Setup initializes components and commands (for testing)
+func (c *{{.AppNamePascal}}App) Setup() error {
+	// Register components
+	c.RegisterComponents()
+
+	// Register commands
+	c.RegisterCommands()
+
+	// Trigger setup (initialize only, don't start scheduler)
+	return c.Core.RunNonBlocking()
+}
+
+// Run starts the application (blocking)
+func (c *{{.AppNamePascal}}App) Run() error {
+	// Register components
+	c.RegisterComponents()
+
+	// Register commands
+	c.RegisterCommands()
+
+	// Execute command
+	return c.rootCmd.Execute()
+}
+
+// GetApp returns internal application instance (for testing)
+func (c *{{.AppNamePascal}}App) GetApp() *application.CronApplication {
+	return c.Core
+}
+
+// GetRootCmd returns root command (for testing)
+func (c *{{.AppNamePascal}}App) GetRootCmd() *cobra.Command {
+	return c.rootCmd
+}

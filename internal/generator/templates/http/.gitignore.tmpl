@@ -1,0 +1,107 @@
+# ==========================================
+# {{.AppName}} .gitignore
+# ==========================================
+
+# ========== 编译产物 ==========
+# 本地编译的二进制文件
+{{.AppName}}
+build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test 产物
+*.test
+*.out
+
+# ========== 运行时文件 ==========
+# PID 文件
+*.pid
+
+# 运行日志（logs 目录保留但内容忽略）
+logs/*.log
+*.log
+
+# ========== 配置文件（敏感信息）==========
+# 本地开发配置
+config/local.yaml
+config/local.yml
+config/*.local.yaml
+config/*.local.yml
+
+# 生产配置（不应提交）
+config/prod.yaml
+config/prod.yml
+config/production.yaml
+config/production.yml
+
+# 密钥文件
+*.pem
+*.key
+*.crt
+
+# ========== 环境变量 ==========
+.env
+.env.*
+!.env.example
+
+# ========== 临时文件 ==========
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# ========== 测试 ==========
+# 覆盖率报告
+coverage.out
+coverage.html
+*.cover
+
+# 测试数据
+test/data/
+test/fixtures/
+
+# ========== IDE ==========
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# ========== OS ==========
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ========== 依赖 ==========
+vendor/
+
+# ========== 调试 ==========
+debug
+debug.test
+*.prof
+*.pprof
+cpu.out
+mem.out
+trace.out
+
+# ========== 数据文件 ==========
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# ========== 上传文件 ==========
+storage/
+uploads/

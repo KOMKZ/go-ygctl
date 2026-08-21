@@ -1,0 +1,14 @@
+#!/bin/bash
+# {{.AppName}} Restart Script
+# 重启 {{.AppName}} 应用
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 停止
+"$SCRIPT_DIR/stop.sh" "$@"
+
+# 等待一秒
+sleep 1
+
+# 启动
+"$SCRIPT_DIR/start.sh" -d "$@"

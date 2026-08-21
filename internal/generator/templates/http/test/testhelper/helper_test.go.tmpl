@@ -1,0 +1,11 @@
+package testhelper
+
+import "testing"
+
+func TestGetServerAndShutdown(t *testing.T) {
+	s := GetServer(t)
+	if s == nil || s.Engine == nil {
+		t.Fatal("server or engine is nil")
+	}
+	Shutdown()
+}

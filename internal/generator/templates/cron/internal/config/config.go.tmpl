@@ -1,0 +1,20 @@
+package config
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/logger"
+)
+
+// Config Cron application config
+type Config struct {
+	Logger logger.ManagerConfig `mapstructure:"logger"`
+	Cron   CronConfig           `mapstructure:"cron"`
+	// Add more config sections as needed:
+	// Database map[string]database.Config `mapstructure:"database"`
+	// Redis    map[string]redis.Config    `mapstructure:"redis"`
+}
+
+// CronConfig cron specific config
+type CronConfig struct {
+	Timezone        string `mapstructure:"timezone"`
+	ShutdownTimeout int    `mapstructure:"shutdown_timeout"`
+}

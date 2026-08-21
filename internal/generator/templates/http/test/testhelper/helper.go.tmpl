@@ -1,0 +1,42 @@
+package testhelper
+
+import (
+	"os"
+	"sync"
+	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/testutil"
+	"{{.ModuleName}}/internal/app"
+	"github.com/gin-gonic/gin"
+)
+
+var (
+	testServer *testutil.TestServer
+	testApp    *app.{{.AppNamePascal}}
+	initOnce   sync.Once
+)
+
+// GetServer returns the shared test server of {{.AppName}}.
+func GetServer(t *testing.T) *testutil.TestServer {
+	t.Helper()
+	initOnce.Do(func() {
+		os.Setenv("APP_ENV", "test")
+		gin.SetMode(gin.TestMode)
+
+		testApp = app.NewWithConfig("../../config")
+
+		var err error
+		testServer, err = testutil.NewTestServer(testApp)
+		if err != nil {
+			t.Fatalf("failed to create test server: %v", err)
+		}
+	})
+	return testServer
+}
+
+// Shutdown stops the shared test server.
+func Shutdown() {
+	if testApp != nil {
+		testApp.Shutdown()
+	}
+}

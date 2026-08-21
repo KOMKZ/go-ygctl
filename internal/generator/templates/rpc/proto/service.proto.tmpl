@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package {{.ServiceNameLower}};
+
+option go_package = "{{.ProjectModule}}/proto/{{.ServiceNameLower}}";
+
+// {{.ServiceName}}Service - {{.Description}}
+service {{.ServiceName}}Service {
+  // Hello - Example greeting RPC
+  rpc Hello(HelloRequest) returns (HelloResponse);
+  
+  // GetInfo - Example query RPC
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+}
+
+// HelloRequest greeting request
+message HelloRequest {
+  string name = 1;  // Name to greet
+}
+
+// HelloResponse greeting response
+message HelloResponse {
+  string message = 1;  // Greeting message
+}
+
+// GetInfoRequest query request
+message GetInfoRequest {
+  string id = 1;  // ID to query
+}
+
+// GetInfoResponse query response
+message GetInfoResponse {
+  string id = 1;           // ID
+  string name = 2;         // Name
+  string description = 3;  // Description
+  int64 created_at = 4;    // Created timestamp
+}

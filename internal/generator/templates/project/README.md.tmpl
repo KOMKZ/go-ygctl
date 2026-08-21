@@ -1,0 +1,84 @@
+# {{.ProjectName}}
+
+Multi-application project powered by [Yogan Framework](https://github.com/KOMKZ/go-yogan-framework).
+
+## Project Structure
+
+```
+{{.ProjectName}}/
+├── go.work              # Go workspace configuration
+├── apps/                # Application modules
+│   └── {{.AppName}}/    # First HTTP application
+│       ├── internal/    # app / module / router
+│       └── test/        # Integration + logic tests
+├── domains/             # Shared domain packages (yogan-domains style)
+├── proto/               # Shared protobuf definitions
+{{- if .GenerateProto}}
+│   └── payment/         # Demo payment service (example)
+{{- end}}
+├── pkg/                 # Shared utility packages
+│   ├── errdef/          # Error definitions
+│   └── apputil/         # Application utilities
+└── scripts/             # Build and utility scripts
+```
+
+## Quick Start
+
+```bash
+# Build all applications
+./scripts/build.sh
+
+# Build specific application
+./scripts/build.sh {{.AppName}}
+
+# Run tests
+cd apps/{{.AppName}} && go test ./...
+
+# Run application
+cd apps/{{.AppName}} && go run .
+```
+
+## Adding New Application
+
+1. Create new app directory: `apps/new-app/`
+2. Add to go.work: `use ./apps/new-app`
+3. Follow the structure of existing apps
+
+## Adding New Domain
+
+1. Create domain directory: `domains/user/`
+2. Add go.mod: `module {{.ProjectModule}}/domains/user`
+3. Add to go.work: `use ./domains/user`
+{{if .GenerateProto}}
+## Proto / gRPC
+
+### 依赖安装
+
+```bash
+# 安装 protoc 编译器
+brew install protobuf
+
+# 安装 Go 插件
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# 确保插件在 PATH 中
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+### 生成代码
+
+```bash
+cd proto/payment
+make gen
+```
+
+详见 `proto/payment/README.md`。
+{{end}}
+## Configuration
+
+Each application has its own config in `apps/<app>/config/config.yaml`.
+
+## License
+
+MIT

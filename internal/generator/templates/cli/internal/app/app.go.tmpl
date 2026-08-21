@@ -1,0 +1,80 @@
+// Package app encapsulates the CLI application logic
+package app
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/spf13/cobra"
+)
+
+// {{.AppNamePascal}}App CLI application instance
+type {{.AppNamePascal}}App struct {
+	Core       *application.CLIApplication // CLI application core
+	rootCmd    *cobra.Command              // Cobra root command
+	configPath string                      // Config directory path
+	logger     *logger.CtxZapLogger        // Application logger
+}
+
+// New creates CLI application instance (using default config path)
+func New() *{{.AppNamePascal}}App {
+	rootCmd := &cobra.Command{
+		Use:     "{{.AppName}}",
+		Short:   "{{.Description}}",
+		Version: "v0.1.0",
+	}
+	return &{{.AppNamePascal}}App{
+		configPath: "./config",
+		rootCmd:    rootCmd,
+		Core:       application.NewCLI("./config", "{{.AppNameUpper}}", rootCmd),
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}
+}
+
+// NewWithConfig creates CLI application instance (with custom config path)
+func NewWithConfig(configPath string) *{{.AppNamePascal}}App {
+	rootCmd := &cobra.Command{
+		Use:     "{{.AppName}}",
+		Short:   "{{.Description}}",
+		Version: "v0.1.0",
+	}
+	return &{{.AppNamePascal}}App{
+		configPath: configPath,
+		rootCmd:    rootCmd,
+		Core:       application.NewCLI(configPath, "{{.AppNameUpper}}", rootCmd),
+		logger:     logger.GetLogger("{{.AppNameSnake}}"),
+	}
+}
+
+// Setup initializes components and commands (for testing)
+func (c *{{.AppNamePascal}}App) Setup() error {
+	// Register components
+	c.RegisterComponents()
+
+	// Register commands
+	c.RegisterCommands()
+
+	// Trigger setup (initialize only, don't execute)
+	return c.Core.Setup()
+}
+
+// Run starts the application (blocking)
+func (c *{{.AppNamePascal}}App) Run() error {
+	// Register components
+	c.RegisterComponents()
+
+	// Register commands
+	c.RegisterCommands()
+
+	// Execute command
+	return c.Core.Execute()
+}
+
+// GetApp returns internal application instance (for testing)
+func (c *{{.AppNamePascal}}App) GetApp() *application.CLIApplication {
+	return c.Core
+}
+
+// GetRootCmd returns root command (for testing)
+func (c *{{.AppNamePascal}}App) GetRootCmd() *cobra.Command {
+	return c.rootCmd
+}

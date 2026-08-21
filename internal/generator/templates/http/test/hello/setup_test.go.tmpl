@@ -1,0 +1,14 @@
+package hello_test
+
+import (
+	"os"
+	"testing"
+
+	"{{.ModuleName}}/test/testhelper"
+)
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	testhelper.Shutdown()
+	os.Exit(code)
+}

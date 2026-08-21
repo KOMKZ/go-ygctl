@@ -1,0 +1,16 @@
+package hello
+
+import "github.com/gin-gonic/gin"
+
+// HelloHandler serves the hello greeting endpoint.
+type HelloHandler struct{}
+
+// NewHelloHandler creates a new hello handler.
+func NewHelloHandler() *HelloHandler {
+	return &HelloHandler{}
+}
+
+// Hello returns the greeting message.
+func (h *HelloHandler) Hello(c *gin.Context, req *HelloRequest) (*HelloResponse, error) {
+	return &HelloResponse{Message: "hello"}, nil
+}

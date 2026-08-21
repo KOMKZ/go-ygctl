@@ -1,0 +1,15 @@
+# {{.AppName}} test configuration (loaded when APP_ENV=test)
+
+api_server:
+  host: "127.0.0.1"
+  port: 0
+  mode: "test"
+
+logger:
+  base_log_dir: "logs"
+  app_name: "{{.AppName}}"
+  logger_name: "{{.AppNameSnake}}"
+  log_dir_mode: "single"
+  level: "info"
+  encoding: "json"
+  enable_console: false
