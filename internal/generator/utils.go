@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"path/filepath"
 	"strings"
 	"unicode"
 )
@@ -32,4 +33,14 @@ func ToSnakeCase(s string) string {
 		}
 	}
 	return result.String()
+}
+
+// resolveFrameworkAbs resolves the framework path against the app directory
+// for go.work replace computation. Absolute paths are kept untouched —
+// filepath.Join would wrongly prefix them with appPath.
+func resolveFrameworkAbs(appPath, frameworkPath string) string {
+	if filepath.IsAbs(frameworkPath) {
+		return frameworkPath
+	}
+	return filepath.Join(appPath, frameworkPath)
 }

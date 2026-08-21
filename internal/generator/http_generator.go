@@ -190,20 +190,29 @@ func (g *HTTPGenerator) templateData() map[string]any {
 	// Project module: github.com/myorg/my-project
 	projectModule := fmt.Sprintf("%s/%s", g.config.OrgName, g.config.ProjectName)
 
-	// Framework path for pkg: in workspace mode, relative replace directives in
-	// non-main modules resolve against the MAIN module (the app) directory, so
-	// pkg must use the SAME path value as the app to reach the same framework
-	// directory (go.work rejects conflicting replacements otherwise).
+	// pkgFrameworkPath is kept for template compatibility; the authoritative
+	// replace now lives in go.work (see WorkspaceFrameworkPath).
 	pkgFrameworkPath := g.config.FrameworkPath
+
+	// Framework path for go.work (relative to the project root): the
+	// workspace-level replace is the single source of truth in workspace mode.
+	projectPath := filepath.Join(g.config.OutputPath, g.config.ProjectName)
+	appPath := filepath.Join(projectPath, "apps", g.config.AppName)
+	frameworkAbs := resolveFrameworkAbs(appPath, g.config.FrameworkPath)
+	workspaceFrameworkPath, relErr := filepath.Rel(projectPath, frameworkAbs)
+	if relErr != nil {
+		workspaceFrameworkPath = g.config.FrameworkPath
+	}
 
 	return map[string]any{
 		// Project level
-		"ProjectName":        g.config.ProjectName,
-		"ProjectNameSnake":   projectNameSnake,
-		"ProjectModule":      projectModule,
-		"OrgName":            g.config.OrgName,
-		"PkgFrameworkPath":   pkgFrameworkPath,
-		"GenerateProto":      g.config.GenerateProto,
+		"ProjectName":            g.config.ProjectName,
+		"ProjectNameSnake":       projectNameSnake,
+		"ProjectModule":          projectModule,
+		"OrgName":                g.config.OrgName,
+		"PkgFrameworkPath":       pkgFrameworkPath,
+		"WorkspaceFrameworkPath": workspaceFrameworkPath,
+		"GenerateProto":          g.config.GenerateProto,
 
 		// App level
 		"AppName":           g.config.AppName,
