@@ -38,3 +38,8 @@ logs/
 
 # Vendor (optional)
 # vendor/
+
+# App runtime configs carry local credentials (DSN/JWT secrets) - keep them
+# out of version control; bootstrap from the committed *.example files.
+apps/*/config/config.yaml
+apps/*/config/test.yaml
