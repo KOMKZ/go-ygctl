@@ -15,17 +15,12 @@ import (
 type {{.AppNamePascal}} struct {
 	Core       *application.Application
 	configPath string
-	flags      *application.AppFlags
 	logger     *logger.CtxZapLogger
 }
 
 // New creates an application with the default config directory.
 func New() *{{.AppNamePascal}} {
-	return &{{.AppNamePascal}}{
-		configPath: "./config",
-		Core:       application.New("./config", "{{.AppNameUpper}}", nil),
-		logger:     logger.GetLogger("{{.AppNameSnake}}"),
-	}
+	return NewWithConfig("./config")
 }
 
 // NewWithConfig creates an application with an explicit config directory.
@@ -41,7 +36,6 @@ func NewWithConfig(configPath string) *{{.AppNamePascal}} {
 func NewWithFlags(flags *application.AppFlags) *{{.AppNamePascal}} {
 	return &{{.AppNamePascal}}{
 		configPath: flags.ConfigDir,
-		flags:      flags,
 		Core:       application.New(flags.ConfigDir, "{{.AppNameUpper}}", flags),
 		logger:     logger.GetLogger("{{.AppNameSnake}}"),
 	}
