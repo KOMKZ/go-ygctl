@@ -1,6 +1,6 @@
 #!/bin/bash
 # {{.AppName}} Restart Script
-# 重启 {{.AppName}} 应用
+# 重启 {{.AppName}} 应用（先编译，再停止旧进程并启动）
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -11,4 +11,4 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sleep 1
 
 # 启动
-"$SCRIPT_DIR/start.sh" -d "$@"
+"$SCRIPT_DIR/start.sh" -d -b -f "$@"

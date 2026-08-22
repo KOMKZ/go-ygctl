@@ -175,3 +175,36 @@ func TestGeneratedHTTPBuildScript(t *testing.T) {
 		}
 	}
 }
+
+// TestGeneratedHTTPRestartScript verifies that scripts/restart.sh rebuilds
+// before restarting so generated apps do not keep running stale binaries.
+func TestGeneratedHTTPRestartScript(t *testing.T) {
+	framework := frameworkAbsPath(t)
+	output := t.TempDir()
+
+	cfg := NewDefaultConfig()
+	cfg.ProjectName, cfg.AppName = "gen-proj-restart", "demo-http"
+	cfg.ModuleName = "github.com/KOMKZ/gen-proj-restart/apps/demo-http"
+	cfg.OrgName = "github.com/KOMKZ"
+	cfg.OutputPath = output
+	cfg.FrameworkPath = framework
+	if err := NewHTTPGenerator(cfg).Generate(); err != nil {
+		t.Fatalf("generate failed: %v", err)
+	}
+
+	appDir := filepath.Join(output, cfg.ProjectName, "apps", cfg.AppName)
+	restartPath := filepath.Join(appDir, "scripts", "restart.sh")
+	content, err := os.ReadFile(restartPath)
+	if err != nil {
+		t.Fatalf("read restart script failed: %v", err)
+	}
+	text := string(content)
+	for _, want := range []string{
+		"# 重启 demo-http 应用（先编译，再停止旧进程并启动）",
+		`"$SCRIPT_DIR/start.sh" -d -b -f "$@"`,
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("restart script missing %q:\n%s", want, text)
+		}
+	}
+}
