@@ -14,8 +14,10 @@
     <RTableCard
       :loading="loading"
       :refreshable="true"
+      :exportable="true"
       data-testid="[[.Entity]]-card"
       @refresh="loadData"
+      @export="handleExportAll"
     >
       <template #extra>
         <n-space size="small">
@@ -37,8 +39,8 @@
         :checked-row-keys="checkedRowKeys"
         :exportable="true"
         :batch-deletable="true"
+        :export-handler="handleExportSelected"
         :batch-delete-handler="handleBatchDelete"
-        export-file-name="[[.Entity]]-list.csv"
         :bordered="false"
         :striped="true"
         data-testid="[[.Entity]]-table"
@@ -73,7 +75,7 @@ import {
   RDataTable,
   REmptyState,
 } from '@rong/admin-ui'
-import type { FormFieldSchema, DataTableColumn, DataTableBatchPayload, DataTableRowKey } from '@rong/admin-ui'
+import type { FormFieldSchema, DataTableColumn, DataTableBatchPayload, DataTableExportPayload, DataTableRowKey } from '@rong/admin-ui'
 import type { [[.EntityPascal]]Record } from '@/api/[[.Entity]]'
 import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
 import { getHttpClient } from '@/app'
@@ -212,6 +214,26 @@ async function handleBatchDelete(payload: DataTableBatchPayload<[[.EntityPascal]
     void loadData()
   } catch (err) {
     message.error(parseErrorMessage(err) || '批量删除失败')
+  }
+}
+
+async function handleExportAll() {
+  try {
+    await create[[.EntityPascal]]Api(httpClient).exportAll({ query: { ...filterValues } })
+    message.success('导出任务已提交')
+  } catch (err) {
+    message.error(parseErrorMessage(err) || '导出失败')
+  }
+}
+
+async function handleExportSelected(payload: DataTableExportPayload<[[.EntityPascal]]Record>) {
+  try {
+    await create[[.EntityPascal]]Api(httpClient).exportSelected({
+      ids: payload.selectedKeys.map(Number),
+    })
+    message.success('导出任务已提交')
+  } catch (err) {
+    message.error(parseErrorMessage(err) || '导出失败')
   }
 }
 

@@ -29,6 +29,14 @@ export interface [[.EntityPascal]]ListParams {
   query?: Record<string, unknown>
 }
 
+export interface [[.EntityPascal]]ExportAllParams {
+  query?: Record<string, unknown>
+}
+
+export interface [[.EntityPascal]]ExportSelectedParams {
+  ids: number[]
+}
+
 function normalize[[.EntityPascal]]Record(raw: Backend[[.EntityPascal]]Item): [[.EntityPascal]]Record {
   return {
     id: raw.ID,
@@ -83,6 +91,16 @@ export function create[[.EntityPascal]]Api(http: HttpClient) {
     /** 批量删除：后端无批量端点（契约缺口），客户端并行 DELETE */
     async batchRemove(ids: number[]): Promise<void> {
       await Promise.all(ids.map((id) => this.remove(id)))
+    },
+
+    /** POST /api/[[.Table]]/export */
+    async exportAll(params: [[.EntityPascal]]ExportAllParams): Promise<void> {
+      await http.post<unknown>('/api/[[.Table]]/export', params)
+    },
+
+    /** POST /api/[[.Table]]/export/selected */
+    async exportSelected(params: [[.EntityPascal]]ExportSelectedParams): Promise<void> {
+      await http.post<unknown>('/api/[[.Table]]/export/selected', params)
     },
   }
 }
