@@ -98,7 +98,6 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 		{"port/port.go.tmpl", "port/port.go"},
 		{"provider/do/provider.go.tmpl", "provider/do/provider.go"},
 		{"event/event.go.tmpl", "event/event.go"},
-		{"permissions/declared_permissions.go.tmpl", "permissions/declared_permissions.go"},
 		{"policy/policy.go.tmpl", "policy/policy.go"},
 		{"assembler/assembler.go.tmpl", "assembler/assembler.go"},
 		{"contract/contract.md.tmpl", "contract/contract.md"},

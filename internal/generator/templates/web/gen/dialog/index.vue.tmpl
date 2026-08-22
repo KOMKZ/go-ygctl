@@ -11,25 +11,22 @@
       @reset="handleReset"
     />
 
-    <div class="ra-card ra-card--flush">
-      <RTableToolbarPro
-        :loading="loading"
-        :refreshable="true"
-        data-testid="[[.Entity]]-toolbar"
-        @refresh="loadData"
-      >
-        <template #extra>
-          <n-space size="small">
-            <n-button type="primary" size="small" data-testid="[[.Entity]]-add-btn" @click="handleAdd">
-              <template #icon>
-                <n-icon :size="14"><PlusIcon /></n-icon>
-              </template>
-              新增[[.EntityLabel]]
-            </n-button>
-          </n-space>
-        </template>
-      </RTableToolbarPro>
-
+    <RTableCard
+      :loading="loading"
+      :refreshable="true"
+      data-testid="[[.Entity]]-card"
+      @refresh="loadData"
+    >
+      <template #extra>
+        <n-space size="small">
+          <n-button type="primary" size="small" data-testid="[[.Entity]]-add-btn" @click="handleAdd">
+            <template #icon>
+              <n-icon :size="14"><PlusIcon /></n-icon>
+            </template>
+            新增[[.EntityLabel]]
+          </n-button>
+        </n-space>
+      </template>
       <RDataTable
         :columns="columns"
         :data="filteredRows"
@@ -38,6 +35,10 @@
         row-key="id"
         :selectable="true"
         :checked-row-keys="checkedRowKeys"
+        :exportable="true"
+        :batch-deletable="true"
+        :batch-delete-handler="handleBatchDelete"
+        export-file-name="[[.Entity]]-list.csv"
         :bordered="false"
         :striped="true"
         data-testid="[[.Entity]]-table"
@@ -55,18 +56,8 @@
             @action="error ? loadData() : handleAdd()"
           />
         </template>
-        <template #batchToolbar="{ selectedCount, selectedKeys }">
-          <RBatchActionBar
-            :selected-count="selectedCount"
-            :selected-keys="selectedKeys"
-            :actions="batchActions"
-            data-testid="[[.Entity]]-batch-bar"
-            @clear="handleClearSelection"
-            @action="handleBatchAction"
-          />
-        </template>
       </RDataTable>
-    </div>
+    </RTableCard>
 
     <[[.EntityPascal]]FormDialog ref="formDialogRef" @success="handleFormSuccess" />
   </div>
@@ -79,12 +70,11 @@ import { NButton, NSpace, NTag, NIcon, useMessage, useDialog } from '@rong/admin
 import { Plus as PlusIcon } from 'lucide-vue-next'
 import {
   RFilterBarPro,
-  RTableToolbarPro,
+  RTableCard,
   RDataTable,
-  RBatchActionBar,
   REmptyState,
 } from '@rong/admin-ui'
-import type { FormFieldSchema, DataTableColumn, BatchAction, DataTableRowKey } from '@rong/admin-ui'
+import type { FormFieldSchema, DataTableColumn, DataTableBatchPayload, DataTableRowKey } from '@rong/admin-ui'
 import type { [[.EntityPascal]]Record } from '@/api/[[.Entity]]'
 import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
 import { getHttpClient } from '@/app'
@@ -118,16 +108,6 @@ const filterSchema: FormFieldSchema[] = [
 
 const columns: DataTableColumn<[[.EntityPascal]]Record>[] = [
 [[.ColumnsTS]]]
-
-const batchActions: BatchAction[] = [
-  {
-    key: 'delete',
-    label: '批量删除',
-    icon: 'trash-2',
-    danger: true,
-    confirmMessage: '确定删除选中的数据？此操作不可恢复',
-  },
-]
 
 const pagination = computed(() => ({
   page: page.value,
@@ -224,11 +204,11 @@ function handleDelete(row: [[.EntityPascal]]Record) {
   })
 }
 
-async function handleBatchAction(key: string, selectedKeys: (string | number)[]) {
-  if (key !== 'delete' || selectedKeys.length === 0) return
+async function handleBatchDelete(payload: DataTableBatchPayload<[[.EntityPascal]]Record>) {
+  if (payload.selectedKeys.length === 0) return
   try {
-    await create[[.EntityPascal]]Api(httpClient).batchRemove(selectedKeys.map(Number))
-    message.success(`已删除 ${selectedKeys.length} 条数据`)
+    await create[[.EntityPascal]]Api(httpClient).batchRemove(payload.selectedKeys.map(Number))
+    message.success(`已删除 ${payload.selectedKeys.length} 条数据`)
     handleClearSelection()
     void loadData()
   } catch (err) {
@@ -250,10 +230,5 @@ onMounted(() => {
 .cell-muted {
   color: var(--ra-color-text-tertiary, #6e7389);
   font-size: var(--ra-font-size-sm, 13px);
-}
-
-/* ra-card--flush 下分页区贴边，补内边距 */
-:deep(.n-data-table__pagination) {
-  padding: var(--ra-spacing-3) var(--ra-spacing-4);
 }
 </style>

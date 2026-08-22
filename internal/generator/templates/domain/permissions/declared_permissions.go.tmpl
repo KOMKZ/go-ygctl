@@ -1,9 +1,0 @@
-package permissions
-
-// DeclaredPermissions 是 {{.DomainKey}} 域的权限码契约。
-// 权限码字典由域声明，API 侧自动 upsert，禁止在 app 侧手工维护权限 SQL。
-//
-// TODO: 按需声明，例如：
-// "{{.DomainKey}}:view":   "查看权限",
-// "{{.DomainKey}}:create": "创建权限",
-var DeclaredPermissions = map[string]string{}

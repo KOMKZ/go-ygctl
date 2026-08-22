@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -331,4 +332,39 @@ endpoints: [list, get, create, update, delete]
 		return "", err
 	}
 	return outPath, nil
+}
+
+// ListDefFiles returns all backend def files under <workspace>/defs, excluding
+// UI-only defs (*.ui.yaml). Results are sorted for stable generation order.
+func ListDefFiles(workspacePath string) ([]string, error) {
+	if workspacePath == "" {
+		var err error
+		workspacePath, err = FindWorkspaceRoot("")
+		if err != nil {
+			return nil, err
+		}
+	}
+	abs, err := filepath.Abs(workspacePath)
+	if err != nil {
+		return nil, err
+	}
+	defsDir := filepath.Join(abs, "defs")
+	entries, err := os.ReadDir(defsDir)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read defs dir %s: %w", defsDir, err)
+	}
+
+	files := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".yaml") || strings.HasSuffix(name, ".ui.yaml") {
+			continue
+		}
+		files = append(files, filepath.Join(defsDir, name))
+	}
+	sort.Strings(files)
+	return files, nil
 }

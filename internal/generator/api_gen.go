@@ -72,7 +72,6 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		{"service/service.go.tmpl", "service/" + data.EntitySnake + "_service.go"},
 		{"service/service_test.go.tmpl", "service/" + data.EntitySnake + "_service_test.go"},
 		{"provider/do/provider.go.tmpl", "provider/do/provider.go"},
-		{"permissions/declared_permissions.go.tmpl", "permissions/declared_permissions.go"},
 		{"contract/contract.md.tmpl", "contract/contract.md"},
 	}
 	for _, f := range domainFiles {
@@ -80,6 +79,13 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		if err := renderDefTemplate(apiTemplates, "templates/api", outPath, f.tmpl, data); err != nil {
 			return nil, fmt.Errorf("failed to generate %s: %w", f.out, err)
 		}
+	}
+	warnings, err := GeneratePermissionDeclarations(workspace, def.Domain, apiTemplates, "templates/api")
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate permissions: %w", err)
+	}
+	for _, warning := range warnings {
+		fmt.Fprintf(os.Stderr, "warning: %s\n", warning)
 	}
 
 	// The domain-init skeleton service files are superseded by the generated
@@ -95,7 +101,6 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		{"appmodule/handler.go.tmpl", "internal/module/" + data.EntitySnake + "/handler.go"},
 		{"appmodule/dto.go.tmpl", "internal/module/" + data.EntitySnake + "/dto.go"},
 		{"appmodule/provider.go.tmpl", "internal/module/" + data.EntitySnake + "/provider.go"},
-		{"appmodule/route_meta.go.tmpl", "internal/module/" + data.EntitySnake + "/route_meta.go"},
 		{"approuter/router.go.tmpl", "internal/router/" + data.EntitySnake + "_router.go"},
 	}
 	for _, f := range appFiles {

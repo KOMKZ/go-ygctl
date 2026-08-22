@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/KOMKZ/go-ygctl/internal/generator"
 	"github.com/fatih/color"
@@ -113,10 +114,73 @@ Then: gofmt + go mod tidy + go build verification.`,
 	},
 }
 
+var apiSyncCmd = &cobra.Command{
+	Use:   "sync",
+	Short: "Scan all backend defs in the workspace and regenerate DAO/API layers",
+	Long: `Scan <workspace>/defs/*.yaml (excluding *.ui.yaml), then run
+dao gen + api gen for each def in stable order.
+
+This is the workspace-level append/regenerate path: backend def files are treated
+as the source of truth for table-backed API skeletons. All permission declaration
+files are regenerated from defs/permissions/*.yaml and should not be edited by hand.`,
+	Args: cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		workspace := apiWorkspace
+		if workspace == "" {
+			root, err := generator.FindWorkspaceRoot("")
+			if err != nil {
+				return err
+			}
+			workspace = root
+		} else {
+			abs, err := filepath.Abs(workspace)
+			if err != nil {
+				return err
+			}
+			workspace = abs
+		}
+
+		defFiles, err := generator.ListDefFiles(workspace)
+		if err != nil {
+			return err
+		}
+		if len(defFiles) == 0 {
+			color.Yellow("No backend def files found under %s/defs", workspace)
+		} else {
+			color.Cyan("\n🔄 Syncing workspace defs from %s", filepath.Join(workspace, "defs"))
+			for _, defFile := range defFiles {
+				color.Yellow("  • %s", filepath.Base(defFile))
+				daoResult, err := (&generator.DAOGenConfig{
+					WorkspacePath: workspace,
+					DefFile:       defFile,
+				}).Generate()
+				if err != nil {
+					return fmt.Errorf("dao gen failed for %s: %w", defFile, err)
+				}
+				_ = daoResult
+				if _, err := (&generator.APIGenConfig{
+					WorkspacePath: workspace,
+					DefFile:       defFile,
+				}).Generate(); err != nil {
+					return fmt.Errorf("api gen failed for %s: %w", defFile, err)
+				}
+			}
+		}
+
+		if err := generator.SyncPermissionDeclarations(workspace); err != nil {
+			return fmt.Errorf("permission sync failed: %w", err)
+		}
+
+		color.Green("✅ Workspace defs synced: %d file(s)", len(defFiles))
+		return nil
+	},
+}
+
 func init() {
 	apiCmd.AddCommand(apiInitCmd)
 	daoCmd.AddCommand(daoGenCmd)
 	apiCmd.AddCommand(apiGenCmd)
+	apiCmd.AddCommand(apiSyncCmd)
 	for _, c := range []*cobra.Command{daoGenCmd, apiGenCmd} {
 		c.Flags().StringVarP(&apiDefFile, "file", "f", "", "Api def file (required)")
 		_ = c.MarkFlagRequired("file")
