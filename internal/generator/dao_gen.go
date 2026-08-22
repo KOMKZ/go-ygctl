@@ -48,25 +48,26 @@ type defQueryData struct {
 
 // defTemplateData is the template context for dao/api generation.
 type defTemplateData struct {
-	DomainKey    string
-	DomainSnake  string
-	DomainPascal string
-	EntityName   string
-	EntityPascal string
-	EntitySnake  string
-	TableName    string
-	DomainImport string
-	ErrModule    int
-	NeedsTimePkg bool
-	Fields       []defFieldData
-	UniqueFields []defFieldData
-	Queries      []defQueryData
-	Endpoints    []string
-	RootModule   string
-	AppModule    string // target app module path (api gen only)
-	AppName      string // target app name (api gen only)
-	HasEmailRule bool   // any field declares the email validation rule
-	HasValidate  bool   // any request DTO carries validation rules
+	DomainKey      string
+	DomainSnake    string
+	DomainPascal   string
+	EntityName     string
+	EntityPascal   string
+	EntitySnake    string
+	TableName      string
+	DomainImport   string
+	ErrModule      int
+	NeedsTimePkg   bool
+	Fields         []defFieldData
+	UniqueFields   []defFieldData
+	Queries        []defQueryData
+	Endpoints      []EndpointDef
+	RootModule     string
+	PermMetaImport string // workspace pkg/permmeta module path
+	AppModule      string // target app module path (api gen only)
+	AppName        string // target app name (api gen only)
+	HasEmailRule   bool   // any field declares the email validation rule
+	HasValidate    bool   // any request DTO carries validation rules
 }
 
 // Generate runs the DAO layer generation from the def.
@@ -155,17 +156,18 @@ func buildDefTemplateData(workspace, domainDir string, def *Def) (*defTemplateDa
 	entitySnake := ToSnakeCase(entityPascal)
 
 	data := &defTemplateData{
-		DomainKey:    def.Domain,
-		DomainSnake:  strings.ReplaceAll(def.Domain, "-", "_"),
-		DomainPascal: ToPascalCase(def.Domain),
-		EntityName:   def.Entity,
-		EntityPascal: entityPascal,
-		EntitySnake:  entitySnake,
-		TableName:    def.Table,
-		DomainImport: rootModule + "/domains/" + def.Domain,
-		RootModule:   rootModule,
-		Endpoints:    def.Endpoints,
-		ErrModule:    readDomainErrModule(domainDir),
+		DomainKey:      def.Domain,
+		DomainSnake:    strings.ReplaceAll(def.Domain, "-", "_"),
+		DomainPascal:   ToPascalCase(def.Domain),
+		EntityName:     def.Entity,
+		EntityPascal:   entityPascal,
+		EntitySnake:    entitySnake,
+		TableName:      def.Table,
+		DomainImport:   rootModule + "/domains/" + def.Domain,
+		RootModule:     rootModule,
+		PermMetaImport: rootModule + "/pkg/permmeta",
+		Endpoints:      def.Endpoints,
+		ErrModule:      readDomainErrModule(domainDir),
 	}
 
 	needsTime := false

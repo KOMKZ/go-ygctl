@@ -21,15 +21,15 @@
 | 方法 | 路径 | Handler |
 |------|------|---------|
 {{- range .Endpoints}}
-{{- if eq . "list"}}
+{{- if eq .Action "list"}}
 | GET | /api/{{$.TableName}}/page | List |
-{{- else if eq . "get"}}
+{{- else if eq .Action "get"}}
 | GET | /api/{{$.TableName}}/:id | GetByID |
-{{- else if eq . "create"}}
+{{- else if eq .Action "create"}}
 | POST | /api/{{$.TableName}} | Create |
-{{- else if eq . "update"}}
+{{- else if eq .Action "update"}}
 | PUT | /api/{{$.TableName}}/:id | Update |
-{{- else if eq . "delete"}}
+{{- else if eq .Action "delete"}}
 | DELETE | /api/{{$.TableName}}/:id | Delete |
 {{- end}}
 {{- end}}

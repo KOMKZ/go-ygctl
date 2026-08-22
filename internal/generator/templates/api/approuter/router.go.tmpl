@@ -17,15 +17,15 @@ func Register{{.EntityPascal}}Routes(engine *gin.Engine, app *application.Applic
 	group := api.Group("/{{.TableName}}")
 	{
 {{- range .Endpoints}}
-{{- if eq . "list"}}
+{{- if eq .Action "list"}}
 		group.GET("/page", httpx.Wrap(handler.List))
-{{- else if eq . "get"}}
+{{- else if eq .Action "get"}}
 		group.GET("/:id", httpx.Wrap(handler.GetByID))
-{{- else if eq . "create"}}
+{{- else if eq .Action "create"}}
 		group.POST("", httpx.Wrap(handler.Create))
-{{- else if eq . "update"}}
+{{- else if eq .Action "update"}}
 		group.PUT("/:id", httpx.Wrap(handler.Update))
-{{- else if eq . "delete"}}
+{{- else if eq .Action "delete"}}
 		group.DELETE("/:id", httpx.Wrap(handler.Delete))
 {{- end}}
 {{- end}}

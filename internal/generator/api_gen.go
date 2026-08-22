@@ -95,6 +95,7 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		{"appmodule/handler.go.tmpl", "internal/module/" + data.EntitySnake + "/handler.go"},
 		{"appmodule/dto.go.tmpl", "internal/module/" + data.EntitySnake + "/dto.go"},
 		{"appmodule/provider.go.tmpl", "internal/module/" + data.EntitySnake + "/provider.go"},
+		{"appmodule/route_meta.go.tmpl", "internal/module/" + data.EntitySnake + "/route_meta.go"},
 		{"approuter/router.go.tmpl", "internal/router/" + data.EntitySnake + "_router.go"},
 	}
 	for _, f := range appFiles {

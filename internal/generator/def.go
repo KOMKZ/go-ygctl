@@ -25,14 +25,33 @@ type DefField struct {
 	Validate string `yaml:"validate"`
 }
 
+// EndpointDef is one declared CRUD endpoint with optional permission metadata
+// (name/description flow into the permission dictionary and route scan).
+type EndpointDef struct {
+	Action      string `yaml:"action"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+}
+
+// UnmarshalYAML accepts both plain strings ("list") and objects
+// ({action: list, name: ..., description: ...}).
+func (e *EndpointDef) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind == yaml.ScalarNode {
+		e.Action = node.Value
+		return nil
+	}
+	type raw EndpointDef
+	return node.Decode((*raw)(e))
+}
+
 // Def is the api def file content (defs/<entity>.yaml).
 type Def struct {
-	Domain    string     `yaml:"domain"`
-	Entity    string     `yaml:"entity"`
-	Table     string     `yaml:"table"`
-	Fields    []DefField `yaml:"fields"`
-	Queries   []string   `yaml:"queries"`   // e.g. by_username -> FindByUsername
-	Endpoints []string   `yaml:"endpoints"` // list/get/create/update/delete
+	Domain    string        `yaml:"domain"`
+	Entity    string        `yaml:"entity"`
+	Table     string        `yaml:"table"`
+	Fields    []DefField    `yaml:"fields"`
+	Queries   []string      `yaml:"queries"`   // e.g. by_username -> FindByUsername
+	Endpoints []EndpointDef `yaml:"endpoints"` // list/get/create/update/delete (string or object form)
 }
 
 // DSLType maps a DSL type name to Go type, MySQL column type and default size.
@@ -133,11 +152,18 @@ func (d *Def) Validate() error {
 	}
 
 	if len(d.Endpoints) == 0 {
-		d.Endpoints = []string{"list", "get", "create", "update", "delete"}
+		for _, a := range []string{"list", "get", "create", "update", "delete"} {
+			d.Endpoints = append(d.Endpoints, EndpointDef{Action: a})
+		}
 	}
-	for _, e := range d.Endpoints {
-		if !endpointsSet[e] {
-			return fmt.Errorf("unknown endpoint %q (allowed: list/get/create/update/delete)", e)
+	for i := range d.Endpoints {
+		e := &d.Endpoints[i]
+		if !endpointsSet[e.Action] {
+			return fmt.Errorf("unknown endpoint %q (allowed: list/get/create/update/delete)", e.Action)
+		}
+		if e.Name == "" {
+			// 默认权限名：<entity> <action> 权限（可读但建议在 def 中显式定义）
+			e.Name = fmt.Sprintf("%s %s 权限", d.Entity, e.Action)
 		}
 	}
 	return nil

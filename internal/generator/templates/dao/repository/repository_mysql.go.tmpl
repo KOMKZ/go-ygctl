@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
+{{- if .Queries}}
 	"fmt"
+{{- end}}
 
 	"{{.DomainImport}}/model"
 	"github.com/KOMKZ/go-yogan-framework/database"
