@@ -138,6 +138,12 @@ func TestBuildWebGenData_Fragments(t *testing.T) {
 	if !strings.Contains(data.FilterSchemaTS, "type: 'select'") {
 		t.Errorf("FilterSchemaTS missing role select: %s", data.FilterSchemaTS)
 	}
+	if !strings.Contains(data.FilterSchemaTS, "type: 'input', clearable: true") {
+		t.Errorf("FilterSchemaTS missing clearable input: %s", data.FilterSchemaTS)
+	}
+	if !strings.Contains(data.FilterSchemaTS, "type: 'select', clearable: true") {
+		t.Errorf("FilterSchemaTS missing clearable select: %s", data.FilterSchemaTS)
+	}
 	if !strings.Contains(data.CreateSchemaTS, "key: 'role'") || !strings.Contains(data.EditSchemaTS, "key: 'role'") {
 		t.Errorf("form schema missing role: create=%q edit=%q", data.CreateSchemaTS, data.EditSchemaTS)
 	}

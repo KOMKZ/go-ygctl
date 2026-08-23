@@ -293,9 +293,9 @@ func filterSchemaCode(fields []webGenField) string {
 			continue
 		}
 		if f.SearchType == "select" {
-			sb.WriteString("  { key: '" + f.Name + "', label: '" + f.Label + "', type: 'select', options: " + tsOptions(f.SearchOptions) + " },\n")
+			sb.WriteString("  { key: '" + f.Name + "', label: '" + f.Label + "', type: 'select', clearable: true, options: " + tsOptions(f.SearchOptions) + " },\n")
 		} else {
-			sb.WriteString("  { key: '" + f.Name + "', label: '" + f.Label + "', type: 'input', placeholder: '" + f.Placeholder + "' },\n")
+			sb.WriteString("  { key: '" + f.Name + "', label: '" + f.Label + "', type: 'input', clearable: true, placeholder: '" + f.Placeholder + "' },\n")
 		}
 	}
 	return sb.String()
