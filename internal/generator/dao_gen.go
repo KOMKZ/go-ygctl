@@ -34,6 +34,9 @@ type defFieldData struct {
 	StructTag       string // complete backtick-delimited tag (gorm + json)
 	Comment         string
 	Unique          bool
+	Index           bool
+	Required        bool
+	Default         string
 	MySQLCol        string   // MySQL column type for the migration skeleton
 	ValidationRules []string // ozzo-validation expressions (may be empty)
 }
@@ -55,6 +58,7 @@ type defTemplateData struct {
 	EntityPascal string
 	EntitySnake  string
 	TableName    string
+	RouteBase    string
 	DomainImport string
 	ErrModule    int
 	NeedsTimePkg bool
@@ -162,6 +166,7 @@ func buildDefTemplateData(workspace, domainDir string, def *Def) (*defTemplateDa
 		EntityPascal: entityPascal,
 		EntitySnake:  entitySnake,
 		TableName:    def.Table,
+		RouteBase:    def.RouteBase,
 		DomainImport: rootModule + "/domains/" + def.Domain,
 		RootModule:   rootModule,
 		Endpoints:    def.Endpoints,
@@ -180,6 +185,9 @@ func buildDefTemplateData(workspace, domainDir string, def *Def) (*defTemplateDa
 			StructTag:       FieldStructTag(f),
 			Comment:         f.Comment,
 			Unique:          f.Unique,
+			Index:           f.Index,
+			Required:        f.Required,
+			Default:         f.Default,
 			MySQLCol:        MySQLColumnType(f),
 			ValidationRules: ValidationRules(f),
 		}

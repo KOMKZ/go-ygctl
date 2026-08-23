@@ -10,8 +10,11 @@ import (
 )
 
 var (
-	apiWorkspace string
-	apiDefFile   string
+	apiWorkspace     string
+	apiDefFile       string
+	apiInitDomain    string
+	apiInitTable     string
+	apiInitRouteBase string
 )
 
 var apiCmd = &cobra.Command{
@@ -44,7 +47,13 @@ var apiInitCmd = &cobra.Command{
 	Short: "Generate a def template at defs/<entity>.yaml",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		path, err := generator.InitDefFile(apiWorkspace, args[0])
+		path, err := generator.InitDefFileWithConfig(generator.InitDefConfig{
+			WorkspacePath: apiWorkspace,
+			Domain:        apiInitDomain,
+			Entity:        args[0],
+			Table:         apiInitTable,
+			RouteBase:     apiInitRouteBase,
+		})
 		if err != nil {
 			return err
 		}
@@ -185,4 +194,7 @@ func init() {
 		c.Flags().StringVarP(&apiDefFile, "file", "f", "", "Api def file (required)")
 		_ = c.MarkFlagRequired("file")
 	}
+	apiInitCmd.Flags().StringVar(&apiInitDomain, "domain", "", "Domain key (default: entity)")
+	apiInitCmd.Flags().StringVar(&apiInitTable, "table", "", "Database table name (default: <entity>s)")
+	apiInitCmd.Flags().StringVar(&apiInitRouteBase, "route-base", "", "API route base below /api (default: /<table>)")
 }

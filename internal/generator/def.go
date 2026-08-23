@@ -17,6 +17,7 @@ type DefField struct {
 	Type     string `yaml:"type"`
 	Size     int    `yaml:"size"`
 	Unique   bool   `yaml:"unique"`
+	Index    bool   `yaml:"index"`
 	Required bool   `yaml:"required"`
 	Default  string `yaml:"default"`
 	Comment  string `yaml:"comment"`
@@ -32,6 +33,9 @@ type EndpointDef struct {
 	Action      string `yaml:"action"`
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
+	Method      string `yaml:"method"`
+	Path        string `yaml:"path"`
+	RoutePath   string `yaml:"-"`
 }
 
 // UnmarshalYAML accepts both plain strings ("list") and objects
@@ -50,6 +54,7 @@ type Def struct {
 	Domain    string        `yaml:"domain"`
 	Entity    string        `yaml:"entity"`
 	Table     string        `yaml:"table"`
+	RouteBase string        `yaml:"route_base"`
 	Fields    []DefField    `yaml:"fields"`
 	Queries   []string      `yaml:"queries"`   // e.g. by_username -> FindByUsername
 	Endpoints []EndpointDef `yaml:"endpoints"` // list/get/create/update/delete (string or object form)
@@ -122,6 +127,7 @@ func (d *Def) Validate() error {
 	if d.Table == "" {
 		d.Table = d.Entity + "s"
 	}
+	d.RouteBase = normalizeRouteBase(d.RouteBase, d.Table)
 	if len(d.Fields) == 0 {
 		return fmt.Errorf("at least one business field is required")
 	}
@@ -162,12 +168,69 @@ func (d *Def) Validate() error {
 		if !endpointsSet[e.Action] {
 			return fmt.Errorf("unknown endpoint %q (allowed: list/get/create/update/delete)", e.Action)
 		}
+		e.Method = strings.ToUpper(strings.TrimSpace(e.Method))
+		if e.Method == "" {
+			e.Method = defaultEndpointMethod(e.Action)
+		}
+		e.Path = strings.TrimSpace(e.Path)
+		e.RoutePath = normalizeEndpointRoutePath(e.Path, e.Action)
 		if e.Name == "" {
 			// 默认权限名：<entity> <action> 权限（可读但建议在 def 中显式定义）
 			e.Name = fmt.Sprintf("%s %s 权限", d.Entity, e.Action)
 		}
 	}
 	return nil
+}
+
+func normalizeRouteBase(routeBase, table string) string {
+	routeBase = strings.TrimSpace(routeBase)
+	if routeBase == "" {
+		routeBase = "/" + table
+	}
+	if !strings.HasPrefix(routeBase, "/") {
+		routeBase = "/" + routeBase
+	}
+	if routeBase != "/" {
+		routeBase = strings.TrimRight(routeBase, "/")
+	}
+	return routeBase
+}
+
+func defaultEndpointMethod(action string) string {
+	switch action {
+	case "list", "get":
+		return "GET"
+	case "create":
+		return "POST"
+	case "update":
+		return "PUT"
+	case "delete":
+		return "DELETE"
+	default:
+		return "GET"
+	}
+}
+
+func normalizeEndpointRoutePath(path, action string) string {
+	if path == "" {
+		switch action {
+		case "list":
+			return "/page"
+		case "get", "update", "delete":
+			return "/:id"
+		case "create":
+			return ""
+		default:
+			return ""
+		}
+	}
+	if path == "." || path == "/" {
+		return ""
+	}
+	if !strings.HasPrefix(path, "/") {
+		return "/" + path
+	}
+	return path
 }
 
 func dslTypeNames() []string {
@@ -202,6 +265,8 @@ func FieldStructTag(f DefField) string {
 	gormParts := []string{}
 	if f.Unique {
 		gormParts = append(gormParts, "uniqueIndex")
+	} else if f.Index {
+		gormParts = append(gormParts, "index")
 	}
 	if f.Type == "string" && f.Size > 0 {
 		gormParts = append(gormParts, fmt.Sprintf("size:%d", f.Size))
@@ -292,7 +357,21 @@ func MySQLColumnType(f DefField) string {
 }
 
 // InitDefFile generates a def template at defs/<entity>.yaml in the workspace.
+type InitDefConfig struct {
+	WorkspacePath string
+	Domain        string
+	Entity        string
+	Table         string
+	RouteBase     string
+}
+
 func InitDefFile(workspacePath, entity string) (string, error) {
+	return InitDefFileWithConfig(InitDefConfig{WorkspacePath: workspacePath, Entity: entity})
+}
+
+func InitDefFileWithConfig(cfg InitDefConfig) (string, error) {
+	workspacePath := cfg.WorkspacePath
+	entity := strings.TrimSpace(cfg.Entity)
 	if workspacePath == "" {
 		var err error
 		workspacePath, err = FindWorkspaceRoot("")
@@ -303,6 +382,18 @@ func InitDefFile(workspacePath, entity string) (string, error) {
 	if !domainKeyRe.MatchString(entity) {
 		return "", fmt.Errorf("entity %q must be lowercase snake/kebab-case", entity)
 	}
+	domain := strings.TrimSpace(cfg.Domain)
+	if domain == "" {
+		domain = entity
+	}
+	if !domainKeyRe.MatchString(domain) {
+		return "", fmt.Errorf("domain %q must be lowercase snake/kebab-case", domain)
+	}
+	table := strings.TrimSpace(cfg.Table)
+	if table == "" {
+		table = entity + "s"
+	}
+	routeBase := normalizeRouteBase(cfg.RouteBase, table)
 
 	defsDir := filepath.Join(workspacePath, "defs")
 	if err := os.MkdirAll(defsDir, 0755); err != nil {
@@ -317,7 +408,8 @@ func InitDefFile(workspacePath, entity string) (string, error) {
 # 约定：id/created_at/updated_at 由生成器自动附加，这里只写业务字段。
 domain: %s
 entity: %s
-table: %ss
+table: %s
+route_base: %s
 fields:
   # 业务字段示例（按需修改/删除）：
   - {name: name, type: string, size: 50, required: true, comment: "名称"}
@@ -326,7 +418,7 @@ fields:
 queries: []
   # 自定义查询示例：- by_name（生成 FindByName，字段必须存在）
 endpoints: [list, get, create, update, delete]
-`, entity, entity, entity, entity)
+`, domain, domain, entity, table, routeBase)
 
 	if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
 		return "", err

@@ -54,12 +54,10 @@ func columnsCode(entity string, fields []webGenField) string {
 			sb.WriteString(" },\n")
 		}
 	}
-	// 行操作列（fixed right）
-	sb.WriteString("  {\n    key: 'actions',\n    title: '操作',\n    width: 140,\n    fixed: 'right',\n    render(row): VNode {\n")
-	sb.WriteString("      return h(NSpace, { size: 'small' }, () => [\n")
-	sb.WriteString("        h(NButton, { size: 'small', type: 'primary', text: true, 'data-testid': `" + entity + "-edit-${row.id}`, onClick: () => handleEdit(row) }, { default: () => '编辑' }),\n")
-	sb.WriteString("        h(NButton, { size: 'small', type: 'error', text: true, 'data-testid': `" + entity + "-delete-${row.id}`, onClick: () => handleDelete(row) }, { default: () => '删除' }),\n")
-	sb.WriteString("      ])\n    },\n  },\n")
+	// 行操作列固定使用 RRowActions：默认最多 3 个行内动作，第 4 个起自动收进“更多”下拉。
+	sb.WriteString("  {\n    key: 'actions',\n    title: '操作',\n    width: 180,\n    fixed: 'right',\n    render(row): VNode {\n")
+	sb.WriteString("      return h(RRowActions, { row, testIdPrefix: '" + entity + "', actions: buildRowActions(row) })\n")
+	sb.WriteString("    },\n  },\n")
 	return sb.String()
 }
 
@@ -77,15 +75,14 @@ func enumLabelsTS(f webGenField) string {
 	return "{ " + strings.Join(entries, ", ") + " }"
 }
 
-// backendItemFieldsTS renders the PascalCase backend item interface fields
-// (后端无 json tag 的 PascalCase 序列化契约，adapter 归一化用).
+// backendItemFieldsTS renders the snake_case backend item interface fields.
 func backendItemFieldsTS(fields []webGenField) string {
 	var sb strings.Builder
 	for _, f := range fields {
 		if f.IsJSONHidden() {
 			continue
 		}
-		sb.WriteString(fmt.Sprintf("  %s: %s\n", f.PascalName, tsTypeOf(f.DSLType)))
+		sb.WriteString(fmt.Sprintf("  %s: %s\n", f.Name, tsTypeOf(f.DSLType)))
 	}
 	return sb.String()
 }
@@ -126,7 +123,7 @@ func normalizeAssignmentsTS(fields []webGenField) string {
 		if f.IsJSONHidden() {
 			continue
 		}
-		sb.WriteString(fmt.Sprintf("    %s: raw.%s,\n", f.Name, f.PascalName))
+		sb.WriteString(fmt.Sprintf("    %s: raw.%s,\n", f.Name, f.Name))
 	}
 	return sb.String()
 }

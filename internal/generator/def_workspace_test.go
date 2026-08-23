@@ -37,6 +37,50 @@ func TestListDefFiles_SkipsUIDefsAndSorts(t *testing.T) {
 	}
 }
 
+func TestLoadDef_NormalizesCustomRouteBaseAndEndpointPaths(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "storage.yaml")
+	content := `
+domain: storage
+entity: file
+table: storage_files
+route_base: files
+fields:
+  - {name: storage_id, type: string, size: 500, required: true}
+endpoints:
+  - {action: list, method: get, path: .}
+  - {action: create, method: post, path: upload}
+  - {action: delete}
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("write def: %v", err)
+	}
+
+	def, err := LoadDef(path)
+	if err != nil {
+		t.Fatalf("LoadDef() err = %v", err)
+	}
+	if def.RouteBase != "/files" {
+		t.Fatalf("route_base = %q, want /files", def.RouteBase)
+	}
+	if def.Endpoints[0].Method != "GET" || def.Endpoints[0].RoutePath != "" {
+		t.Fatalf("list route = %s %q, want GET empty", def.Endpoints[0].Method, def.Endpoints[0].RoutePath)
+	}
+	if def.Endpoints[1].Method != "POST" || def.Endpoints[1].RoutePath != "/upload" {
+		t.Fatalf("create route = %s %q, want POST /upload", def.Endpoints[1].Method, def.Endpoints[1].RoutePath)
+	}
+	if def.Endpoints[2].Method != "DELETE" || def.Endpoints[2].RoutePath != "/:id" {
+		t.Fatalf("delete route = %s %q, want DELETE /:id", def.Endpoints[2].Method, def.Endpoints[2].RoutePath)
+	}
+}
+
+func TestFieldStructTag_IncludesNonUniqueIndex(t *testing.T) {
+	got := FieldStructTag(DefField{Name: "storage", Type: "string", Size: 50, Index: true})
+	if !strings.Contains(got, `gorm:"index;size:50"`) {
+		t.Fatalf("FieldStructTag() = %q, want indexed gorm tag", got)
+	}
+}
+
 func TestGeneratePermissionDeclarations_RegeneratesExistingFile(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(dir, "defs", "permissions"), 0755); err != nil {

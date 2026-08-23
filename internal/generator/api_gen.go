@@ -288,10 +288,11 @@ func generateMigrationSkeleton(migrationsDir string, data *defTemplateData) (str
 	up.WriteString("    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n")
 	for _, f := range data.Fields {
 		line := fmt.Sprintf("    `%s` %s", f.Name, f.MySQLCol)
-		if f.Unique {
+		if f.Unique || f.Required {
 			line += " NOT NULL"
-		} else if !strings.HasPrefix(f.GoType, "*") && f.GoType != "time.Time" {
-			// required-ness: def Required is reflected via gorm tag only; keep SQL simple
+		}
+		if f.Default != "" {
+			line += " DEFAULT " + mysqlDefaultLiteral(f)
 		}
 		if f.Comment != "" {
 			line += fmt.Sprintf(" COMMENT '%s'", f.Comment)
@@ -304,6 +305,8 @@ func generateMigrationSkeleton(migrationsDir string, data *defTemplateData) (str
 	for _, f := range data.Fields {
 		if f.Unique {
 			up.WriteString(fmt.Sprintf("    ,UNIQUE KEY `uk_%s` (`%s`)\n", f.Name, f.Name))
+		} else if f.Index {
+			up.WriteString(fmt.Sprintf("    ,KEY `idx_%s` (`%s`)\n", f.Name, f.Name))
 		}
 	}
 	up.WriteString(fmt.Sprintf(") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='%s';\n", data.TableName))
@@ -319,4 +322,13 @@ func generateMigrationSkeleton(migrationsDir string, data *defTemplateData) (str
 		return "", err
 	}
 	return upPath, nil
+}
+
+func mysqlDefaultLiteral(f defFieldData) string {
+	switch f.GoType {
+	case "string":
+		return "'" + strings.ReplaceAll(f.Default, "'", "''") + "'"
+	default:
+		return f.Default
+	}
 }

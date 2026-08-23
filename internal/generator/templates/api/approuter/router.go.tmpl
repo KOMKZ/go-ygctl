@@ -8,25 +8,25 @@ import (
 	"github.com/samber/do/v2"
 )
 
-// Register{{.EntityPascal}}Routes registers the {{.TableName}} CRUD routes of {{.AppName}}.
+// Register{{.EntityPascal}}Routes registers the {{.TableName}} routes of {{.AppName}}.
 func Register{{.EntityPascal}}Routes(engine *gin.Engine, app *application.Application) {
 	injector := app.GetInjector()
 	handler := do.MustInvoke[*{{.EntitySnake}}Module.{{.EntityPascal}}Handler](injector)
 
 	api := engine.Group("/api")
-	group := api.Group("/{{.TableName}}")
+	group := api.Group("{{.RouteBase}}")
 	{
 {{- range .Endpoints}}
 {{- if eq .Action "list"}}
-		group.GET("/page", httpx.Wrap(handler.List))
+		group.{{.Method}}("{{.RoutePath}}", httpx.Wrap(handler.List))
 {{- else if eq .Action "get"}}
-		group.GET("/:id", httpx.Wrap(handler.GetByID))
+		group.{{.Method}}("{{.RoutePath}}", httpx.Wrap(handler.GetByID))
 {{- else if eq .Action "create"}}
-		group.POST("", httpx.Wrap(handler.Create))
+		group.{{.Method}}("{{.RoutePath}}", httpx.Wrap(handler.Create))
 {{- else if eq .Action "update"}}
-		group.PUT("/:id", httpx.Wrap(handler.Update))
+		group.{{.Method}}("{{.RoutePath}}", httpx.Wrap(handler.Update))
 {{- else if eq .Action "delete"}}
-		group.DELETE("/:id", httpx.Wrap(handler.Delete))
+		group.{{.Method}}("{{.RoutePath}}", httpx.Wrap(handler.Delete))
 {{- end}}
 {{- end}}
 	}

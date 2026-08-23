@@ -118,21 +118,21 @@ export interface ProfilePermissionsDTO {
 }
 
 /**
- * 后端 AdminItem 原始形态（service 层结构体无 json tag，序列化为 PascalCase）
+ * 后端 AdminItem 原始形态（snake_case 序列化契约）
  */
 export interface BackendAdminItem {
-  ID: number
-  Username: string
-  RealName: string
-  Email: string
-  Phone: string
-  Avatar: string
-  AvatarStorageID: string
-  Role: number
-  Status: number
-  LastLoginAt: string | null
-  CreatedAt: string
-  UpdatedAt: string
+  id: number
+  username: string
+  real_name: string
+  email: string
+  phone: string
+  avatar: string
+  avatar_storage_id: string
+  role: number
+  status: number
+  last_login_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 /**

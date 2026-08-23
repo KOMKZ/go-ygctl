@@ -4,11 +4,11 @@ import type { HttpClient } from '@rong/admin-ui/app-request'
 import type { BackendPageResponse, PaginatedResult } from '@/api/types'
 import { extractData, fromBackendPageResponse } from '@/api/adapter'
 
-/** 后端原始记录（PascalCase 序列化契约，adapter 归一化用） */
+/** 后端原始记录（snake_case 序列化契约，adapter 归一化用） */
 export interface Backend[[.EntityPascal]]Item {
-  ID: number
-[[.BackendItemFieldsTS]]  CreatedAt: string
-  UpdatedAt: string
+  id: number
+[[.BackendItemFieldsTS]]  created_at: string
+  updated_at: string
 }
 
 /** 前端统一记录模型（snake_case，与 defs DSL 字段名一致） */
@@ -39,9 +39,9 @@ export interface [[.EntityPascal]]ExportSelectedParams {
 
 function normalize[[.EntityPascal]]Record(raw: Backend[[.EntityPascal]]Item): [[.EntityPascal]]Record {
   return {
-    id: raw.ID,
-[[.NormalizeAssignmentsTS]]    created_at: raw.CreatedAt,
-    updated_at: raw.UpdatedAt,
+    id: raw.id,
+[[.NormalizeAssignmentsTS]]    created_at: raw.created_at,
+    updated_at: raw.updated_at,
   }
 }
 

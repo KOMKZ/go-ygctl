@@ -17,7 +17,7 @@ func New{{.EntityPascal}}Handler(svc *service.{{.EntityPascal}}Service) *{{.Enti
 	return &{{.EntityPascal}}Handler{svc: svc}
 }
 
-// List handles GET /api/{{.TableName}}/page.
+// List handles the generated list endpoint.
 func (h *{{.EntityPascal}}Handler) List(c *gin.Context, req *List{{.EntityPascal}}Request) (*{{.EntityPascal}}PageResponse, error) {
 	req.ApplyDefaults()
 	items, total, err := h.svc.Paginate(c.Request.Context(), req.Current, req.Size)
@@ -26,26 +26,34 @@ func (h *{{.EntityPascal}}Handler) List(c *gin.Context, req *List{{.EntityPascal
 	}
 	return &{{.EntityPascal}}PageResponse{
 		PageMeta: types.NewPageMeta(total, req.Current, req.Size),
-		Records:  items,
+		Records:  to{{.EntityPascal}}Responses(items),
 	}, nil
 }
 
-// GetByID handles GET /api/{{.TableName}}/:id.
-func (h *{{.EntityPascal}}Handler) GetByID(c *gin.Context, req *{{.EntityPascal}}GetRequest) (*service.{{.EntityPascal}}Item, error) {
-	return h.svc.GetByID(c.Request.Context(), req.ID)
+// GetByID handles the generated detail endpoint.
+func (h *{{.EntityPascal}}Handler) GetByID(c *gin.Context, req *{{.EntityPascal}}GetRequest) (*{{.EntityPascal}}Response, error) {
+	item, err := h.svc.GetByID(c.Request.Context(), req.ID)
+	if err != nil {
+		return nil, err
+	}
+	return to{{.EntityPascal}}Response(item), nil
 }
 
-// Create handles POST /api/{{.TableName}}.
-func (h *{{.EntityPascal}}Handler) Create(c *gin.Context, req *Create{{.EntityPascal}}Request) (*service.{{.EntityPascal}}Item, error) {
-	return h.svc.Create(c.Request.Context(), service.Create{{.EntityPascal}}Input{
+// Create handles the generated create endpoint.
+func (h *{{.EntityPascal}}Handler) Create(c *gin.Context, req *Create{{.EntityPascal}}Request) (*{{.EntityPascal}}Response, error) {
+	item, err := h.svc.Create(c.Request.Context(), service.Create{{.EntityPascal}}Input{
 {{- range .Fields}}
 		{{.PascalName}}: req.{{.PascalName}},
 {{- end}}
 	})
+	if err != nil {
+		return nil, err
+	}
+	return to{{.EntityPascal}}Response(item), nil
 }
 
-// Update handles PUT /api/{{.TableName}}/:id.
-func (h *{{.EntityPascal}}Handler) Update(c *gin.Context, req *{{.EntityPascal}}UpdateRequest) (*service.{{.EntityPascal}}Item, error) {
+// Update handles the generated update endpoint.
+func (h *{{.EntityPascal}}Handler) Update(c *gin.Context, req *{{.EntityPascal}}UpdateRequest) (*{{.EntityPascal}}Response, error) {
 	if err := h.svc.Update(c.Request.Context(), service.Update{{.EntityPascal}}Input{
 		ID: req.ID,
 {{- range .Fields}}
@@ -54,10 +62,14 @@ func (h *{{.EntityPascal}}Handler) Update(c *gin.Context, req *{{.EntityPascal}}
 	}); err != nil {
 		return nil, err
 	}
-	return h.svc.GetByID(c.Request.Context(), req.ID)
+	item, err := h.svc.GetByID(c.Request.Context(), req.ID)
+	if err != nil {
+		return nil, err
+	}
+	return to{{.EntityPascal}}Response(item), nil
 }
 
-// Delete handles DELETE /api/{{.TableName}}/:id.
+// Delete handles the generated delete endpoint.
 func (h *{{.EntityPascal}}Handler) Delete(c *gin.Context, req *{{.EntityPascal}}DeleteRequest) (*{{.EntityPascal}}DeleteResponse, error) {
 	if err := h.svc.Delete(c.Request.Context(), req.ID); err != nil {
 		return nil, err

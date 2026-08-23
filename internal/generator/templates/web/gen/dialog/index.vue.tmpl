@@ -75,8 +75,9 @@ import {
   RTableCard,
   RDataTable,
   REmptyState,
+  RRowActions,
 } from '@rong/admin-ui'
-import type { FormFieldSchema, DataTableColumn, DataTableBatchPayload, DataTableExportPayload, DataTableRowKey } from '@rong/admin-ui'
+import type { FormFieldSchema, DataTableColumn, DataTableBatchPayload, DataTableExportPayload, DataTableRowKey, RowAction } from '@rong/admin-ui'
 import type { [[.EntityPascal]]Record } from '@/api/[[.Entity]]'
 import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
 import { getHttpClient } from '@/app'
@@ -110,6 +111,23 @@ const filterSchema: FormFieldSchema[] = [
 
 const columns: DataTableColumn<[[.EntityPascal]]Record>[] = [
 [[.ColumnsTS]]]
+
+function buildRowActions(row: [[.EntityPascal]]Record): RowAction[] {
+  return [
+    {
+      key: 'edit',
+      label: '编辑',
+      type: 'primary',
+      onClick: () => handleEdit(row),
+    },
+    {
+      key: 'delete',
+      label: '删除',
+      danger: true,
+      onClick: () => handleDelete(row),
+    },
+  ]
+}
 
 const pagination = computed(() => ({
   page: page.value,

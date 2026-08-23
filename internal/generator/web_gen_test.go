@@ -129,6 +129,9 @@ func TestBuildWebGenData_Fragments(t *testing.T) {
 	if !strings.Contains(data.ColumnsTS, "roleLabels[row.role]") {
 		t.Errorf("ColumnsTS missing enum label expr: %s", data.ColumnsTS)
 	}
+	if !strings.Contains(data.ColumnsTS, "RRowActions") || !strings.Contains(data.ColumnsTS, "buildRowActions(row)") {
+		t.Errorf("ColumnsTS missing row actions component: %s", data.ColumnsTS)
+	}
 	if !strings.Contains(data.FilterSchemaTS, "key: 'username'") {
 		t.Errorf("FilterSchemaTS missing username: %s", data.FilterSchemaTS)
 	}
@@ -138,10 +141,10 @@ func TestBuildWebGenData_Fragments(t *testing.T) {
 	if !strings.Contains(data.CreateSchemaTS, "key: 'role'") || !strings.Contains(data.EditSchemaTS, "key: 'role'") {
 		t.Errorf("form schema missing role: create=%q edit=%q", data.CreateSchemaTS, data.EditSchemaTS)
 	}
-	if !strings.Contains(data.BackendItemFieldsTS, "Username: string") {
+	if !strings.Contains(data.BackendItemFieldsTS, "username: string") {
 		t.Errorf("BackendItemFieldsTS = %s", data.BackendItemFieldsTS)
 	}
-	if !strings.Contains(data.NormalizeAssignmentsTS, "username: raw.Username") {
+	if !strings.Contains(data.NormalizeAssignmentsTS, "username: raw.username") {
 		t.Errorf("NormalizeAssignmentsTS = %s", data.NormalizeAssignmentsTS)
 	}
 	if !strings.Contains(data.EnumLabelsTS, "roleLabels") {
@@ -174,11 +177,9 @@ func TestFormSchemaCode_RulesValid(t *testing.T) {
 	}
 }
 
-// TestWebGen_PascalNamesMatchBackend 回归：前端 BackendItem 字段名必须与后端
-// Go 结构体字段名逐字一致（GoFieldName 含 commonInitialisms）。
-// 金样验收暴露：ToPascalCase 把 avatar_storage_id 转成 Avatar_storage_id，
-// raw.Real_name 在后端不存在，normalize 后永远 undefined（编辑回填空值）。
-func TestWebGen_PascalNamesMatchBackend(t *testing.T) {
+// TestWebGen_SnakeNamesMatchBackendContract 回归：前端 BackendItem 字段名必须与后端
+// HTTP JSON 契约一致，统一使用 snake_case。
+func TestWebGen_SnakeNamesMatchBackendContract(t *testing.T) {
 	cases := map[string]string{
 		"avatar_storage_id": "AvatarStorageID",
 		"last_login_at":     "LastLoginAt",
@@ -198,11 +199,14 @@ func TestWebGen_PascalNamesMatchBackend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(data.NormalizeAssignmentsTS, "real_name: raw.RealName") {
-		t.Errorf("NormalizeAssignmentsTS = %s, want raw.RealName", data.NormalizeAssignmentsTS)
+	if !strings.Contains(data.BackendItemFieldsTS, "real_name: string") {
+		t.Errorf("BackendItemFieldsTS = %s, want real_name", data.BackendItemFieldsTS)
 	}
-	if !strings.Contains(data.NormalizeAssignmentsTS, "avatar_storage_id: raw.AvatarStorageID") {
-		t.Errorf("NormalizeAssignmentsTS = %s, want raw.AvatarStorageID", data.NormalizeAssignmentsTS)
+	if !strings.Contains(data.NormalizeAssignmentsTS, "real_name: raw.real_name") {
+		t.Errorf("NormalizeAssignmentsTS = %s, want raw.real_name", data.NormalizeAssignmentsTS)
+	}
+	if !strings.Contains(data.NormalizeAssignmentsTS, "avatar_storage_id: raw.avatar_storage_id") {
+		t.Errorf("NormalizeAssignmentsTS = %s, want raw.avatar_storage_id", data.NormalizeAssignmentsTS)
 	}
 }
 

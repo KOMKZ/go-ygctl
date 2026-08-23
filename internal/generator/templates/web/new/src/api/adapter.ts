@@ -91,22 +91,22 @@ export function fromBackendPageResponse<T>(response: BackendPageResponse<T>): Pa
 }
 
 /**
- * 将后端 PascalCase 记录归一化为前端 snake_case 模型（adapter 层吸收后端序列化差异）
+ * 将后端 snake_case 记录归一化为前端统一模型
  */
 export function normalizeAdminRecord(raw: BackendAdminItem): AdminRecord {
   return {
-    id: raw.ID,
-    username: raw.Username,
-    real_name: raw.RealName,
-    email: raw.Email,
-    phone: raw.Phone,
-    avatar: raw.Avatar,
-    avatar_storage_id: raw.AvatarStorageID,
-    role: raw.Role,
-    status: raw.Status,
-    last_login_at: raw.LastLoginAt,
-    created_at: raw.CreatedAt,
-    updated_at: raw.UpdatedAt,
+    id: raw.id,
+    username: raw.username,
+    real_name: raw.real_name,
+    email: raw.email,
+    phone: raw.phone,
+    avatar: raw.avatar,
+    avatar_storage_id: raw.avatar_storage_id,
+    role: raw.role,
+    status: raw.status,
+    last_login_at: raw.last_login_at,
+    created_at: raw.created_at,
+    updated_at: raw.updated_at,
   }
 }
 
