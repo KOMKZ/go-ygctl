@@ -8,8 +8,15 @@ func TestCLIAppExecute(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 
 	app := NewWithConfig("../../config")
-	app.GetRootCmd().SetArgs([]string{"home"})
+	app.GetRootCmd().SetArgs([]string{"hello"})
 	if err := app.Execute(); err != nil {
 		t.Fatalf("execute failed: %v", err)
+	}
+}
+
+func TestNewUsesDefaultConfig(t *testing.T) {
+	app := New()
+	if app.configPath != "./config" {
+		t.Fatalf("configPath = %q, want ./config", app.configPath)
 	}
 }

@@ -24,8 +24,15 @@ func (g *CLIGenerator) Generate() error {
 		return err
 	}
 
-	projectPath := filepath.Join(g.config.OutputPath, g.config.ProjectName)
+	projectPath := g.projectPath()
 	appPath := filepath.Join(projectPath, "apps", g.config.AppName)
+
+	if g.config.WorkspacePath != "" {
+		if err := g.ensureExistingWorkspace(projectPath, appPath); err != nil {
+			return err
+		}
+		return g.generateAppOnly(projectPath, appPath)
+	}
 
 	// Check if project path exists
 	if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
@@ -93,19 +100,65 @@ func (g *CLIGenerator) Generate() error {
 		}
 	}
 
-	// Generate app-level files
+	return g.renderAppFiles(appPath, data)
+}
+
+func (g *CLIGenerator) projectPath() string {
+	if g.config.WorkspacePath != "" {
+		return g.config.WorkspacePath
+	}
+	return filepath.Join(g.config.OutputPath, g.config.ProjectName)
+}
+
+func (g *CLIGenerator) ensureExistingWorkspace(projectPath, appPath string) error {
+	if _, err := os.Stat(filepath.Join(projectPath, "go.work")); err != nil {
+		return fmt.Errorf("workspace %q must contain go.work: %w", projectPath, err)
+	}
+	entries, err := os.ReadDir(appPath)
+	if err == nil && len(entries) > 0 {
+		return fmt.Errorf("%w: %s", ErrPathNotEmpty, appPath)
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to inspect app directory %s: %w", appPath, err)
+	}
+	return nil
+}
+
+func (g *CLIGenerator) generateAppOnly(projectPath, appPath string) error {
+	appDirs := []string{
+		"",
+		"config",
+		"internal/app",
+		"internal/command",
+	}
+	for _, dir := range appDirs {
+		if err := os.MkdirAll(filepath.Join(appPath, dir), 0755); err != nil {
+			return fmt.Errorf("failed to create app directory %s: %w", dir, err)
+		}
+	}
+	if err := g.renderAppFiles(appPath, g.templateData()); err != nil {
+		return err
+	}
+	return addGoWorkUse(filepath.Join(projectPath, "go.work"), "./apps/"+g.config.AppName)
+}
+
+func (g *CLIGenerator) renderAppFiles(appPath string, data map[string]interface{}) error {
 	appFiles := []struct {
 		template string
 		output   string
 	}{
 		{"cli/main.go.tmpl", "main.go"},
+		{"cli/main_test.go.tmpl", "main_test.go"},
 		{"cli/go.mod.tmpl", "go.mod"},
 		{"cli/Makefile.tmpl", "Makefile"},
 		{"cli/config/config.yaml.tmpl", "config/config.yaml"},
+		{"cli/config/config.yaml.tmpl", "config/config.yaml.example"},
 		{"cli/config/test.yaml.tmpl", "config/test.yaml"},
+		{"cli/config/test.yaml.tmpl", "config/test.yaml.example"},
 		{"cli/internal/app/app.go.tmpl", "internal/app/app.go"},
 		{"cli/internal/app/app_test.go.tmpl", "internal/app/app_test.go"},
-		{"cli/internal/command/home.go.tmpl", "internal/command/home.go"},
+		{"cli/internal/command/hello.go.tmpl", "internal/command/hello.go"},
+		{"cli/internal/command/hello_test.go.tmpl", "internal/command/hello_test.go"},
 	}
 
 	for _, f := range appFiles {
@@ -113,7 +166,31 @@ func (g *CLIGenerator) Generate() error {
 			return fmt.Errorf("failed to generate app file %s: %w", f.output, err)
 		}
 	}
+	return nil
+}
 
+func addGoWorkUse(goWorkPath, usePath string) error {
+	content, err := os.ReadFile(goWorkPath)
+	if err != nil {
+		return fmt.Errorf("read go.work: %w", err)
+	}
+	text := string(content)
+	if strings.Contains(text, "\n\t"+usePath+"\n") || strings.Contains(text, "\n\t"+usePath+"\r\n") {
+		return nil
+	}
+	useStart := strings.Index(text, "use (")
+	if useStart < 0 {
+		return fmt.Errorf("go.work must contain a use (...) block")
+	}
+	blockEndRel := strings.Index(text[useStart:], "\n)")
+	if blockEndRel < 0 {
+		return fmt.Errorf("go.work use block is not closed")
+	}
+	insertAt := useStart + blockEndRel
+	updated := text[:insertAt] + "\n\t" + usePath + text[insertAt:]
+	if err := os.WriteFile(goWorkPath, []byte(updated), 0644); err != nil {
+		return fmt.Errorf("write go.work: %w", err)
+	}
 	return nil
 }
 
@@ -132,7 +209,7 @@ func (g *CLIGenerator) templateData() map[string]interface{} {
 
 	// Framework path for go.work (relative to the project root): the
 	// workspace-level replace is the single source of truth in workspace mode.
-	projectPath := filepath.Join(g.config.OutputPath, g.config.ProjectName)
+	projectPath := g.projectPath()
 	appPath := filepath.Join(projectPath, "apps", g.config.AppName)
 	frameworkAbs := resolveFrameworkAbs(appPath, g.config.FrameworkPath)
 	workspaceFrameworkPath, relErr := filepath.Rel(projectPath, frameworkAbs)

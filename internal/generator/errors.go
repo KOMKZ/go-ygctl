@@ -9,5 +9,6 @@ var (
 	ErrOutputPathRequired  = errors.New("output path is required")
 	ErrServiceNameRequired = errors.New("service name is required")
 	ErrPathExists          = errors.New("path already exists")
+	ErrPathNotEmpty        = errors.New("path already exists and is not empty")
 	ErrTemplateRender      = errors.New("failed to render template")
 )

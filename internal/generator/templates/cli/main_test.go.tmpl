@@ -1,0 +1,43 @@
+package main
+
+import (
+	"errors"
+	"os"
+	"testing"
+)
+
+func TestVersionDefaults(t *testing.T) {
+	if Version == "" {
+		t.Fatal("Version must have a default value")
+	}
+}
+
+func TestMainRunsHelloCommand(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+	oldArgs := os.Args
+	os.Args = []string{"{{.AppName}}", "hello"}
+	t.Cleanup(func() {
+		os.Args = oldArgs
+	})
+
+	main()
+}
+
+func TestMainHandlesExecutionError(t *testing.T) {
+	want := errors.New("boom")
+	oldExecute := executeCLI
+	oldFatal := fatalCLI
+	t.Cleanup(func() {
+		executeCLI = oldExecute
+		fatalCLI = oldFatal
+	})
+
+	var got error
+	executeCLI = func() error { return want }
+	fatalCLI = func(err error) { got = err }
+
+	main()
+	if got != want {
+		t.Fatalf("fatal err = %v, want %v", got, want)
+	}
+}

@@ -117,7 +117,8 @@ type CLIConfig struct {
 	Description string // e.g., "CLI tool for my-project"
 
 	// Output
-	OutputPath string // e.g., "." (where to create project)
+	OutputPath    string // e.g., "." (where to create project)
+	WorkspacePath string // existing multi-app workspace root; when set only apps/<app> is generated
 
 	// Framework reference
 	UseLocalFramework bool   // true = use replace directive

@@ -20,9 +20,9 @@ Commands:
   component  Manage framework components
 
 Supported application types:
-  - HTTP (Gin-based web application)
-  - CLI  (Command-line application) [coming soon]
-  - gRPC (gRPC server/client)       [coming soon]
+- HTTP (Gin-based web application)
+- CLI  (Command-line application)
+- gRPC (gRPC server/client)       [coming soon]
 
 Examples:
   go-ygctl new http              # Create a new HTTP application

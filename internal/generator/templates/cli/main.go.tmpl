@@ -17,10 +17,16 @@ var BuildTime = ""
 // GitCommit is injected by scripts/build.sh via -ldflags.
 var GitCommit = ""
 
-func main() {
-	application := app.New()
+var executeCLI = func() error {
+	return app.New().Execute()
+}
 
-	if err := application.Execute(); err != nil {
-		logger.Fatal("main", "CLI application failed", zap.Error(err))
+var fatalCLI = func(err error) {
+	logger.Fatal("main", "CLI application failed", zap.Error(err))
+}
+
+func main() {
+	if err := executeCLI(); err != nil {
+		fatalCLI(err)
 	}
 }

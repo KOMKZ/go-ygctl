@@ -36,6 +36,25 @@ go-ygctl new http my-api --module github.com/myorg/my-api --output ./apps
 go-ygctl new http my-api --module github.com/myorg/my-api --local-framework=false
 ```
 
+### Create CLI Application
+
+**New multi-app project:**
+
+```bash
+go-ygctl new cli demo-cli --project demo-proj --org github.com/KOMKZ --output .
+```
+
+**Existing multi-app workspace:**
+
+```bash
+cd hrise-server-app
+go-ygctl new cli hrse-cli --workspace . --org github.com/KOMKZ
+go run ./apps/hrse-cli hello
+```
+
+The generated CLI app includes a `hello` subcommand that prints `hello world`
+and test coverage for the generated `main`, `app`, and `command` packages.
+
 ### Options
 
 | Flag | Short | Default | Description |
@@ -43,6 +62,7 @@ go-ygctl new http my-api --module github.com/myorg/my-api --local-framework=fals
 | `--interactive` | `-i` | false | Interactive mode |
 | `--module` | `-m` | - | Go module name |
 | `--output` | `-o` | `.` | Output directory |
+| `--workspace` | - | - | Existing multi-app workspace path for `new cli` |
 | `--port` | `-p` | 8080 | Server port |
 | `--local-framework` | - | true | Use local framework with replace |
 | `--framework-path` | - | `../../go-yogan-framework` | Local framework path |

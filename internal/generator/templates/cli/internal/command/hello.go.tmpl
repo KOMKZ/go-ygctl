@@ -10,21 +10,20 @@ func NewRootCmd() *cobra.Command {
 		Use:   "{{.AppName}}",
 		Short: "{{.Description}}",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("hello from {{.AppName}}")
-			return nil
+			return cmd.Help()
 		},
 	}
-	rootCmd.AddCommand(newHomeCmd())
+	rootCmd.AddCommand(newHelloCmd())
 	return rootCmd
 }
 
-// newHomeCmd builds the home subcommand.
-func newHomeCmd() *cobra.Command {
+// newHelloCmd builds the hello subcommand.
+func newHelloCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "home",
-		Short: "Print the home greeting",
+		Use:   "hello",
+		Short: "Print hello world",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("hello from home")
+			cmd.Println("hello world")
 			return nil
 		},
 	}

@@ -15,6 +15,7 @@ var (
 	cliOrg         string
 	cliModule      string
 	cliOutput      string
+	cliWorkspace   string
 	cliLocalFW     bool
 	cliFWPath      string
 )
@@ -28,7 +29,8 @@ If app-name is omitted (or --interactive is set), the command prompts
 for configuration interactively.
 
 Example:
-  go-ygctl new cli demo-cli --project demo-proj --org github.com/KOMKZ --output .`,
+  go-ygctl new cli demo-cli --project demo-proj --org github.com/KOMKZ --output .
+  go-ygctl new cli hrse-cli --workspace .`,
 	RunE: runNewCLI,
 }
 
@@ -39,6 +41,7 @@ func init() {
 	newCLICmd.Flags().StringVar(&cliOrg, "org", "github.com/KOMKZ", "Organization module prefix")
 	newCLICmd.Flags().StringVarP(&cliModule, "module", "m", "", "App Go module name (auto-generated if empty)")
 	newCLICmd.Flags().StringVarP(&cliOutput, "output", "o", ".", "Output directory")
+	newCLICmd.Flags().StringVar(&cliWorkspace, "workspace", "", "Existing multi-app workspace path; generate apps/<app-name> only")
 	newCLICmd.Flags().BoolVar(&cliLocalFW, "local-framework", true, "Use local framework with replace directive")
 	newCLICmd.Flags().StringVar(&cliFWPath, "framework-path", "../../../go-yogan-framework", "Local framework path (relative to apps/<app>)")
 }
@@ -58,10 +61,29 @@ func runNewCLI(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	} else {
+		workspacePath := cliWorkspace
+		if workspacePath != "" {
+			abs, err := filepath.Abs(workspacePath)
+			if err != nil {
+				return err
+			}
+			workspacePath = abs
+		}
+
 		config = generator.NewDefaultCLIConfig()
 		config.AppName = appName
 		config.ProjectName = cliProject
 		config.OrgName = cliOrg
+		config.WorkspacePath = workspacePath
+		if config.ProjectName == "" && config.WorkspacePath != "" {
+			config.ProjectName = filepath.Base(config.WorkspacePath)
+		}
+		if config.ProjectName == "" {
+			config.ProjectName = "my-project"
+		}
+		if config.OrgName == "" {
+			config.OrgName = "github.com/KOMKZ"
+		}
 		if cliModule != "" {
 			config.ModuleName = cliModule
 		} else {
@@ -71,13 +93,6 @@ func runNewCLI(cmd *cobra.Command, args []string) error {
 		config.UseLocalFramework = cliLocalFW
 		config.FrameworkPath = cliFWPath
 		config.Description = fmt.Sprintf("%s CLI", generator.ToPascalCase(config.AppName))
-
-		if config.ProjectName == "" {
-			config.ProjectName = "my-project"
-		}
-		if config.OrgName == "" {
-			config.OrgName = "github.com/KOMKZ"
-		}
 	}
 
 	color.Cyan("\n🚀 Generating multi-app project with CLI application: %s", config.ProjectName)
@@ -88,6 +103,9 @@ func runNewCLI(cmd *cobra.Command, args []string) error {
 	}
 
 	projectPath := filepath.Join(config.OutputPath, config.ProjectName)
+	if config.WorkspacePath != "" {
+		projectPath = config.WorkspacePath
+	}
 	appPath := filepath.Join(projectPath, "apps", config.AppName)
 	absAppPath, _ := filepath.Abs(appPath)
 
@@ -106,7 +124,7 @@ func runNewCLI(cmd *cobra.Command, args []string) error {
 	color.Yellow("  3. Run CLI application:")
 	fmt.Printf("     cd %s\n", absAppPath)
 	fmt.Println("     go run . --help")
-	fmt.Println("     go run . home        # Run home command")
+	fmt.Println("     go run . hello       # Print hello world")
 	fmt.Println()
 
 	return nil
