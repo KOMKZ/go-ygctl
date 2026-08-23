@@ -2,14 +2,15 @@
 
 ## 准入结论
 
-PASS。`go-ygctl new cli` 已支持向现有 multi-app workspace 追加 CLI app，并生成带 `hello` 子命令和完整测试覆盖的 CLI 骨架。
+PASS。`go-ygctl new cli` 已支持向现有 multi-app workspace 追加 CLI app，并生成 `command/module/service` 三层 CLI 骨架；app Makefile 的 build 产物进入应用自身 `build/` 目录。
 
 ## 门禁证据
 
 - `go test ./internal/generator/...`：PASS。
 - `go build -o go-ygctl .`：PASS。
 - 临时 workspace 执行 `go-ygctl new cli tmp-cli --workspace . --org github.com/KOMKZ`：PASS。
-- 真实 workspace 执行 `go-ygctl new cli hrse-cli --workspace . --org github.com/KOMKZ`：PASS。
+- 真实 workspace 执行 `go-ygctl new cli hrise-cli --workspace . --org github.com/KOMKZ`：PASS。
+- 生成物 `cd apps/hrise-cli && make build`：PASS，输出到 `apps/hrise-cli/build/hrise-cli`。
 
 ## 阻断项
 

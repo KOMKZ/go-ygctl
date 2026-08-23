@@ -1,0 +1,26 @@
+package service
+
+import (
+	"context"
+
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"go.uber.org/zap"
+)
+
+// HelloService is the application service behind the hello command.
+type HelloService struct {
+	logger *logger.CtxZapLogger
+}
+
+// NewHelloService creates a HelloService.
+func NewHelloService(log *logger.CtxZapLogger) *HelloService {
+	return &HelloService{logger: log}
+}
+
+// Message returns the hello response.
+func (s *HelloService) Message(ctx context.Context) string {
+	if s.logger != nil {
+		s.logger.DebugCtx(ctx, "hello command executed", zap.String("message", "hello world"))
+	}
+	return "hello world"
+}

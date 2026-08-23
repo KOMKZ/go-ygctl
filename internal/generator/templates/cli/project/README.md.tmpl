@@ -16,7 +16,8 @@
 │       └── internal/
 │           ├── app/           # Application layer
 │           ├── command/       # CLI commands
-│           └── config/        # Config structs
+│           ├── module/        # CLI module adapters
+│           └── service/       # Application services
 ├── domains/                   # Domain packages
 ├── pkg/                       # Shared utilities
 │   ├── errdef/               # Error definitions
@@ -65,10 +66,10 @@ make build APP={{.AppName}}
 
 ## Adding New Commands
 
-1. Create command file in `apps/{{.AppName}}/internal/command/`:
+1. Create module command file in `apps/{{.AppName}}/internal/module/<module>/`:
 
 ```go
-package command
+package module
 
 func RegisterXxxCommands(root *cobra.Command, app *application.CLIApplication) {
     xxxCmd := &cobra.Command{
@@ -82,10 +83,10 @@ func RegisterXxxCommands(root *cobra.Command, app *application.CLIApplication) {
 }
 ```
 
-2. Register in `apps/{{.AppName}}/internal/app/commands.go`:
+2. Register in `apps/{{.AppName}}/internal/command/root.go`:
 
 ```go
-command.RegisterXxxCommands(c.rootCmd, core)
+xxxModule.RegisterCommands(root, injector)
 ```
 
 ## Adding New Domains

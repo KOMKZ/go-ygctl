@@ -1,0 +1,23 @@
+package command
+
+import (
+	helloModule "{{.ModuleName}}/internal/module/hello"
+	"github.com/samber/do/v2"
+	"github.com/spf13/cobra"
+)
+
+// NewRootCmd builds the root command of {{.AppName}}.
+func NewRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "{{.AppName}}",
+		Short: "{{.Description}}",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+}
+
+// RegisterModules attaches module commands to the root command.
+func RegisterModules(root *cobra.Command, injector do.Injector) {
+	helloModule.RegisterCommands(root, injector)
+}

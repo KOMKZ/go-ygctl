@@ -1,0 +1,13 @@
+package service
+
+import (
+	"context"
+	"testing"
+)
+
+func TestHelloServiceMessage(t *testing.T) {
+	svc := NewHelloService(nil)
+	if got := svc.Message(context.Background()); got != "hello world" {
+		t.Fatalf("Message() = %q, want hello world", got)
+	}
+}

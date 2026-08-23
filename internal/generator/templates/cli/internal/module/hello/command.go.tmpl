@@ -1,0 +1,28 @@
+package hello
+
+import (
+	"{{.ModuleName}}/internal/service"
+	"github.com/samber/do/v2"
+	"github.com/spf13/cobra"
+)
+
+// RegisterCommands attaches hello commands to the root command.
+func RegisterCommands(root *cobra.Command, injector do.Injector) {
+	do.Provide(injector, ProvideHelloService)
+	root.AddCommand(newHelloCmd(injector))
+}
+
+func newHelloCmd(injector do.Injector) *cobra.Command {
+	return &cobra.Command{
+		Use:   "hello",
+		Short: "Print hello world",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			svc, err := do.Invoke[*service.HelloService](injector)
+			if err != nil {
+				return err
+			}
+			cmd.Println(svc.Message(cmd.Context()))
+			return nil
+		},
+	}
+}

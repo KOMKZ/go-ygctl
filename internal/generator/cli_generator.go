@@ -61,6 +61,8 @@ func (g *CLIGenerator) Generate() error {
 		"config",
 		"internal/app",
 		"internal/command",
+		"internal/module/hello",
+		"internal/service",
 	}
 
 	for _, dir := range appDirs {
@@ -130,6 +132,8 @@ func (g *CLIGenerator) generateAppOnly(projectPath, appPath string) error {
 		"config",
 		"internal/app",
 		"internal/command",
+		"internal/module/hello",
+		"internal/service",
 	}
 	for _, dir := range appDirs {
 		if err := os.MkdirAll(filepath.Join(appPath, dir), 0755); err != nil {
@@ -157,8 +161,13 @@ func (g *CLIGenerator) renderAppFiles(appPath string, data map[string]interface{
 		{"cli/config/test.yaml.tmpl", "config/test.yaml.example"},
 		{"cli/internal/app/app.go.tmpl", "internal/app/app.go"},
 		{"cli/internal/app/app_test.go.tmpl", "internal/app/app_test.go"},
-		{"cli/internal/command/hello.go.tmpl", "internal/command/hello.go"},
-		{"cli/internal/command/hello_test.go.tmpl", "internal/command/hello_test.go"},
+		{"cli/internal/command/root.go.tmpl", "internal/command/root.go"},
+		{"cli/internal/command/root_test.go.tmpl", "internal/command/root_test.go"},
+		{"cli/internal/module/hello/command.go.tmpl", "internal/module/hello/command.go"},
+		{"cli/internal/module/hello/command_test.go.tmpl", "internal/module/hello/command_test.go"},
+		{"cli/internal/module/hello/provider.go.tmpl", "internal/module/hello/provider.go"},
+		{"cli/internal/service/hello_service.go.tmpl", "internal/service/hello_service.go"},
+		{"cli/internal/service/hello_service_test.go.tmpl", "internal/service/hello_service_test.go"},
 	}
 
 	for _, f := range appFiles {

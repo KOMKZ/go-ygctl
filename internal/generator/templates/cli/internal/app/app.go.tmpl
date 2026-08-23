@@ -21,9 +21,11 @@ func New() *{{.AppNamePascal}} {
 
 // NewWithConfig creates an application with an explicit config directory.
 func NewWithConfig(configPath string) *{{.AppNamePascal}} {
+	core := application.NewCLI(configPath, "{{.AppNameUpper}}", command.NewRootCmd())
+	command.RegisterModules(core.GetRootCmd(), core.GetInjector())
 	return &{{.AppNamePascal}}{
 		configPath: configPath,
-		Core:       application.NewCLI(configPath, "{{.AppNameUpper}}", command.NewRootCmd()),
+		Core:       core,
 		logger:     logger.GetLogger("{{.AppNameSnake}}"),
 	}
 }
