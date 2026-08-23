@@ -1,12 +1,11 @@
 package hello
 
 import (
-	"{{.ModuleName}}/internal/service"
 	"github.com/KOMKZ/go-yogan-framework/logger"
 	"github.com/samber/do/v2"
 )
 
 // ProvideHelloService registers the hello application service.
-func ProvideHelloService(i do.Injector) (*service.HelloService, error) {
-	return service.NewHelloService(logger.GetLogger("{{.AppNameSnake}}")), nil
+func ProvideHelloService(i do.Injector) (*HelloService, error) {
+	return NewHelloService(logger.GetLogger("{{.AppNameSnake}}")), nil
 }

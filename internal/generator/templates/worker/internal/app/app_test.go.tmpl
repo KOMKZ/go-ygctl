@@ -1,0 +1,13 @@
+package app
+
+import "testing"
+
+func TestNewWithConfig(t *testing.T) {
+	worker := NewWithConfig("./config", "default")
+	if worker == nil {
+		t.Fatal("NewWithConfig returned nil")
+	}
+	if worker.profile != "default" {
+		t.Fatalf("profile = %q, want default", worker.profile)
+	}
+}

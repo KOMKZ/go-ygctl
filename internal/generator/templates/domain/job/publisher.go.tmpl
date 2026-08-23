@@ -1,0 +1,50 @@
+package job
+
+import (
+	"context"
+
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	jobruntime "{{.JobRuntimeImport}}"
+	"go.uber.org/zap"
+)
+
+// {{.TaskPascal}}JobRecord is the public publish result for {{.TaskType}}.
+type {{.TaskPascal}}JobRecord struct {
+	JobID    string
+	TaskType string
+	Status   string
+	TraceID  string
+}
+
+// {{.TaskPascal}}Publisher publishes {{.TaskType}} through the shared job runtime.
+type {{.TaskPascal}}Publisher struct {
+	runtime *jobruntime.Publisher
+	log     *logger.CtxZapLogger
+}
+
+// New{{.TaskPascal}}Publisher creates a thin business publisher facade.
+func New{{.TaskPascal}}Publisher(runtime *jobruntime.Publisher, log *logger.CtxZapLogger) *{{.TaskPascal}}Publisher {
+	if log == nil {
+		log = logger.GetLogger("queue_producer")
+	}
+	return &{{.TaskPascal}}Publisher{runtime: runtime, log: log}
+}
+
+// Publish creates or dispatches a {{.TaskType}} job.
+func (p *{{.TaskPascal}}Publisher) Publish(ctx context.Context, cmd {{.TaskPascal}}Command) (*{{.TaskPascal}}JobRecord, error) {
+	record, err := jobruntime.Publish(ctx, p.runtime, {{.TaskPascal}}Task, cmd)
+	if record == nil {
+		return nil, err
+	}
+	p.log.InfoCtx(ctx, "{{.TaskType}} published",
+		zap.String("job_id", record.JobID),
+		zap.String("task_type", {{.TaskConstName}}),
+	)
+	result := &{{.TaskPascal}}JobRecord{
+		JobID:    record.JobID,
+		TaskType: record.TaskType,
+		Status:   record.Status,
+		TraceID:  record.TraceID,
+	}
+	return result, err
+}

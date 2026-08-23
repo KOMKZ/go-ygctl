@@ -1,0 +1,45 @@
+package job
+
+import (
+	"time"
+
+	frameworkqueue "github.com/KOMKZ/go-yogan-framework/queue"
+)
+
+const (
+	// {{.TaskConstName}} is the queue task type handled by this domain.
+	{{.TaskConstName}} = "{{.TaskType}}"
+
+	// Default{{.TaskPascal}}Mode is the generated fallback. Runtime config is
+	// the final source of truth.
+	Default{{.TaskPascal}}Mode = "{{.Mode}}"
+)
+
+// {{.TaskPascal}}Defaults declares safe defaults for {{.TaskType}}.
+var {{.TaskPascal}}Defaults = {{.TaskPascal}}TaskDefaults{
+	TaskType: {{.TaskConstName}},
+	Mode:     Default{{.TaskPascal}}Mode,
+	Queue:    "default",
+	Timeout:  10 * time.Minute,
+}
+
+// {{.TaskPascal}}Task declares {{.TaskType}} runtime metadata.
+var {{.TaskPascal}}Task = frameworkqueue.TaskDefinition[{{.TaskPascal}}Command]{
+	Type:        {{.TaskConstName}},
+	Description: "{{.TaskPascal}} job",
+	Mode:        {{.TaskPascal}}Defaults.Mode,
+	Queue:       {{.TaskPascal}}Defaults.Queue,
+	Timeout:     {{.TaskPascal}}Defaults.Timeout,
+	IdempotencyKey: func(cmd {{.TaskPascal}}Command) string {
+		return cmd.Name
+	},
+}
+
+// {{.TaskPascal}}TaskDefaults contains generated defaults. Keep runtime configuration as the
+// final source of truth and use these values only as fallbacks.
+type {{.TaskPascal}}TaskDefaults struct {
+	TaskType string
+	Mode     string
+	Queue    string
+	Timeout  time.Duration
+}

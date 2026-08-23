@@ -1,0 +1,31 @@
+package app
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/samber/do/v2"
+	"go.uber.org/zap"
+)
+
+func (a *{{.AppNamePascal}}) initDI() {
+	injector := a.Core.GetInjector()
+	do.ProvideNamedValue(injector, "queue_producer", logger.GetLogger("queue_producer"))
+	do.ProvideNamedValue(injector, "queue_worker", logger.GetLogger("queue_worker"))
+	do.ProvideNamedValue(injector, "job_tracker", logger.GetLogger("job_tracker"))
+	do.ProvideNamedValue(injector, "job_executor", logger.GetLogger("job_executor"))
+}
+
+func (a *{{.AppNamePascal}}) onSetup(core *application.WorkerApplication) error {
+	a.logger.InfoCtx(core.Context(), "worker setup", zap.String("profile", a.profile))
+	return a.registerHandlers()
+}
+
+func (a *{{.AppNamePascal}}) onReady(core *application.WorkerApplication) error {
+	a.logger.InfoCtx(core.Context(), "worker ready", zap.String("profile", a.profile))
+	return nil
+}
+
+func (a *{{.AppNamePascal}}) onShutdown(core *application.WorkerApplication) error {
+	a.logger.InfoCtx(core.Context(), "worker shutting down", zap.String("profile", a.profile))
+	return nil
+}

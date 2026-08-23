@@ -20,9 +20,9 @@ func TestValidationRules_EmailUsesEmailFormat(t *testing.T) {
 // 否则 ozzo In 与字段值 reflect.DeepEqual 永远不匹配（创建/更新 100% 校验失败）。
 func TestValidationRules_InTypedLiterals(t *testing.T) {
 	cases := []struct {
-		name    string
-		field   DefField
-		wantIn  string
+		name   string
+		field  DefField
+		wantIn string
 	}{
 		{
 			name:   "int8 typed literals",

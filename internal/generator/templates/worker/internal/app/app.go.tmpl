@@ -1,0 +1,51 @@
+package app
+
+import (
+	"github.com/KOMKZ/go-yogan-framework/application"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"github.com/spf13/pflag"
+)
+
+// {{.AppNamePascal}} is a long-running queue worker application.
+type {{.AppNamePascal}} struct {
+	Core       *application.WorkerApplication
+	configPath string
+	profile    string
+	logger     *logger.CtxZapLogger
+}
+
+// New creates a worker with default config and flags.
+func New() *{{.AppNamePascal}} {
+	profile := "default"
+	configPath := "./config"
+	pflag.StringVar(&profile, "profile", profile, "Worker profile")
+	pflag.StringVar(&configPath, "config", configPath, "Config directory")
+	pflag.Parse()
+	return NewWithConfig(configPath, profile)
+}
+
+// NewWithConfig creates a worker for tests and custom launchers.
+func NewWithConfig(configPath, profile string) *{{.AppNamePascal}} {
+	core := application.NewWorker(configPath, "{{.AppNameUpper}}", profile, nil)
+	return &{{.AppNamePascal}}{
+		Core:       core,
+		configPath: configPath,
+		profile:    profile,
+		logger:     logger.GetLogger("queue_worker"),
+	}
+}
+
+// WithVersion sets the application version.
+func (a *{{.AppNamePascal}}) WithVersion(version string) *{{.AppNamePascal}} {
+	a.Core.WithVersion(version)
+	return a
+}
+
+// Run starts the worker and blocks until shutdown.
+func (a *{{.AppNamePascal}}) Run() error {
+	a.initDI()
+	a.Core.OnSetup(a.onSetup)
+	a.Core.OnReady(a.onReady)
+	a.Core.OnShutdown(a.onShutdown)
+	return a.Core.Run()
+}

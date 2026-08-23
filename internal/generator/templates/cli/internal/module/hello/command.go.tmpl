@@ -1,7 +1,6 @@
 package hello
 
 import (
-	"{{.ModuleName}}/internal/service"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +16,7 @@ func newHelloCmd(injector do.Injector) *cobra.Command {
 		Use:   "hello",
 		Short: "Print hello world",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			svc, err := do.Invoke[*service.HelloService](injector)
+			svc, err := do.Invoke[*HelloService](injector)
 			if err != nil {
 				return err
 			}

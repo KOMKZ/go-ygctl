@@ -1,0 +1,48 @@
+package job
+
+import (
+	"context"
+
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	jobruntime "{{.JobRuntimeImport}}"
+	"go.uber.org/zap"
+)
+
+// {{.TaskPascal}}Command is the domain command for {{.TaskType}} execution.
+// Add business fields here; do not depend on queue task types.
+type {{.TaskPascal}}Command struct {
+	Name string `json:"name"`
+}
+
+// {{.TaskPascal}}Executor executes {{.TaskType}} without depending on a queue
+// service. Keep this type easy to unit test with fake ports.
+type {{.TaskPascal}}Executor struct {
+	log *logger.CtxZapLogger
+}
+
+// New{{.TaskPascal}}Executor creates the executor.
+func New{{.TaskPascal}}Executor(log *logger.CtxZapLogger) *{{.TaskPascal}}Executor {
+	if log == nil {
+		log = logger.GetLogger("job_executor")
+	}
+	return &{{.TaskPascal}}Executor{log: log}
+}
+
+// Execute runs the domain job logic. Replace the demo body with real business
+// logic and report progress through the injected job tracker when needed.
+func (e *{{.TaskPascal}}Executor) Execute(ctx context.Context, cmd {{.TaskPascal}}Command) (jobruntime.Result, error) {
+	jobID := jobruntime.JobIDFromContext(ctx)
+	e.log.InfoCtx(ctx, "{{.TaskType}} executor started",
+		zap.String("job_id", jobID),
+		zap.String("task_type", {{.TaskConstName}}),
+		zap.String("name", cmd.Name),
+	)
+	e.log.InfoCtx(ctx, "{{.TaskType}} executor completed",
+		zap.String("job_id", jobID),
+		zap.String("task_type", {{.TaskConstName}}),
+	)
+	return jobruntime.Result{
+		Progress:   `{"percent":100}`,
+		LogSummary: "{{.TaskType}} completed",
+	}, nil
+}

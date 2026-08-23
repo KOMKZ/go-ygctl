@@ -67,9 +67,9 @@ type WebGenConfig struct {
 
 // WebGenResult reports generated files and the entity name.
 type WebGenResult struct {
-	Entity     string
-	Style      string
-	Files      []string
+	Entity        string
+	Style         string
+	Files         []string
 	RouteInjected bool
 	IconInjected  bool
 }
@@ -289,7 +289,7 @@ type webGenField struct {
 	SearchType     string // input|select
 	SearchOptions  map[string]string
 	FormShow       bool
-	FormCreateOnly bool // e.g. password：仅新建表单
+	FormCreateOnly bool   // e.g. password：仅新建表单
 	FormType       string // input|select|textarea|password|number
 	FormOptions    map[string]string
 	FormRules      []webGenRule

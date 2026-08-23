@@ -1,0 +1,10 @@
+package app
+
+// registerHandlers registers queue handlers explicitly at worker startup.
+//
+// Add domain-backed handlers here. Handler logic belongs in the owning domain,
+// usually domains/<domain>/job/*.go; this app should only adapt DI and queue
+// task metadata to a domain command.
+func (a *{{.AppNamePascal}}) registerHandlers() error {
+	return nil
+}

@@ -1,0 +1,68 @@
+logger:
+  base_log_dir: "logs"
+  app_name: "{{.AppName}}"
+  logger_name: "{{.AppNameSnake}}"
+  log_dir_mode: "module"
+  level: "info"
+  encoding: "json"
+  enable_console: true
+  enable_file: true
+  enable_level_in_filename: true
+  enable_date_in_filename: true
+  enable_trace_id: true
+
+database:
+  connections:
+    master:
+      driver: "mysql"
+      dsn: "DB_USER:DB_PASS@tcp(localhost:3306)/DB_NAME?charset=utf8mb4&parseTime=True&loc=Local"
+      max_open_conns: 20
+      max_idle_conns: 5
+      conn_max_lifetime: 3600
+      enable_log: false
+      slow_threshold: 200000000
+
+queue:
+  enabled: true
+  driver: "{{.Driver}}"
+  brokers:
+    jobs:
+      redis:
+        mode: "dedicated"
+        addr: "127.0.0.1:6379"
+        db: 3
+    media:
+      redis:
+        mode: "dedicated"
+        addr: "127.0.0.1:6379"
+        db: 4
+  queues:
+    default:
+      broker: "jobs"
+      name: "default"
+      max_pending: 10000
+    media:
+      broker: "media"
+      name: "default"
+      max_pending: 1000
+  profiles:
+{{- range .Profiles}}
+    {{.}}:
+      workers:
+{{- if eq . "media"}}
+        media:
+          concurrency: 10
+          queues:
+            media: 1
+{{- else}}
+        jobs:
+          concurrency: 10
+          queues:
+            default: 1
+{{- end}}
+{{- end}}
+  tasks:
+    export.demo:
+      queue: "default"
+      mode: "queue"
+      timeout: "10m"

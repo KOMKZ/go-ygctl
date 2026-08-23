@@ -1,0 +1,19 @@
+module {{.ModuleName}}
+
+go 1.24.1
+
+require (
+{{- if .UseLocalFramework}}
+	github.com/KOMKZ/go-yogan-framework v0.0.0
+{{- end}}
+	github.com/spf13/pflag v1.0.9
+	go.uber.org/zap v1.27.1
+)
+{{- if .UseLocalFramework}}
+
+replace github.com/KOMKZ/go-yogan-framework => {{.FrameworkPath}}
+{{- end}}
+{{- if not .UseLocalFramework}}
+
+// Remote mode: run `go get -u github.com/KOMKZ/go-yogan-framework@latest`.
+{{- end}}

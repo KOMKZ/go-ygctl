@@ -45,7 +45,7 @@ replace github.com/KOMKZ/go-yogan-framework => ../go-yogan-framework
 		"internal/app/app.go",
 		"internal/command/root.go",
 		"internal/module/hello/command.go",
-		"internal/service/hello_service.go",
+		"internal/module/hello/service.go",
 	} {
 		if _, err := os.Stat(filepath.Join(appPath, file)); err != nil {
 			t.Fatalf("generated file %s missing: %v", file, err)

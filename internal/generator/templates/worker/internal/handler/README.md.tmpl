@@ -1,0 +1,13 @@
+# Worker Handlers
+
+Register handlers explicitly from `internal/app/handlers.go`.
+
+Keep business execution in domain packages:
+
+```text
+domains/<domain>/job/<task>_executor.go
+domains/<domain>/job/<task>_publisher.go
+```
+
+This directory is only for thin adapters when an application-specific wrapper is
+unavoidable.

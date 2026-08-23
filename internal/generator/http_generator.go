@@ -9,7 +9,7 @@ import (
 	"text/template"
 )
 
-//go:embed all:templates/http all:templates/project all:templates/rpc all:templates/cli all:templates/cron
+//go:embed all:templates/http all:templates/project all:templates/rpc all:templates/cli all:templates/cron all:templates/worker
 var httpTemplates embed.FS
 
 // HTTPGenerator generates HTTP application from templates

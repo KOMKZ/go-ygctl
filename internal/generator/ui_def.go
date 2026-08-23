@@ -40,26 +40,26 @@ type UIField struct {
 
 // UIColumn controls table column presentation.
 type UIColumn struct {
-	Show   bool              `yaml:"show"`   // 默认按规则兜底
-	Width  int               `yaml:"width"`  // 列宽 px；0 = 不指定
-	Label  string            `yaml:"label"`  // 列头；空 = 用 def comment/字段名
+	Show    bool              `yaml:"show"`    // 默认按规则兜底
+	Width   int               `yaml:"width"`   // 列宽 px；0 = 不指定
+	Label   string            `yaml:"label"`   // 列头；空 = 用 def comment/字段名
 	Options map[string]string `yaml:"options"` // value -> display label（枚举列渲染）
 }
 
 // UISearch controls filter-bar presentation.
 type UISearch struct {
-	Show    bool   `yaml:"show"`
-	Type    string `yaml:"type"`    // input | select；空 = 按字段类型推断
+	Show    bool              `yaml:"show"`
+	Type    string            `yaml:"type"`    // input | select；空 = 按字段类型推断
 	Options map[string]string `yaml:"options"` // select 选项（value -> label）
 }
 
 // UIForm controls create/edit form presentation.
 type UIForm struct {
-	Show    bool   `yaml:"show"`
-	Type    string `yaml:"type"` // input | select | textarea | password | number；空 = 按字段类型推断
-	Rules   *UIRules `yaml:"rules"` // 覆盖 def 派生校验（required/min/max/pattern）
-	Options map[string]string `yaml:"options"`
-	Placeholder string `yaml:"placeholder"`
+	Show        bool              `yaml:"show"`
+	Type        string            `yaml:"type"`  // input | select | textarea | password | number；空 = 按字段类型推断
+	Rules       *UIRules          `yaml:"rules"` // 覆盖 def 派生校验（required/min/max/pattern）
+	Options     map[string]string `yaml:"options"`
+	Placeholder string            `yaml:"placeholder"`
 }
 
 // UIRules overrides form validation rules for one field.

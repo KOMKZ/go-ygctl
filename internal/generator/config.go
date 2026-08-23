@@ -125,11 +125,41 @@ type CLIConfig struct {
 	FrameworkPath     string // local path to framework (relative to apps/<app>)
 }
 
+// WorkerConfig holds the configuration for generating a queue worker
+// application inside an existing multi-app workspace.
+type WorkerConfig struct {
+	ProjectName string
+	OrgName     string
+
+	AppName     string
+	ModuleName  string
+	Description string
+
+	OutputPath    string
+	WorkspacePath string
+
+	Driver            string
+	Profiles          []string
+	UseLocalFramework bool
+	FrameworkPath     string
+}
+
 // NewDefaultCLIConfig returns a config with sensible defaults
 func NewDefaultCLIConfig() *CLIConfig {
 	return &CLIConfig{
 		UseLocalFramework: true,
 		FrameworkPath:     "../../../go-yogan-framework", // relative to apps/<app>/
+	}
+}
+
+// NewDefaultWorkerConfig returns a config with sensible defaults.
+func NewDefaultWorkerConfig() *WorkerConfig {
+	return &WorkerConfig{
+		OrgName:           "github.com/KOMKZ",
+		Driver:            "asynq",
+		Profiles:          []string{"default"},
+		UseLocalFramework: true,
+		FrameworkPath:     "../../../go-yogan-framework",
 	}
 }
 
@@ -146,6 +176,29 @@ func (c *CLIConfig) Validate() error {
 	}
 	if c.OutputPath == "" {
 		return ErrOutputPathRequired
+	}
+	return nil
+}
+
+// Validate checks if the worker config is valid.
+func (c *WorkerConfig) Validate() error {
+	if c.ProjectName == "" {
+		return ErrProjectNameRequired
+	}
+	if c.AppName == "" {
+		return ErrAppNameRequired
+	}
+	if c.ModuleName == "" {
+		return ErrModuleNameRequired
+	}
+	if c.OutputPath == "" {
+		return ErrOutputPathRequired
+	}
+	if c.Driver == "" {
+		c.Driver = "asynq"
+	}
+	if len(c.Profiles) == 0 {
+		c.Profiles = []string{"default"}
 	}
 	return nil
 }

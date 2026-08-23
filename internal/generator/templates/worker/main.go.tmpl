@@ -1,0 +1,23 @@
+package main
+
+import (
+	"{{.ModuleName}}/internal/app"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"go.uber.org/zap"
+)
+
+// Version is injected at build time by -ldflags.
+var Version = "0.1.0"
+
+// BuildTime is injected at build time by -ldflags.
+var BuildTime = ""
+
+// GitCommit is injected at build time by -ldflags.
+var GitCommit = ""
+
+func main() {
+	worker := app.New().WithVersion(Version)
+	if err := worker.Run(); err != nil {
+		logger.Fatal("main", "{{.AppName}} failed", zap.Error(err))
+	}
+}

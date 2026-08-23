@@ -32,14 +32,14 @@ CRUD 模板多风格（默认 dialog，可扩展）：
 }
 
 var (
-	webNewAppName   string
-	webNewTitle     string
-	webNewUILink    string
-	webNewPort      int
-	webNewProxy     string
-	webNewPrefix    string
-	webNewBackend   string
-	webNewOut       string
+	webNewAppName string
+	webNewTitle   string
+	webNewUILink  string
+	webNewPort    int
+	webNewProxy   string
+	webNewPrefix  string
+	webNewBackend string
+	webNewOut     string
 )
 
 var webNewCmd = &cobra.Command{
@@ -78,10 +78,10 @@ var webNewCmd = &cobra.Command{
 }
 
 var (
-	ensureAppPath     string
-	ensureProject     string
-	ensurePort        int
-	ensureBackendApp  string
+	ensureAppPath    string
+	ensureProject    string
+	ensurePort       int
+	ensureBackendApp string
 )
 
 var webEnsureCmd = &cobra.Command{
@@ -169,4 +169,3 @@ var webGenCmd = &cobra.Command{
 		return nil
 	},
 }
-

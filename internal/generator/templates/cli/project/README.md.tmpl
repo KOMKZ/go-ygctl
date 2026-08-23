@@ -16,8 +16,7 @@
 │       └── internal/
 │           ├── app/           # Application layer
 │           ├── command/       # CLI commands
-│           ├── module/        # CLI module adapters
-│           └── service/       # Application services
+│           └── module/        # CLI modules: command + service/provider
 ├── domains/                   # Domain packages
 ├── pkg/                       # Shared utilities
 │   ├── errdef/               # Error definitions
@@ -66,7 +65,7 @@ make build APP={{.AppName}}
 
 ## Adding New Commands
 
-1. Create module command file in `apps/{{.AppName}}/internal/module/<module>/`:
+1. Create module files in `apps/{{.AppName}}/internal/module/<module>/`:
 
 ```go
 package module

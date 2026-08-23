@@ -13,6 +13,9 @@ var (
 	domainWorkspace string
 	domainModule    string
 	domainPure      bool
+	domainJobDomain string
+	domainJobTask   string
+	domainJobMode   string
 )
 
 var domainCmd = &cobra.Command{
@@ -55,10 +58,33 @@ Example:
 func init() {
 	rootCmd.AddCommand(domainCmd)
 	domainCmd.AddCommand(domainInitCmd)
+	domainCmd.AddCommand(domainJobCmd)
+	domainJobCmd.AddCommand(domainJobAddCmd)
 	domainInitCmd.Flags().StringVar(&domainEntity, "entity", "", "Entity name (default: singularized domain key)")
 	domainInitCmd.Flags().StringVar(&domainWorkspace, "workspace", "", "Workspace root (default: search upward for go.work)")
 	domainInitCmd.Flags().StringVar(&domainModule, "module", "", "Module path base (default: derived from first app under apps/)")
 	domainInitCmd.Flags().BoolVar(&domainPure, "pure", false, "Table-less logic domain: skip model/repository skeleton")
+	domainJobAddCmd.Flags().StringVar(&domainJobDomain, "domain", "", "Domain name, e.g. export")
+	domainJobAddCmd.Flags().StringVar(&domainJobTask, "task", "", "Task type, e.g. export.demo")
+	domainJobAddCmd.Flags().StringVar(&domainJobMode, "mode", "queue", "Default producer mode: queue or sync")
+	domainJobAddCmd.Flags().StringVar(&domainWorkspace, "workspace", "", "Workspace root (default: search upward for go.work)")
+	domainJobAddCmd.Flags().StringVar(&domainModule, "module", "", "Module path base (default: derived from first app under apps/)")
+}
+
+var domainJobCmd = &cobra.Command{
+	Use:   "job",
+	Short: "Manage domain-owned job publisher and executor files",
+}
+
+var domainJobAddCmd = &cobra.Command{
+	Use:   "add --domain <domain> --task <task-type>",
+	Short: "Generate domain-owned job publisher and executor files",
+	Long: `Generate job publisher and executor files under domains/<domain>/job.
+
+Example:
+  ygctl domain job add --domain export --task export.demo --mode queue`,
+	Args: cobra.NoArgs,
+	RunE: runDomainJobAdd,
 }
 
 func runDomainInit(cmd *cobra.Command, args []string) error {
@@ -91,5 +117,32 @@ func runDomainInit(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("  %d. Add domain logic in service/\n", step)
 	fmt.Printf("  %d. Wire providers in the app, register routes in internal/module/\n", step+1)
+	return nil
+}
+
+func runDomainJobAdd(cmd *cobra.Command, args []string) error {
+	if domainJobDomain == "" {
+		return fmt.Errorf("--domain is required")
+	}
+	if domainJobTask == "" {
+		return fmt.Errorf("--task is required")
+	}
+
+	config := &generator.DomainJobConfig{
+		DomainKey:     domainJobDomain,
+		TaskType:      domainJobTask,
+		Mode:          domainJobMode,
+		WorkspacePath: domainWorkspace,
+		ModuleBase:    domainModule,
+	}
+
+	color.Cyan("\n🚀 Generating domain job: %s (%s)", config.DomainKey, config.TaskType)
+	if err := generator.NewDomainJobGenerator(config).Generate(); err != nil {
+		return err
+	}
+	color.Green("✅ Domain job generated successfully!")
+	fmt.Printf("   Domain: %s\n", config.DomainKey)
+	fmt.Printf("   Task:   %s\n", config.TaskType)
+	fmt.Printf("   Mode:   %s\n", config.Mode)
 	return nil
 }

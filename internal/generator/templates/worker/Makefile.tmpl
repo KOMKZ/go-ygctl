@@ -1,0 +1,12 @@
+.PHONY: build test run
+
+APP := {{.AppName}}
+
+build:
+	go build -o build/$(APP) .
+
+test:
+	go test ./...
+
+run:
+	go run . --profile default

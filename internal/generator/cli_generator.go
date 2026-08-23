@@ -62,7 +62,6 @@ func (g *CLIGenerator) Generate() error {
 		"internal/app",
 		"internal/command",
 		"internal/module/hello",
-		"internal/service",
 	}
 
 	for _, dir := range appDirs {
@@ -133,7 +132,6 @@ func (g *CLIGenerator) generateAppOnly(projectPath, appPath string) error {
 		"internal/app",
 		"internal/command",
 		"internal/module/hello",
-		"internal/service",
 	}
 	for _, dir := range appDirs {
 		if err := os.MkdirAll(filepath.Join(appPath, dir), 0755); err != nil {
@@ -166,8 +164,8 @@ func (g *CLIGenerator) renderAppFiles(appPath string, data map[string]interface{
 		{"cli/internal/module/hello/command.go.tmpl", "internal/module/hello/command.go"},
 		{"cli/internal/module/hello/command_test.go.tmpl", "internal/module/hello/command_test.go"},
 		{"cli/internal/module/hello/provider.go.tmpl", "internal/module/hello/provider.go"},
-		{"cli/internal/service/hello_service.go.tmpl", "internal/service/hello_service.go"},
-		{"cli/internal/service/hello_service_test.go.tmpl", "internal/service/hello_service_test.go"},
+		{"cli/internal/module/hello/service.go.tmpl", "internal/module/hello/service.go"},
+		{"cli/internal/module/hello/service_test.go.tmpl", "internal/module/hello/service_test.go"},
 	}
 
 	for _, f := range appFiles {
