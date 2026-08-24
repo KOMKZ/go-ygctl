@@ -23,6 +23,9 @@ type WebNewConfig struct {
 	APIProxyTarget string // vite /api proxy target; default http://localhost:9201
 	StoragePrefix  string // localStorage key prefix; default first segment of name
 	BackendAppDir  string // startall/stopall 后端目录名; default ../hrise-admin-api
+	AppBasePath    string // authenticated layout base path; default /
+	HomePath       string // authenticated home path; default /dashboard
+	LoginPath      string // login route path; default /login
 }
 
 // WebNewResult reports the generation result.
@@ -40,8 +43,10 @@ type webNewData struct {
 	APIProxyTarget string
 	StoragePrefix  string
 	BackendAppDir  string
+	AppBasePath    string
 	HomePath       string
 	LoginPath      string
+	DashboardPath  string
 }
 
 // Generate renders the admin app skeleton from the golden-app templates
@@ -75,6 +80,19 @@ func (c *WebNewConfig) Generate() (*WebNewResult, error) {
 	if c.BackendAppDir == "" {
 		c.BackendAppDir = "hrise-admin-api"
 	}
+	if c.AppBasePath == "" {
+		c.AppBasePath = "/"
+	}
+	if c.HomePath == "" {
+		c.HomePath = "/dashboard"
+	}
+	if c.LoginPath == "" {
+		c.LoginPath = "/login"
+	}
+	dashboardPath, err := childRoutePath(c.AppBasePath, c.HomePath)
+	if err != nil {
+		return nil, err
+	}
 
 	data := &webNewData{
 		AppName:        c.AppName,
@@ -84,12 +102,14 @@ func (c *WebNewConfig) Generate() (*WebNewResult, error) {
 		APIProxyTarget: c.APIProxyTarget,
 		StoragePrefix:  c.StoragePrefix,
 		BackendAppDir:  c.BackendAppDir,
-		HomePath:       "/dashboard",
-		LoginPath:      "/login",
+		AppBasePath:    c.AppBasePath,
+		HomePath:       c.HomePath,
+		LoginPath:      c.LoginPath,
+		DashboardPath:  dashboardPath,
 	}
 
 	count := 0
-	err := fs.WalkDir(webTemplates, "templates/web/new", func(path string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(webTemplates, "templates/web/new", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -132,6 +152,28 @@ func (c *WebNewConfig) Generate() (*WebNewResult, error) {
 		}
 	}
 	return &WebNewResult{AppPath: c.AppPath, Files: count}, nil
+}
+
+func childRoutePath(basePath, fullPath string) (string, error) {
+	base := strings.TrimSuffix(basePath, "/")
+	full := strings.TrimSuffix(fullPath, "/")
+	if base == "" {
+		base = "/"
+	}
+	if full == "" {
+		full = "/"
+	}
+	if base == "/" {
+		return strings.TrimPrefix(full, "/"), nil
+	}
+	if full == base {
+		return "", nil
+	}
+	prefix := base + "/"
+	if !strings.HasPrefix(full, prefix) {
+		return "", fmt.Errorf("home path %q must be equal to or under app base path %q", fullPath, basePath)
+	}
+	return strings.TrimPrefix(full, prefix), nil
 }
 
 // kebabToTitle converts a kebab-case name to a title: hrise-admin-web-demo

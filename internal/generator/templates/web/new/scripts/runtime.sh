@@ -43,7 +43,7 @@ start_background_process() {
 
   mkdir -p "$runtime_dir"
   stop_pidfile "$pid_file"
-  nohup "$@" >"$log_file" 2>&1 & echo $! >"$pid_file"
+  nohup setsid "$@" >"$log_file" 2>&1 </dev/null & echo $! >"$pid_file"
   sleep 1
   printf "Started %s server on :%s (pid: %s)\n" "$label" "$port" "$(cat "$pid_file")"
 }
@@ -54,7 +54,7 @@ start_dev_bg() {
   local log_file="$3"
   local port="$4"
   load_toolchain
-  start_background_process "$runtime_dir" "$pid_file" "$log_file" "dev" "$port" pnpm dev --port "$port"
+  start_background_process "$runtime_dir" "$pid_file" "$log_file" "dev" "$port" pnpm exec vite --host 127.0.0.1 --port "$port" --strictPort
 }
 
 start_preview_bg() {
@@ -63,7 +63,7 @@ start_preview_bg() {
   local log_file="$3"
   local port="$4"
   load_toolchain
-  start_background_process "$runtime_dir" "$pid_file" "$log_file" "preview" "$port" pnpm preview --port "$port"
+  start_background_process "$runtime_dir" "$pid_file" "$log_file" "preview" "$port" pnpm exec vite preview --host 127.0.0.1 --port "$port" --strictPort
 }
 
 kill_ports() {

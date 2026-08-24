@@ -40,6 +40,9 @@ var (
 	webNewPrefix  string
 	webNewBackend string
 	webNewOut     string
+	webNewBase    string
+	webNewHome    string
+	webNewLogin   string
 )
 
 var webNewCmd = &cobra.Command{
@@ -62,6 +65,9 @@ var webNewCmd = &cobra.Command{
 			APIProxyTarget: webNewProxy,
 			StoragePrefix:  webNewPrefix,
 			BackendAppDir:  webNewBackend,
+			AppBasePath:    webNewBase,
+			HomePath:       webNewHome,
+			LoginPath:      webNewLogin,
 		}
 		result, err := cfg.Generate()
 		if err != nil {
@@ -125,6 +131,9 @@ func init() {
 	webNewCmd.Flags().StringVar(&webNewProxy, "api-proxy", "", "Vite /api proxy target (default http://localhost:9201)")
 	webNewCmd.Flags().StringVar(&webNewPrefix, "storage-prefix", "", "localStorage key prefix (default: first segment of app name)")
 	webNewCmd.Flags().StringVar(&webNewBackend, "backend-app", "", "startall/stopall backend dir name (default hrise-admin-api)")
+	webNewCmd.Flags().StringVar(&webNewBase, "app-base-path", "", "Authenticated layout base path (default /)")
+	webNewCmd.Flags().StringVar(&webNewHome, "home-path", "", "Authenticated home path (default /dashboard)")
+	webNewCmd.Flags().StringVar(&webNewLogin, "login-path", "", "Login route path (default /login)")
 	webEnsureCmd.Flags().StringVar(&ensureAppPath, "app", "", "Existing web app root (required)")
 	webEnsureCmd.Flags().StringVar(&ensureProject, "project", "", "Makefile PROJECT (default: base name of app path)")
 	webEnsureCmd.Flags().IntVar(&ensurePort, "port", 0, "Dev server port (default 3100)")

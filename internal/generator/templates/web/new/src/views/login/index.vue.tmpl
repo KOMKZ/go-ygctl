@@ -238,7 +238,7 @@
     console.log('[Captcha] onBizResult callback, bizResult:', bizResult)
     if (bizResult) {
       message.success('登录成功')
-      const redirect = (route.query.redirect as string) || '/dashboard'
+      const redirect = (route.query.redirect as string) || '[[.HomePath]]'
       router.replace(redirect)
     }
   }
@@ -280,7 +280,7 @@
           pendingResolve = null
         } else {
           message.success('登录成功')
-          const redirect = (route.query.redirect as string) || '/dashboard'
+          const redirect = (route.query.redirect as string) || '[[.HomePath]]'
           router.replace(redirect)
         }
       } else {

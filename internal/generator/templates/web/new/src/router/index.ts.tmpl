@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const staticRoutes: RouteRecordRaw[] = [
   {
-    path: '/login',
+    path: '[[.LoginPath]]',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
     meta: {
@@ -20,13 +20,13 @@ export const staticRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/',
+    path: '[[.AppBasePath]]',
     name: 'Layout',
     component: () => import('@/layouts/AdminLayout.vue'),
-    redirect: '/dashboard',
+    redirect: '[[.HomePath]]',
     children: [
       {
-        path: 'dashboard',
+        path: '[[.DashboardPath]]',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue'),
         meta: {
@@ -35,15 +35,6 @@ export const staticRoutes: RouteRecordRaw[] = [
         },
       },
       // @ygctl-web-gen:routes - 由 ygctl web gen 管理，勿手改
-      {
-        path: 'admin',
-        name: 'AdminList',
-        component: () => import('@/views/admin/index.vue'),
-        meta: {
-          title: '管理员管理',
-          icon: 'Users',
-        },
-      },
       // @ygctl-web-gen:routes:end
     ],
   },

@@ -33,7 +33,7 @@ async function bootstrap() {
     userStore.logout()
     permissionInit?.reset()
 
-    window.location.href = '/login'
+    window.location.href = '[[.LoginPath]]'
   }
 
   const runtimePlugins: AppPlugin[] = [
@@ -77,7 +77,7 @@ async function bootstrap() {
             if (!store.isLoggingIn) {
               forceLogout(`${parseErrorMessage(error)}，请重新登录`)
             }
-            return '/login'
+            return '[[.LoginPath]]'
           }
 
           if (!canAccessRoute(permissionRuntime.uiAuth.value, to.path)) {
@@ -114,9 +114,9 @@ async function bootstrap() {
     rootContainer: '#app',
     router: {
       staticRoutes,
-      whiteList: ['/login'],
-      loginPath: '/login',
-      homePath: '/dashboard',
+      whiteList: ['[[.LoginPath]]'],
+      loginPath: '[[.LoginPath]]',
+      homePath: '[[.HomePath]]',
     },
     auth: {
       storage,
@@ -144,7 +144,7 @@ async function bootstrap() {
         },
       },
       onTokenExpired: () => {
-        window.location.href = '/login'
+        window.location.href = '[[.LoginPath]]'
       },
     },
     request: {

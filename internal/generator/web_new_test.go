@@ -18,6 +18,8 @@ func TestWebNew_Generate(t *testing.T) {
 		AppPort:        3200,
 		APIProxyTarget: "http://localhost:9201",
 		StoragePrefix:  "demo",
+		AppBasePath:    "/app",
+		HomePath:       "/app/dashboard",
 	}
 	result, err := cfg.Generate()
 	if err != nil {
@@ -30,6 +32,7 @@ func TestWebNew_Generate(t *testing.T) {
 	// 关键文件存在
 	for _, f := range []string{
 		"package.json", "Makefile", "index.html", "vite.config.ts", "README.md",
+		".eslintrc.cjs",
 		"src/main.ts", "src/app.ts", "src/router/index.ts",
 		"src/views/login/index.vue", "src/views/dashboard/index.vue",
 		"src/layouts/components/SidebarMenu.vue",
@@ -56,12 +59,23 @@ func TestWebNew_Generate(t *testing.T) {
 	if !strings.Contains(string(router), "HRise Admin Demo") {
 		t.Errorf("router title not parameterized:\n%s", router)
 	}
+	if !strings.Contains(string(router), "path: '/app'") ||
+		!strings.Contains(string(router), "redirect: '/app/dashboard'") ||
+		!strings.Contains(string(router), "path: 'dashboard'") {
+		t.Errorf("router home path not parameterized:\n%s", router)
+	}
 	if !strings.Contains(string(router), routeMarkerBegin) || !strings.Contains(string(router), routeMarkerEnd) {
 		t.Errorf("router markers missing in generated app")
+	}
+	if strings.Contains(string(router), "views/admin") {
+		t.Errorf("fresh web skeleton must not reference a CRUD page before web gen:\n%s", router)
 	}
 	mainTS, _ := os.ReadFile(filepath.Join(out, "src/main.ts"))
 	if !strings.Contains(string(mainTS), "demo-login-hint") {
 		t.Errorf("storage prefix not parameterized in main.ts")
+	}
+	if !strings.Contains(string(mainTS), "homePath: '/app/dashboard'") {
+		t.Errorf("main.ts home path not parameterized:\n%s", mainTS)
 	}
 
 	// shell 脚本原样复制（bash [[ ]] 与模板定界符不冲突）
@@ -84,5 +98,19 @@ func TestWebNew_RequiresUILink(t *testing.T) {
 	_, err := cfg.Generate()
 	if err == nil || !strings.Contains(err.Error(), "ui link") {
 		t.Errorf("error = %v, want ui link required message", err)
+	}
+}
+
+func TestWebNew_HomePathMustBeUnderAppBase(t *testing.T) {
+	cfg := &WebNewConfig{
+		AppName:     "demo-app",
+		AppPath:     t.TempDir() + "/demo-app",
+		UILink:      "link:x",
+		AppBasePath: "/app",
+		HomePath:    "/dashboard",
+	}
+	_, err := cfg.Generate()
+	if err == nil || !strings.Contains(err.Error(), "must be equal to or under app base path") {
+		t.Errorf("error = %v, want base path validation message", err)
 	}
 }
