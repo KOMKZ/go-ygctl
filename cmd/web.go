@@ -27,7 +27,7 @@ DSL 分文件约定：
   defs/<entity>.ui.yaml  前端呈现 def（菜单/列/搜索/表单/风格），api gen 不消费
 
 CRUD 模板多风格（默认 dialog，可扩展）：
-  dialog  列表页 + 新建/编辑弹窗（RFilterBarPro + RDataTable + RCrudFormDialog）
+  dialog  列表页 + 新建/编辑弹窗（RListPage + RCrudFormDialog）
   page    列表页 + 独立新建/编辑页面路由（create/edit）`,
 }
 

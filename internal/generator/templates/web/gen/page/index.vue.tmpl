@@ -1,24 +1,25 @@
 <template>
-  <div class="ra-page" data-testid="[[.Entity]]-list-page">
-    <RFilterBarPro
-      v-model="filterValues"
-      :schema="filterSchema"
-      :collapsible="false"
-      search-label="搜索"
-      reset-label="重置"
-      data-testid="[[.Entity]]-filter-bar"
-      @search="handleSearch"
-      @reset="handleReset"
-    />
-
-    <RTableCard
+  <RListPage
       :loading="loading"
       :refreshable="true"
       :exportable="true"
-      data-testid="[[.Entity]]-card"
+      data-testid="[[.Entity]]-list-page"
+      table-testid="[[.Entity]]-card"
       @refresh="loadData"
       @export="handleExportAll"
     >
+    <template #filters>
+      <RFilterBarPro
+        v-model="filterValues"
+        :schema="filterSchema"
+        :collapsible="false"
+        search-label="搜索"
+        reset-label="重置"
+        data-testid="[[.Entity]]-filter-bar"
+        @search="handleSearch"
+        @reset="handleReset"
+      />
+    </template>
       <template #extra>
         <n-space size="small">
           <n-button type="primary" size="small" data-testid="[[.Entity]]-add-btn" @click="handleAdd">
@@ -59,8 +60,7 @@
           />
         </template>
       </RDataTable>
-    </RTableCard>
-  </div>
+  </RListPage>
 </template>
 
 <script setup lang="ts">
@@ -71,7 +71,7 @@ import { NButton, NSpace, NTag, NIcon, useMessage, useDialog } from '@rong/admin
 import { Plus as PlusIcon } from 'lucide-vue-next'
 import {
   RFilterBarPro,
-  RTableCard,
+  RListPage,
   RDataTable,
   REmptyState,
   RRowActions,

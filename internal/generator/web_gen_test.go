@@ -32,6 +32,32 @@ func TestWebGenStyles_Registered(t *testing.T) {
 	}
 }
 
+func TestWebGenTemplates_UseFrameworkPageLayouts(t *testing.T) {
+	cases := map[string][]string{
+		"gen/dialog/index.vue.tmpl": {"<RListPage", "table-testid=", "RListPage,"},
+		"gen/page/index.vue.tmpl":   {"<RListPage", "table-testid=", "RListPage,"},
+		"gen/page/create.vue.tmpl":  {"<RFormPage", "card-testid=", "RFormPage,"},
+		"gen/page/edit.vue.tmpl":    {"<RFormPage", "card-testid=", "RFormPage,"},
+	}
+	for tmpl, required := range cases {
+		raw, err := webTemplates.ReadFile("templates/web/" + tmpl)
+		if err != nil {
+			t.Fatalf("read %s: %v", tmpl, err)
+		}
+		body := string(raw)
+		for _, token := range required {
+			if !strings.Contains(body, token) {
+				t.Errorf("%s missing %q", tmpl, token)
+			}
+		}
+		for _, forbidden := range []string{`class="ra-page"`, "<RTableCard", `class="ra-card"`} {
+			if strings.Contains(body, forbidden) {
+				t.Errorf("%s contains deprecated page layout token %q", tmpl, forbidden)
+			}
+		}
+	}
+}
+
 // TestResolveWebFields_Defaults 校验默认呈现规则（CRUD-SPEC §2 兜底）。
 func TestResolveWebFields_Defaults(t *testing.T) {
 	def := &Def{

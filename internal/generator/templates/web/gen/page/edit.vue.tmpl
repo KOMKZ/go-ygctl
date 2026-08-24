@@ -1,6 +1,5 @@
 <template>
-  <div class="ra-page" data-testid="[[.Entity]]-edit-page">
-    <div class="ra-card">
+  <RFormPage width="medium" data-testid="[[.Entity]]-edit-page" card-testid="[[.Entity]]-edit-card">
       <RFormRenderer
         ref="formRef"
         :schema="editSchema"
@@ -21,8 +20,7 @@
           保存
         </n-button>
       </n-space>
-    </div>
-  </div>
+  </RFormPage>
 </template>
 
 <script setup lang="ts">
@@ -30,7 +28,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NSpace, NButton, useMessage } from '@rong/admin-ui/naive'
-import { RFormRenderer } from '@rong/admin-ui'
+import { RFormPage, RFormRenderer } from '@rong/admin-ui'
 import type { FormFieldSchema, FormRendererExpose } from '@rong/admin-ui'
 import type { [[.EntityPascal]]FormModel } from '@/api/[[.Entity]]'
 import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
@@ -106,11 +104,5 @@ onMounted(() => {
 <style scoped>
 .form-actions {
   margin-top: var(--ra-spacing-6);
-}
-
-/* 表单卡片 50% 布局：避免全宽输入框 */
-.ra-card {
-  max-width: 50%;
-  min-width: 420px;
 }
 </style>

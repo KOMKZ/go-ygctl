@@ -1,6 +1,5 @@
 <template>
-  <div class="ra-page" data-testid="[[.Entity]]-create-page">
-    <div class="ra-card">
+  <RFormPage width="medium" data-testid="[[.Entity]]-create-page" card-testid="[[.Entity]]-create-card">
       <RFormRenderer
         ref="formRef"
         :schema="createSchema"
@@ -21,8 +20,7 @@
           保存
         </n-button>
       </n-space>
-    </div>
-  </div>
+  </RFormPage>
 </template>
 
 <script setup lang="ts">
@@ -30,7 +28,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 [[if .HasCreateOnlyFields]]import { NInput, NSpace, NButton, useMessage } from '@rong/admin-ui/naive'[[else]]import { NSpace, NButton, useMessage } from '@rong/admin-ui/naive'[[end]]
-import { RFormRenderer } from '@rong/admin-ui'
+import { RFormPage, RFormRenderer } from '@rong/admin-ui'
 import type { FormFieldSchema, FormRendererExpose } from '@rong/admin-ui'
 import type { [[.EntityPascal]]FormModel } from '@/api/[[.Entity]]'
 import { create[[.EntityPascal]]Api } from '@/api/[[.Entity]]'
@@ -79,11 +77,5 @@ async function handleSubmit() {
 <style scoped>
 .form-actions {
   margin-top: var(--ra-spacing-6);
-}
-
-/* 表单卡片 50% 布局：避免全宽输入框 */
-.ra-card {
-  max-width: 50%;
-  min-width: 420px;
 }
 </style>
