@@ -1,0 +1,14 @@
+package model
+
+import "time"
+
+// {{.EntityPascal}}ReadListItem 是管理端列表读模型，不作为领域写模型使用。
+type {{.EntityPascal}}ReadListItem struct {
+	ID                 uint       `gorm:"column:id"`
+	UserID             uint       `gorm:"column:user_id"`
+	UserNickname       string     `gorm:"column:user_nickname"`
+	ReplyAdminID       *uint      `gorm:"column:reply_admin_id"`
+	ReplyAdminRealName string     `gorm:"column:reply_admin_real_name"`
+	CreatedAt          time.Time  `gorm:"column:created_at"`
+	UpdatedAt          time.Time  `gorm:"column:updated_at"`
+}

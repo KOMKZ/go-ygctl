@@ -1,0 +1,61 @@
+package repository
+
+import (
+	"context"
+	"strings"
+
+	"{{.DomainImport}}/read/model"
+	"gorm.io/gorm"
+)
+
+// MySQL{{.EntityPascal}}ReadRepository 是 MVP 阶段的 JOIN 实现。
+// 用户表、管理员表和字段名必须按实际项目核对；未来切换 CDC/宽表时只替换本文件。
+type MySQL{{.EntityPascal}}ReadRepository struct {
+	db *gorm.DB
+}
+
+func NewMySQL{{.EntityPascal}}ReadRepository(db *gorm.DB) *MySQL{{.EntityPascal}}ReadRepository {
+	return &MySQL{{.EntityPascal}}ReadRepository{db: db}
+}
+
+func (r *MySQL{{.EntityPascal}}ReadRepository) Page(ctx context.Context, filter {{.EntityPascal}}ReadFilter, page, size int) ([]model.{{.EntityPascal}}ReadListItem, int64, error) {
+	query := r.baseQuery(ctx, filter)
+	var total int64
+	if err := query.Session(&gorm.Session{}).Select("COUNT(DISTINCT f.id)").Scan(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if page <= 0 { page = 1 }
+	if size <= 0 || size > 100 { size = 20 }
+	rows := make([]model.{{.EntityPascal}}ReadListItem, 0)
+	listQuery := r.baseQuery(ctx, filter)
+	err := listQuery.Select("f.id, f.user_id, u.nickname AS user_nickname, f.reply_admin_id, a.real_name AS reply_admin_real_name, f.created_at, f.updated_at").
+		Order(readOrder(filter.SortBy, filter.SortOrder)).Offset((page - 1) * size).Limit(size).Scan(&rows).Error
+	return rows, total, err
+}
+
+func (r *MySQL{{.EntityPascal}}ReadRepository) Get(ctx context.Context, id uint) (*model.{{.EntityPascal}}ReadDetailItem, error) {
+	row := new(model.{{.EntityPascal}}ReadDetailItem)
+	err := r.baseQuery(ctx, {{.EntityPascal}}ReadFilter{}).Select("f.id, f.user_id, u.nickname AS user_nickname, f.reply_admin_id, a.real_name AS reply_admin_real_name, f.created_at, f.updated_at").Where("f.id = ?", id).Limit(1).Scan(row).Error
+	if err != nil || row.ID == 0 { return nil, err }
+	return row, nil
+}
+
+func (r *MySQL{{.EntityPascal}}ReadRepository) baseQuery(ctx context.Context, filter {{.EntityPascal}}ReadFilter) *gorm.DB {
+	query := r.db.WithContext(ctx).Table("{{.TableName}} AS f").Joins("LEFT JOIN users AS u ON u.id = f.user_id").Joins("LEFT JOIN admins AS a ON a.id = f.reply_admin_id")
+	if filter.UserID != nil { query = query.Where("f.user_id = ?", *filter.UserID) }
+	if filter.AdminID != nil { query = query.Where("f.reply_admin_id = ?", *filter.AdminID) }
+	if v := strings.TrimSpace(filter.UserKeyword); v != "" { like := "%" + v + "%"; query = query.Where("(u.nickname LIKE ? OR u.email LIKE ?)", like, like) }
+	if v := strings.TrimSpace(filter.AdminKeyword); v != "" { like := "%" + v + "%"; query = query.Where("(a.username LIKE ? OR a.real_name LIKE ?)", like, like) }
+	return query
+}
+
+func readOrder(sortBy, sortOrder string) string {
+	columns := map[string]string{"id": "f.id", "created_at": "f.created_at", "user_nickname": "u.nickname", "admin_name": "a.real_name"}
+	column := columns[sortBy]
+	if column == "" { column = "f.created_at" }
+	direction := "DESC"
+	if strings.EqualFold(sortOrder, "asc") { direction = "ASC" }
+	return column + " " + direction + ", f.id DESC"
+}
+
+var _ {{.EntityPascal}}ReadRepository = (*MySQL{{.EntityPascal}}ReadRepository)(nil)

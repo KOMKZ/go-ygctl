@@ -1,0 +1,14 @@
+package model
+
+import "time"
+
+// {{.EntityPascal}}ReadDetailItem 是管理端详情读模型。
+type {{.EntityPascal}}ReadDetailItem struct {
+	ID                 uint       `gorm:"column:id"`
+	UserID             uint       `gorm:"column:user_id"`
+	UserNickname       string     `gorm:"column:user_nickname"`
+	ReplyAdminID       *uint      `gorm:"column:reply_admin_id"`
+	ReplyAdminRealName string     `gorm:"column:reply_admin_real_name"`
+	CreatedAt          time.Time  `gorm:"column:created_at"`
+	UpdatedAt          time.Time  `gorm:"column:updated_at"`
+}

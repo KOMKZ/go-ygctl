@@ -1,0 +1,32 @@
+# [[.AppName]] 前端开发规则
+
+## 项目定位
+
+这是基于 Vue 3、TypeScript、Vite 和 `@rong/admin-ui` 的管理端应用。页面优先服务于列表筛选、详情查看和重复操作，不在业务页面重复实现底座能力。
+
+## 目录约定
+
+| 目录 | 规则 |
+|---|---|
+| `src/api/` | API 类型、请求参数和响应适配；字段名必须与后端 JSON 契约一致 |
+| `src/views/` | 业务页面和抽屉；列表、详情、表单按实际工作流拆分 |
+| `src/router/` | 路由入口；`ygctl web gen` 管理的 marker 区域不要手改 |
+| `src/layouts/` | 全局布局和菜单；业务页面不要复制布局逻辑 |
+
+## 生成规则
+
+1. 使用 `ygctl web gen <entity> -f defs/<entity>.yaml --app <app>` 生成 CRUD 页面。
+2. 前端 DSL 放在 `defs/<entity>.ui.yaml`，只描述菜单、列、搜索、表单和页面风格。
+3. 读侧字段可以直接加入后端 def 的响应字段；不要为了显示关联名称在前端发起 N+1 请求。
+4. 图片、头像等 URL 必须使用后端已经解析好的 `*_urls` 字段，前端只负责展示和预览。
+5. 生成文件可以二次业务化，但不要覆盖手写代码；重复生成前先确认目标文件属于 ygctl 管理范围。
+
+## 质量门禁
+
+```bash
+make typecheck
+make lint
+make build
+```
+
+禁止在生成流程中强制执行 git commit、push 或覆盖用户未托管的文件。

@@ -117,6 +117,15 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 				out  string
 			}{"repository/repository_mysql.go.tmpl", "repository/repository_mysql.go"},
 		)
+		files = append(files,
+			struct{ tmpl, out string }{"read/model/read_list_item.go.tmpl", "read/model/" + entitySnake + "_read_list_item.go"},
+			struct{ tmpl, out string }{"read/model/read_detail_item.go.tmpl", "read/model/" + entitySnake + "_read_detail_item.go"},
+			struct{ tmpl, out string }{"read/repository/read_repository.go.tmpl", "read/repository/" + entitySnake + "_read_repository.go"},
+			struct{ tmpl, out string }{"read/repository/read_repository_mysql.go.tmpl", "read/repository/" + entitySnake + "_read_repository_mysql.go"},
+			struct{ tmpl, out string }{"read/service/read_query_types.go.tmpl", "read/service/" + entitySnake + "_read_query_types.go"},
+			struct{ tmpl, out string }{"read/service/read_query_service.go.tmpl", "read/service/" + entitySnake + "_read_query_service.go"},
+			struct{ tmpl, out string }{"read/claude.md.tmpl", "read/claude.md"},
+		)
 	}
 
 	var goFiles []string

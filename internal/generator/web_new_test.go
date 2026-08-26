@@ -32,6 +32,7 @@ func TestWebNew_Generate(t *testing.T) {
 	// 关键文件存在
 	for _, f := range []string{
 		"package.json", "Makefile", "index.html", "vite.config.ts", "README.md",
+		"CLAUDE.md",
 		".eslintrc.cjs",
 		"src/main.ts", "src/app.ts", "src/router/index.ts",
 		"src/views/login/index.vue", "src/views/dashboard/index.vue",

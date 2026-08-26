@@ -1,0 +1,23 @@
+package repository
+
+import (
+	"context"
+
+	"{{.DomainImport}}/read/model"
+)
+
+// {{.EntityPascal}}ReadFilter 是读侧过滤条件。过滤、排序和分页必须在数据库完成。
+type {{.EntityPascal}}ReadFilter struct {
+	UserID      *uint
+	AdminID     *uint
+	UserKeyword string
+	AdminKeyword string
+	SortBy      string
+	SortOrder   string
+}
+
+// {{.EntityPascal}}ReadRepository 只负责管理端读模型查询，不承载写入。
+type {{.EntityPascal}}ReadRepository interface {
+	Page(ctx context.Context, filter {{.EntityPascal}}ReadFilter, page, size int) ([]model.{{.EntityPascal}}ReadListItem, int64, error)
+	Get(ctx context.Context, id uint) (*model.{{.EntityPascal}}ReadDetailItem, error)
+}

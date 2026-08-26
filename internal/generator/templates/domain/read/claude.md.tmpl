@@ -1,0 +1,29 @@
+# {{.DomainKey}} 读侧设计规则
+
+## 目的
+
+`read/` 只承载列表、详情、枚举、导出等查询模型，不修改领域写模型，也不把跨域关联塞进写 Repository。
+
+## 目录约定
+
+| 目录 | 规则 |
+|---|---|
+| `model/` | 轻量 GORM 读模型，只描述查询结果列，不复用写模型 |
+| `repository/` | 过滤、排序、分页必须下沉数据库；MVP 可使用 JOIN |
+| `service/` | Query Service 负责查询编排和 DTO 前的转换，不拼接 SQL |
+
+## 设计铁律
+
+1. 文件名必须使用业务前缀，例如 `{{.EntitySnake}}_read_repository.go`。
+2. 不在 handler 中查询数据库，不把用户或管理员表名暴露为 domain port。
+3. COUNT 和列表查询使用独立 GORM 查询链，避免 JOIN 别名被重复追加。
+4. 排序字段必须白名单映射，禁止把请求参数直接拼入 SQL。
+5. URL、枚举名称等展示字段由 Query Service 完成 enrich；失败时保留原始存储 ID，不阻断主查询。
+6. 当前使用 JOIN 是 MVP 的工程取舍。未来切换 CDC/宽表时，只替换 read repository，不改变 handler 和 Query Service 契约。
+
+## 验证
+
+```bash
+go test ./domains/{{.DomainKey}}/...
+go build ./domains/{{.DomainKey}}/...
+```

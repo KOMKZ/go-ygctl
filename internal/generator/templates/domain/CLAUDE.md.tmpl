@@ -16,6 +16,7 @@
 {{- if not .Pure}}
 | model/ | gorm 实体（可用 `ygctl model from-table <table> --domain {{.DomainKey}}` 生成） |
 | repository/ | 数据访问接口 + MySQL 实现（基于 framework database.BaseRepository） |
+| read/ | 管理端列表/详情等读模型；MVP 可 JOIN，未来可替换为 CDC/宽表 |
 {{- end}}
 | service/ | 领域业务规则（骨架无逻辑，按需添加） |
 | port/ | 端口定义："域定义、外部实现"的接口 + 域默认实现（app 层适配注入） |
@@ -31,7 +32,7 @@
 {{end}}
 ## 铁律
 
-1. **域根目录不放置代码**：根目录只有 go.mod/.gitignore/CLAUDE.md；一切代码进子包（errors/model/repository/service/port/provider/event/permissions/policy/assembler）
+1. **域根目录不放置代码**：根目录只有 go.mod/.gitignore/CLAUDE.md；一切代码进子包（errors/model/repository/read/service/port/provider/event/permissions/policy/assembler）
 2. **migration 不属于域**：所有 SQL 集中在 `apps/<app>/migrations/`，用 `ygctl migrate create <desc> --domain {{.DomainKey}}` 创建，禁止在域内放 SQL
 3. **model 变更必须有迁移**：加/改字段同步补 migration SQL
 4. **错误码**：模块号固定；新增业务码扫描 errors/errors.go 取 max+1
@@ -59,7 +60,7 @@ go build ./...
 {{if .Pure}}1. 改 service/port，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
 2. 权限相关 → 更新 permissions/declared_permissions.go
 3. 事件相关 → 在 event/ 定义，app 层 subscriber 订阅
-{{else}}1. 改 model/repository/service，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
+{{else}}1. 改 model/repository/read/service，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
 2. model 变更 → `ygctl migrate create` 补 SQL
 3. 权限相关 → 更新 permissions/declared_permissions.go
 4. 事件相关 → 在 event/ 定义，app 层 subscriber 订阅

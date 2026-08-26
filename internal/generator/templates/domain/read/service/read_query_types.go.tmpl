@@ -1,0 +1,31 @@
+package service
+
+import (
+	"context"
+
+	"{{.DomainImport}}/read/model"
+	readrepo "{{.DomainImport}}/read/repository"
+)
+
+type {{.EntityPascal}}ReadFilter struct {
+	UserID      *uint
+	AdminID     *uint
+	UserKeyword string
+	AdminKeyword string
+	SortBy      string
+	SortOrder   string
+}
+
+type {{.EntityPascal}}ReadQueryService struct { repo readrepo.{{.EntityPascal}}ReadRepository }
+
+func New{{.EntityPascal}}ReadQueryService(repo readrepo.{{.EntityPascal}}ReadRepository) *{{.EntityPascal}}ReadQueryService {
+	return &{{.EntityPascal}}ReadQueryService{repo: repo}
+}
+
+func (s *{{.EntityPascal}}ReadQueryService) Page(ctx context.Context, filter {{.EntityPascal}}ReadFilter, page, size int) ([]model.{{.EntityPascal}}ReadListItem, int64, error) {
+	return s.repo.Page(ctx, readrepo.{{.EntityPascal}}ReadFilter{UserID: filter.UserID, AdminID: filter.AdminID, UserKeyword: filter.UserKeyword, AdminKeyword: filter.AdminKeyword, SortBy: filter.SortBy, SortOrder: filter.SortOrder}, page, size)
+}
+
+func (s *{{.EntityPascal}}ReadQueryService) Detail(ctx context.Context, id uint) (*model.{{.EntityPascal}}ReadDetailItem, error) {
+	return s.repo.Get(ctx, id)
+}
