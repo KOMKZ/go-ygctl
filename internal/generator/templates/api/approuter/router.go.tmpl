@@ -3,7 +3,7 @@ package router
 import (
 	"github.com/KOMKZ/go-yogan-framework/application"
 	"github.com/KOMKZ/go-yogan-framework/httpx"
-	{{.EntitySnake}}Module "{{.AppModule}}/internal/module/{{.EntitySnake}}"
+	{{.AppModuleSnake}}Module "{{.AppModule}}/internal/module/{{.AppModuleSnake}}"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/do/v2"
 )
@@ -11,7 +11,7 @@ import (
 // Register{{.EntityPascal}}Routes registers the {{.TableName}} routes of {{.AppName}}.
 func Register{{.EntityPascal}}Routes(engine *gin.Engine, app *application.Application) {
 	injector := app.GetInjector()
-	handler := do.MustInvoke[*{{.EntitySnake}}Module.{{.EntityPascal}}Handler](injector)
+	handler := do.MustInvoke[*{{.AppModuleSnake}}Module.{{.EntityPascal}}Handler](injector)
 
 	api := engine.Group("/api")
 	group := api.Group("{{.RouteBase}}")

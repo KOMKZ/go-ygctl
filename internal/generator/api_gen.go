@@ -61,7 +61,7 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 	data.AppModule = appModule
 	data.AppName = appName
 
-	result := &APIGenResult{DomainDir: domainDir, ModuleDir: filepath.Join(appDir, "internal", "module", data.EntitySnake)}
+	result := &APIGenResult{DomainDir: domainDir, ModuleDir: filepath.Join(appDir, "internal", "module", data.AppModuleSnake)}
 
 	// ---- Domain-side files ----
 	domainFiles := []struct {
@@ -98,9 +98,9 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		tmpl string
 		out  string
 	}{
-		{"appmodule/handler.go.tmpl", "internal/module/" + data.EntitySnake + "/handler.go"},
-		{"appmodule/dto.go.tmpl", "internal/module/" + data.EntitySnake + "/dto.go"},
-		{"appmodule/provider.go.tmpl", "internal/module/" + data.EntitySnake + "/provider.go"},
+		{"appmodule/handler.go.tmpl", "internal/module/" + data.AppModuleSnake + "/" + data.AppFilePrefix + "_handler.go"},
+		{"appmodule/dto.go.tmpl", "internal/module/" + data.AppModuleSnake + "/" + data.AppFilePrefix + "_dto.go"},
+		{"appmodule/provider.go.tmpl", "internal/module/" + data.AppModuleSnake + "/" + data.AppFilePrefix + "_provider.go"},
 		{"approuter/router.go.tmpl", "internal/router/" + data.EntitySnake + "_router.go"},
 	}
 	for _, f := range appFiles {
@@ -130,7 +130,7 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		filepath.Join(domainDir, "service"),
 		filepath.Join(domainDir, "provider"),
 		filepath.Join(domainDir, "permissions"),
-		filepath.Join(appDir, "internal", "module", data.EntitySnake),
+		filepath.Join(appDir, "internal", "module", data.AppModuleSnake),
 		filepath.Join(appDir, "internal", "router"),
 		filepath.Join(appDir, "internal", "app"),
 	}
@@ -192,9 +192,9 @@ func wireCallbacks(appDir string, data *defTemplateData) error {
 	}
 	text := string(content)
 
-	modImport := fmt.Sprintf("\t%sModule \"%s/internal/module/%s\"\n", data.EntitySnake, data.AppModule, data.EntitySnake)
+	modImport := fmt.Sprintf("\t%sModule \"%s/internal/module/%s\"\n", data.AppModuleSnake, data.AppModule, data.AppModuleSnake)
 	doImport := fmt.Sprintf("\t%sDo \"%s/provider/do\"\n", data.DomainSnake, data.DomainImport)
-	provideLine := fmt.Sprintf("\tdo.Provide(injector, %sModule.Provide%sHandler)\n", data.EntitySnake, data.EntityPascal)
+	provideLine := fmt.Sprintf("\tdo.Provide(injector, %sModule.Provide%sHandler)\n", data.AppModuleSnake, data.EntityPascal)
 	domainProvideRepo := fmt.Sprintf("\tdo.Provide(injector, %sDo.Provide%sRepository)\n", data.DomainSnake, data.EntityPascal)
 	domainProvideSvc := fmt.Sprintf("\tdo.Provide(injector, %sDo.Provide%sService)\n", data.DomainSnake, data.EntityPascal)
 
@@ -217,7 +217,7 @@ func wireCallbacks(appDir string, data *defTemplateData) error {
 		return fmt.Errorf("cannot locate import block in callbacks.go")
 	}
 	insert := []string{}
-	if !strings.Contains(text, `internal/module/`+data.EntitySnake+`"`) {
+	if !strings.Contains(text, `internal/module/`+data.AppModuleSnake+`"`) {
 		insert = append(insert, modImport)
 	}
 	if !strings.Contains(text, `"`+data.DomainImport+`/provider/do"`) {

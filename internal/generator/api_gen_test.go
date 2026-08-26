@@ -67,3 +67,51 @@ func TestAPIGenDTOUsesSnakeCaseJSONContract(t *testing.T) {
 		}
 	}
 }
+
+func TestAPIGenUsesRouteGroupModuleAndBusinessFilePrefix(t *testing.T) {
+	workspace := t.TempDir()
+	appDir := filepath.Join(workspace, "apps", "hrise-admin-api")
+	domainDir := filepath.Join(workspace, "domains", "shop")
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		t.Fatalf("mkdir app: %v", err)
+	}
+	if err := os.MkdirAll(domainDir, 0755); err != nil {
+		t.Fatalf("mkdir domain: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(appDir, "go.mod"), []byte("module github.com/KOMKZ/hrise-server-app/apps/hrise-admin-api\n"), 0644); err != nil {
+		t.Fatalf("write go.mod: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, "go.work"), []byte("go 1.24.1\n"), 0644); err != nil {
+		t.Fatalf("write go.work: %v", err)
+	}
+
+	data, err := buildDefTemplateData(workspace, domainDir, &Def{
+		Domain:    "shop",
+		Entity:    "attribute-set",
+		Table:     "attribute_sets",
+		RouteBase: "/shop/attribute-sets",
+		Fields:    []DefField{{Name: "set_code", Type: "string"}},
+	})
+	if err != nil {
+		t.Fatalf("build template data: %v", err)
+	}
+	if data.AppModuleSnake != "shop" {
+		t.Fatalf("AppModuleSnake = %q, want shop", data.AppModuleSnake)
+	}
+	if data.AppFilePrefix != "attr" {
+		t.Fatalf("AppFilePrefix = %q, want attr", data.AppFilePrefix)
+	}
+
+	outPath := filepath.Join(workspace, "apps", "hrise-admin-api", "internal", "module", data.AppModuleSnake, data.AppFilePrefix+"_handler.go")
+	if err := renderDefTemplate(apiTemplates, "templates/api", outPath, "appmodule/handler.go.tmpl", data); err != nil {
+		t.Fatalf("render handler template: %v", err)
+	}
+	content, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read generated handler: %v", err)
+	}
+	text := string(content)
+	if !strings.HasPrefix(text, "package shop\n") {
+		t.Fatalf("generated handler package mismatch:\n%s", text)
+	}
+}
