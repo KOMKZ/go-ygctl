@@ -18,6 +18,7 @@ var rootCmd = &cobra.Command{
 Commands:
   new        Create a new application
   component  Manage framework components
+  render     Manage Remotion render templates
 
 Supported application types:
 - HTTP (Gin-based web application)
@@ -27,7 +28,8 @@ Supported application types:
 Examples:
   go-ygctl new http              # Create a new HTTP application
   go-ygctl component list        # List available components
-  go-ygctl component add database # Generate integration guide`,
+  go-ygctl component add database # Generate integration guide
+  go-ygctl render template init --name bookquote --composition-id BookquoteV1`,
 	Version: version,
 }
 
