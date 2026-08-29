@@ -10,18 +10,18 @@ import (
 )
 
 var (
-	renderTemplateName         string
-	renderTemplateComposition  string
-	renderTemplateContractsDir string
-	renderTemplateStudioDir    string
-	renderTemplateWorkerDir    string
-	renderTemplateGoDir        string
+	renderTemplateName           string
+	renderTemplateComposition    string
+	renderTemplateContractsDir   string
+	renderTemplateStudioDir      string
+	renderTemplateWorkerDir      string
+	renderTemplateGoComponentDir string
 )
 
 var renderCmd = &cobra.Command{
 	Use:   "render",
 	Short: "Manage Remotion render templates",
-	Long:  "Manage Remotion render template skeletons shared by contracts, Studio, render worker, and Go workflow.",
+	Long:  "Manage Remotion render template skeletons shared by contracts, Studio, render worker, and the Go render component.",
 }
 
 var renderTemplateCmd = &cobra.Command{
@@ -51,7 +51,7 @@ func init() {
 	renderTemplateInitCmd.Flags().StringVar(&renderTemplateContractsDir, "contracts-dir", "hrise-rm-contracts", "Contracts project directory")
 	renderTemplateInitCmd.Flags().StringVar(&renderTemplateStudioDir, "studio-dir", "hrise-rm-studio", "Remotion Studio project directory")
 	renderTemplateInitCmd.Flags().StringVar(&renderTemplateWorkerDir, "worker-dir", "hrise-rm-render-server", "Render worker project directory")
-	renderTemplateInitCmd.Flags().StringVar(&renderTemplateGoDir, "go-dir", "hrise-server-app", "Go workflow project directory")
+	renderTemplateInitCmd.Flags().StringVar(&renderTemplateGoComponentDir, "go-component-dir", "hrise-server-app/components/go-yogan-component-render", "Go render component directory")
 }
 
 func runRenderTemplateInit(cmd *cobra.Command, args []string) error {
@@ -60,12 +60,12 @@ func runRenderTemplateInit(cmd *cobra.Command, args []string) error {
 	}
 
 	config := &generator.RenderTemplateConfig{
-		Name:          renderTemplateName,
-		CompositionID: renderTemplateComposition,
-		ContractsDir:  renderTemplateContractsDir,
-		StudioDir:     renderTemplateStudioDir,
-		WorkerDir:     renderTemplateWorkerDir,
-		GoDir:         renderTemplateGoDir,
+		Name:           renderTemplateName,
+		CompositionID:  renderTemplateComposition,
+		ContractsDir:   renderTemplateContractsDir,
+		StudioDir:      renderTemplateStudioDir,
+		WorkerDir:      renderTemplateWorkerDir,
+		GoComponentDir: renderTemplateGoComponentDir,
 	}
 
 	color.Cyan("\n🚀 Generating render template: %s", config.Name)

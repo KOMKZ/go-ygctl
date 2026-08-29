@@ -25,8 +25,10 @@ go-ygctl render template init --name bookquote --composition-id BookquoteV1
 ```
 
 This command generates deterministic skeleton files across contracts, Studio,
-render worker, and Go workflow handoff directories. It does not generate
-business copy, credentials, assets, or per-video Remotion source.
+render worker, and the Go render component. Contracts remain language-neutral:
+Go and TypeScript contract code is generated into consumer projects, not into
+`hrise-rm-contracts/packages`. It does not generate business copy, credentials,
+assets, or per-video Remotion source.
 
 ### Create HTTP Application
 

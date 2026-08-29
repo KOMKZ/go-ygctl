@@ -11,11 +11,11 @@ import (
 func TestRenderTemplateGeneratorGenerate(t *testing.T) {
 	root := t.TempDir()
 	cfg := &RenderTemplateConfig{
-		Name:         "quote-card",
-		ContractsDir: filepath.Join(root, "hrise-rm-contracts"),
-		StudioDir:    filepath.Join(root, "hrise-rm-studio"),
-		WorkerDir:    filepath.Join(root, "hrise-rm-render-server"),
-		GoDir:        filepath.Join(root, "hrise-server-app"),
+		Name:           "quote-card",
+		ContractsDir:   filepath.Join(root, "hrise-rm-contracts"),
+		StudioDir:      filepath.Join(root, "hrise-rm-studio"),
+		WorkerDir:      filepath.Join(root, "hrise-rm-render-server"),
+		GoComponentDir: filepath.Join(root, "hrise-server-app", "components", "go-yogan-component-render"),
 	}
 
 	result, err := NewRenderTemplateGenerator(cfg).Generate()
@@ -29,7 +29,7 @@ func TestRenderTemplateGeneratorGenerate(t *testing.T) {
 	if result.CompositionID != "QuoteCardV1" {
 		t.Fatalf("CompositionID = %q", result.CompositionID)
 	}
-	if len(result.Files) != 11 {
+	if len(result.Files) != 10 {
 		t.Fatalf("generated %d files", len(result.Files))
 	}
 
@@ -38,16 +38,16 @@ func TestRenderTemplateGeneratorGenerate(t *testing.T) {
 		"hrise-rm-contracts/manifests/quote-card-v1.manifest.json",
 		"hrise-rm-contracts/fixtures/quote-card-v1.sample.json",
 		"hrise-rm-contracts/docs/quote-card-v1.md",
-		"hrise-rm-contracts/packages/ts/src/quote-card-v1.ts",
-		"hrise-rm-contracts/packages/go/rendercontracts/quote_card_v1.go",
-		"hrise-rm-studio/src/render-templates/quote-card-v1/QuoteCardV1.tsx",
-		"hrise-rm-studio/src/render-templates/quote-card-v1/fixture.ts",
-		"hrise-rm-render-server/src/render/templates/quote-card-v1/adapter.ts",
-		"hrise-server-app/internal/render/quote_card_job_builder.go",
+		"hrise-rm-studio/src/render-contract/quote-card-v1/quote-card-v1.input.ts",
+		"hrise-rm-studio/src/render-contract/quote-card-v1/quote-card-v1.manifest.ts",
+		"hrise-rm-render-server/src/render-contract/quote-card-v1/quote-card-v1.input.ts",
+		"hrise-rm-render-server/src/render-contract/quote-card-v1/quote-card-v1.validate.ts",
+		"hrise-server-app/components/go-yogan-component-render/rendercontract/quotecardv1/quote_card_v1_input.go",
+		"hrise-server-app/components/go-yogan-component-render/renderbuild/quotecardv1/quote_card_v1_builder.go",
 	})
 	assertFileContains(t, filepath.Join(root, "hrise-rm-contracts/manifests/quote-card-v1.manifest.json"), `"compositionId": "QuoteCardV1"`)
 	assertFileContains(t, filepath.Join(root, "hrise-rm-contracts/fixtures/quote-card-v1.sample.json"), `"schemaVersion": "render-job-v1"`)
-	assertFileContains(t, filepath.Join(root, "hrise-rm-render-server/src/render/templates/quote-card-v1/adapter.ts"), "prepareQuoteCardInput")
+	assertFileContains(t, filepath.Join(root, "hrise-rm-render-server/src/render-contract/quote-card-v1/quote-card-v1.validate.ts"), "quoteCardRenderJobSchema")
 }
 
 func TestRenderTemplateGeneratorRejectsExistingFile(t *testing.T) {
@@ -61,11 +61,11 @@ func TestRenderTemplateGeneratorRejectsExistingFile(t *testing.T) {
 	}
 
 	cfg := &RenderTemplateConfig{
-		Name:         "bookquote",
-		ContractsDir: filepath.Join(root, "contracts"),
-		StudioDir:    filepath.Join(root, "studio"),
-		WorkerDir:    filepath.Join(root, "worker"),
-		GoDir:        filepath.Join(root, "go"),
+		Name:           "bookquote",
+		ContractsDir:   filepath.Join(root, "contracts"),
+		StudioDir:      filepath.Join(root, "studio"),
+		WorkerDir:      filepath.Join(root, "worker"),
+		GoComponentDir: filepath.Join(root, "go-component-render"),
 	}
 
 	_, err := NewRenderTemplateGenerator(cfg).Generate()
@@ -76,11 +76,11 @@ func TestRenderTemplateGeneratorRejectsExistingFile(t *testing.T) {
 
 func TestRenderTemplateGeneratorRejectsInvalidName(t *testing.T) {
 	cfg := &RenderTemplateConfig{
-		Name:         "Bad_Name",
-		ContractsDir: "contracts",
-		StudioDir:    "studio",
-		WorkerDir:    "worker",
-		GoDir:        "go",
+		Name:           "Bad_Name",
+		ContractsDir:   "contracts",
+		StudioDir:      "studio",
+		WorkerDir:      "worker",
+		GoComponentDir: "go-component-render",
 	}
 
 	_, err := NewRenderTemplateGenerator(cfg).Generate()

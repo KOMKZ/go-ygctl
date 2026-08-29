@@ -10,12 +10,12 @@ import (
 )
 
 type RenderTemplateConfig struct {
-	Name          string
-	CompositionID string
-	ContractsDir  string
-	StudioDir     string
-	WorkerDir     string
-	GoDir         string
+	Name           string
+	CompositionID  string
+	ContractsDir   string
+	StudioDir      string
+	WorkerDir      string
+	GoComponentDir string
 }
 
 type RenderTemplateResult struct {
@@ -46,13 +46,12 @@ func (g *RenderTemplateGenerator) Generate() (*RenderTemplateResult, error) {
 		{filepath.Join(g.config.ContractsDir, "manifests", data.Version+".manifest.json"), renderTemplateManifest(data)},
 		{filepath.Join(g.config.ContractsDir, "fixtures", data.Version+".sample.json"), renderTemplateFixture(data)},
 		{filepath.Join(g.config.ContractsDir, "docs", data.Version+".md"), renderTemplateDoc(data)},
-		{filepath.Join(g.config.ContractsDir, "packages", "ts", "src", data.Version+".ts"), renderTemplateTSType(data)},
-		{filepath.Join(g.config.ContractsDir, "packages", "go", "rendercontracts", data.Snake+"_v1.go"), renderTemplateGoType(data)},
-		{filepath.Join(g.config.StudioDir, "src", "render-templates", data.Version, "README.md"), renderTemplateStudioReadme(data)},
-		{filepath.Join(g.config.StudioDir, "src", "render-templates", data.Version, data.CompositionID+".tsx"), renderTemplateStudioComposition(data)},
-		{filepath.Join(g.config.StudioDir, "src", "render-templates", data.Version, "fixture.ts"), renderTemplateStudioFixture(data)},
-		{filepath.Join(g.config.WorkerDir, "src", "render", "templates", data.Version, "adapter.ts"), renderTemplateWorkerAdapter(data)},
-		{filepath.Join(g.config.GoDir, "internal", "render", data.Snake+"_job_builder.go"), renderTemplateGoBuilder(data)},
+		{filepath.Join(g.config.StudioDir, "src", "render-contract", data.Version, data.Version+".input.ts"), renderTemplateTSType(data, "studio")},
+		{filepath.Join(g.config.StudioDir, "src", "render-contract", data.Version, data.Version+".manifest.ts"), renderTemplateTSManifest(data)},
+		{filepath.Join(g.config.WorkerDir, "src", "render-contract", data.Version, data.Version+".input.ts"), renderTemplateTSType(data, "worker")},
+		{filepath.Join(g.config.WorkerDir, "src", "render-contract", data.Version, data.Version+".validate.ts"), renderTemplateWorkerValidator(data)},
+		{filepath.Join(g.config.GoComponentDir, "rendercontract", data.GoPackage, data.Snake+"_v1_input.go"), renderTemplateGoType(data)},
+		{filepath.Join(g.config.GoComponentDir, "renderbuild", data.GoPackage, data.Snake+"_v1_builder.go"), renderTemplateGoBuilder(data)},
 	}
 
 	var written []string
@@ -83,8 +82,8 @@ func (g *RenderTemplateGenerator) prepareConfig() error {
 	if strings.TrimSpace(g.config.CompositionID) == "" {
 		g.config.CompositionID = ToPascalCase(name) + "V1"
 	}
-	if g.config.ContractsDir == "" || g.config.StudioDir == "" || g.config.WorkerDir == "" || g.config.GoDir == "" {
-		return fmt.Errorf("contracts-dir, studio-dir, worker-dir, and go-dir are required")
+	if g.config.ContractsDir == "" || g.config.StudioDir == "" || g.config.WorkerDir == "" || g.config.GoComponentDir == "" {
+		return fmt.Errorf("contracts-dir, studio-dir, worker-dir, and go-component-dir are required")
 	}
 	return nil
 }
@@ -94,6 +93,8 @@ type renderTemplateData struct {
 	Version       string
 	Pascal        string
 	Snake         string
+	JSIdent       string
+	GoPackage     string
 	CompositionID string
 }
 
@@ -103,8 +104,17 @@ func (g *RenderTemplateGenerator) templateData() renderTemplateData {
 		Version:       g.config.Name + "-v1",
 		Pascal:        ToPascalCase(g.config.Name),
 		Snake:         strings.ReplaceAll(g.config.Name, "-", "_"),
+		JSIdent:       lowerFirst(ToPascalCase(g.config.Name)),
+		GoPackage:     strings.ReplaceAll(g.config.Name, "-", "") + "v1",
 		CompositionID: g.config.CompositionID,
 	}
+}
+
+func lowerFirst(value string) string {
+	if value == "" {
+		return value
+	}
+	return strings.ToLower(value[:1]) + value[1:]
 }
 
 func writeNewFile(path string, content string) error {
@@ -237,8 +247,14 @@ func renderTemplateDoc(data renderTemplateData) string {
 `, data.Version, data.CompositionID, data.Version, data.Version, data.Version)
 }
 
-func renderTemplateTSType(data renderTemplateData) string {
-	return fmt.Sprintf(`import type {RenderAssetRef, RenderJobV1} from './index.js';
+func renderTemplateTSType(data renderTemplateData, target string) string {
+	importPath := "../envelope/render-job-v1"
+	if target == "worker" {
+		importPath = "../envelope/render-job-v1.js"
+	}
+	return fmt.Sprintf(`// Code generated from hrise-rm-contracts/schemas/%s.input.schema.json; DO NOT EDIT.
+
+import type {RenderJobV1} from '%s';
 
 export const %sCompositionId = '%s' as const;
 export const %sCompositionVersion = '%s' as const;
@@ -254,86 +270,116 @@ export type %sV1Input = {
   style?: Record<string, unknown>;
 };
 
+export type RenderAssetRef = {
+  kind: 'image' | 'audio' | 'subtitle' | 'data';
+  ossKey: string;
+  contentType: string;
+};
+
 export type %sV1RenderJob = RenderJobV1<%sV1Input>;
-`, data.Snake, data.CompositionID, data.Snake, data.Version, data.Pascal, data.Pascal, data.Pascal)
+`, data.Version, importPath, data.JSIdent, data.CompositionID, data.JSIdent, data.Version, data.Pascal, data.Pascal, data.Pascal)
+}
+
+func renderTemplateTSManifest(data renderTemplateData) string {
+	return fmt.Sprintf(`// Code generated from hrise-rm-contracts/manifests/%s.manifest.json; DO NOT EDIT.
+
+export const %sManifest = {
+  manifestVersion: 'render-manifest-v1',
+  compositionId: '%s',
+  compositionVersion: '%s',
+  inputSchema: '../schemas/%s.input.schema.json',
+  jobSchema: '../schemas/render-job-v1.schema.json',
+  resultSchema: '../schemas/render-result-v1.schema.json',
+  fixtures: ['../fixtures/%s.sample.json'],
+  output: {
+    contentType: 'video/mp4',
+    width: 1080,
+    height: 1920,
+    fps: 30,
+  },
+} as const;
+`, data.Version, data.JSIdent, data.CompositionID, data.Version, data.Version, data.Version)
 }
 
 func renderTemplateGoType(data renderTemplateData) string {
-	return fmt.Sprintf("package rendercontracts\n\nconst (\n\t%sCompositionID = %q\n\t%sVersion       = %q\n)\n\ntype %sV1Input struct {\n\tCanvas %sCanvas        `json:\"canvas\"`\n\tAssets []RenderAssetRef `json:\"assets\"`\n\tStyle  map[string]any   `json:\"style,omitempty\"`\n}\n\ntype %sCanvas struct {\n\tWidth          int `json:\"width\"`\n\tHeight         int `json:\"height\"`\n\tFPS            int `json:\"fps\"`\n\tDurationFrames int `json:\"durationFrames\"`\n}\n\ntype %sV1RenderJob = RenderJobV1[%sV1Input]\n",
-		data.Pascal, data.CompositionID, data.Pascal, data.Version, data.Pascal, data.Pascal, data.Pascal, data.Pascal, data.Pascal)
+	return fmt.Sprintf("// Code generated from hrise-rm-contracts/schemas/%s.input.schema.json; DO NOT EDIT.\n\npackage %s\n\nimport \"github.com/KOMKZ/go-yogan-component-render/rendercontract/envelope\"\n\nconst (\n\tCompositionID      = %q\n\tCompositionVersion = %q\n)\n\ntype Input struct {\n\tCanvas Canvas         `json:\"canvas\"`\n\tAssets []RenderAssetRef `json:\"assets\"`\n\tStyle  map[string]any   `json:\"style,omitempty\"`\n}\n\ntype Canvas struct {\n\tWidth          int `json:\"width\"`\n\tHeight         int `json:\"height\"`\n\tFPS            int `json:\"fps\"`\n\tDurationFrames int `json:\"durationFrames\"`\n}\n\ntype RenderAssetRef struct {\n\tKind        string `json:\"kind\"`\n\tOssKey      string `json:\"ossKey\"`\n\tContentType string `json:\"contentType\"`\n}\n\ntype RenderJob = envelope.RenderJobV1[Input]\n",
+		data.Version, data.GoPackage, data.CompositionID, data.Version)
 }
 
-func renderTemplateStudioReadme(data renderTemplateData) string {
-	return fmt.Sprintf(`# %s Studio Template
+func renderTemplateWorkerValidator(data renderTemplateData) string {
+	return fmt.Sprintf(`// Code generated from hrise-rm-contracts/schemas/%s.input.schema.json; DO NOT EDIT.
 
-## 规则
+import {z} from 'zod';
+import {%sCompositionId, %sCompositionVersion} from './%s.input.js';
 
-- 从 contracts fixture 派生 preview props。
-- 不复制长期维护的私有 schema。
-- 不生成每个视频任务的 Remotion 源码。
-- Composition ID 保持为 %s。
-`, data.Version, data.CompositionID)
-}
+export const %sInputSchema = z.object({
+  canvas: z.object({
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    fps: z.number().int().positive(),
+    durationFrames: z.number().int().positive(),
+  }),
+  assets: z.array(z.object({
+    kind: z.enum(['image', 'audio', 'subtitle', 'data']),
+    ossKey: z.string().min(1),
+    contentType: z.string().min(1),
+  })),
+  style: z.record(z.unknown()).optional(),
+});
 
-func renderTemplateStudioComposition(data renderTemplateData) string {
-	return fmt.Sprintf(`import React from 'react';
-import {AbsoluteFill} from 'remotion';
-import type {%sV1Input} from '@happy-rise/hrise-rm-contracts/%s';
-
-export function %s(props: %sV1Input) {
-  return (
-    <AbsoluteFill style={{backgroundColor: '#111827', color: 'white', padding: 64}}>
-      <h1>%s</h1>
-      <pre>{JSON.stringify(props.canvas, null, 2)}</pre>
-    </AbsoluteFill>
-  );
-}
-`, data.Pascal, data.Version, data.CompositionID, data.Pascal, data.CompositionID)
-}
-
-func renderTemplateStudioFixture(data renderTemplateData) string {
-	return fmt.Sprintf(`import fixture from '../../../../hrise-rm-contracts/fixtures/%s.sample.json';
-
-export const %sPreviewProps = fixture.inputProps;
-`, data.Version, data.Snake)
-}
-
-func renderTemplateWorkerAdapter(data renderTemplateData) string {
-	return fmt.Sprintf(`import type {%sV1Input} from '@happy-rise/hrise-rm-contracts/%s';
-
-export const compositionId = '%s';
-export const compositionVersion = '%s';
-
-export function prepare%sInput(inputProps: %sV1Input): %sV1Input {
-  return inputProps;
-}
-`, data.Pascal, data.Version, data.CompositionID, data.Version, data.Pascal, data.Pascal, data.Pascal)
+export const %sRenderJobSchema = z.object({
+  schemaVersion: z.literal('render-job-v1'),
+  requestId: z.string().min(1),
+  idempotencyKey: z.string().min(1),
+  compositionId: z.literal(%sCompositionId),
+  compositionVersion: z.literal(%sCompositionVersion),
+  output: z.object({
+    ossKey: z.string().min(1),
+    contentType: z.literal('video/mp4'),
+  }),
+  callback: z.object({
+    url: z.string().url(),
+    authTokenRef: z.string().min(1).optional(),
+    maxAttempts: z.number().int().min(1).max(5),
+    retryDelayMs: z.number().int().min(100).max(60000),
+  }),
+  inputProps: %sInputSchema,
+});
+`, data.Version, data.JSIdent, data.JSIdent, data.Version, data.JSIdent, data.JSIdent, data.JSIdent, data.JSIdent, data.JSIdent)
 }
 
 func renderTemplateGoBuilder(data renderTemplateData) string {
-	return fmt.Sprintf(`package render
+	return fmt.Sprintf(`package %s
 
-import contracts "github.com/KOMKZ/hrise-rm-contracts/packages/go/rendercontracts"
+import (
+	"github.com/KOMKZ/go-yogan-component-render/renderbuild/common"
+	contract "github.com/KOMKZ/go-yogan-component-render/rendercontract/%s"
+	"github.com/KOMKZ/go-yogan-component-render/rendercontract/envelope"
+)
 
-func New%sRenderJob(requestID string, input contracts.%sV1Input) contracts.%sV1RenderJob {
-	return contracts.%sV1RenderJob{
-		SchemaVersion:      contracts.RenderJobV1SchemaVersion,
-		RequestID:          requestID,
-		IdempotencyKey:     requestID + ":%s",
-		CompositionID:      contracts.%sCompositionID,
-		CompositionVersion: contracts.%sVersion,
-		Output: contracts.RenderJobOutput{
-			OssKey:      "renders/v1/" + requestID + "/output.mp4",
+func NewJob(input contract.Input, options common.Options) contract.RenderJob {
+	return contract.RenderJob{
+		SchemaVersion:      envelope.RenderJobV1SchemaVersion,
+		RequestID:          options.RequestID,
+		IdempotencyKey:     options.IdempotencyKey,
+		CompositionID:      contract.CompositionID,
+		CompositionVersion: contract.CompositionVersion,
+		Output: envelope.RenderJobOutput{
+			OssKey:      options.OutputOssKey,
 			ContentType: "video/mp4",
 		},
-		Callback: contracts.RenderCallbackPolicy{
-			MaxAttempts:  contracts.CallbackMaxAttempts,
-			RetryDelayMs: contracts.CallbackRetryDelayMs,
+		Callback: envelope.RenderCallbackPolicy{
+			URL:          options.CallbackURL,
+			AuthTokenRef: options.CallbackAuthRef,
+			MaxAttempts:  envelope.CallbackMaxAttempts,
+			RetryDelayMs: envelope.CallbackRetryDelayMs,
 		},
 		InputProps: input,
+		TimeoutMs:  options.TimeoutMs,
+		Trace:      options.Trace,
 	}
 }
-`, data.Pascal, data.Pascal, data.Pascal, data.Pascal, data.Version, data.Pascal, data.Pascal)
+`, data.GoPackage, data.GoPackage)
 }
 
 func prettyJSON(value any) string {
