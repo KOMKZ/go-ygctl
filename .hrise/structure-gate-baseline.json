@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "issues": {
+    "func:internal/generator/api_gen.go:*APIGenConfig.Generate": 155,
+    "func:internal/generator/domain_migrator.go:*DomainMigrator.Migrate": 159,
+    "func:internal/generator/http_generator.go:*HTTPGenerator.Generate": 157,
+    "func:internal/generator/make_sync.go:syncOneApp": 146,
+    "func:internal/generator/prompt.go:PromptHTTPConfig": 138,
+    "func:internal/generator/prompt.go:PromptRPCConfig": 134,
+    "func:internal/generator/web_gen.go:resolveWebFields": 131,
+    "naming:cmd/model.go": 1,
+    "naming:internal/generator/config.go": 1,
+    "package:cmd": 20,
+    "package:internal/generator": 27
+  }
+}

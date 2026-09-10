@@ -1,0 +1,137 @@
+{
+  "mode": "changed",
+  "root": "/home/kitral/pro/happy-rise-cpy/happy-rise-devpro/go-ygctl",
+  "files_scanned": 62,
+  "funcs_scanned": 307,
+  "issues": [
+    {
+      "key": "naming:internal/generator/config.go",
+      "kind": "naming",
+      "severity": "block",
+      "path": "internal/generator/config.go",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "weak file name; split/new business files should use business_role.go"
+    },
+    {
+      "key": "naming:cmd/model.go",
+      "kind": "naming",
+      "severity": "block",
+      "path": "cmd/model.go",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "weak file name; split/new business files should use business_role.go"
+    },
+    {
+      "key": "func:internal/generator/domain_migrator.go:*DomainMigrator.Migrate",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/domain_migrator.go",
+      "name": "*DomainMigrator.Migrate",
+      "value": 159,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "func:internal/generator/http_generator.go:*HTTPGenerator.Generate",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/http_generator.go",
+      "name": "*HTTPGenerator.Generate",
+      "value": 157,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "func:internal/generator/api_gen.go:*APIGenConfig.Generate",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/api_gen.go",
+      "name": "*APIGenConfig.Generate",
+      "value": 155,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "func:internal/generator/make_sync.go:syncOneApp",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/make_sync.go",
+      "name": "syncOneApp",
+      "value": 146,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "func:internal/generator/prompt.go:PromptHTTPConfig",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/prompt.go",
+      "name": "PromptHTTPConfig",
+      "value": 138,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "func:internal/generator/prompt.go:PromptRPCConfig",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/prompt.go",
+      "name": "PromptRPCConfig",
+      "value": 134,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "func:internal/generator/web_gen.go:resolveWebFields",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/web_gen.go",
+      "name": "resolveWebFields",
+      "value": 131,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
+      "key": "package:internal/generator",
+      "kind": "package",
+      "severity": "warn",
+      "path": "internal/generator",
+      "value": 27,
+      "threshold": 18,
+      "blocking": false,
+      "changed": false,
+      "reason": "package file count exceeds threshold; report only, no automatic subpackage move"
+    },
+    {
+      "key": "package:cmd",
+      "kind": "package",
+      "severity": "warn",
+      "path": "cmd",
+      "value": 20,
+      "threshold": 18,
+      "blocking": false,
+      "changed": false,
+      "reason": "package file count exceeds threshold; report only, no automatic subpackage move"
+    }
+  ],
+  "blocking": []
+}
