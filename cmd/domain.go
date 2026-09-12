@@ -23,8 +23,8 @@ var domainCmd = &cobra.Command{
 	Short: "Manage domains in a multi-app workspace",
 	Long: `Manage domain packages under <workspace>/domains/<name>.
 
-Domains are ordinary packages of the workspace root module (no per-domain
-go.mod). Migrations are NOT stored in domains — they live centralized in
+Domains are independent Go modules registered in the workspace go.work.
+Migrations are NOT stored in domains — they live centralized in
 apps/<app>/migrations/ (see "ygctl migrate").
 
 Commands:
@@ -37,6 +37,7 @@ var domainInitCmd = &cobra.Command{
 	Long: `Generate the complete skeleton of a domain package:
 
   domains/<name>/
+  ├── go.mod                        # independent domain module
   ├── CLAUDE.md                     # domain usage & rules (for AI dev)
   ├── errors/ errors.go             # error codes (module number auto-allocated)
   ├── model/                        # gorm entity placeholder
