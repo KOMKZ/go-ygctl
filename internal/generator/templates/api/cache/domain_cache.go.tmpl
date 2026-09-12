@@ -1,0 +1,75 @@
+// 本文件定义 {{.DomainKey}} 领域缓存聚合对象。
+// 上游由 provider/do 构造后注入 service，service 只依赖窄接口。
+// 维护时本文件只放聚合对象、构造和通用统计，不承载具体缓存资源的 key 或读写细节。
+package cache
+
+import (
+	"context"
+	"sync/atomic"
+	"time"
+
+	frameworkcache "github.com/KOMKZ/go-yogan-framework/cache"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	"go.uber.org/zap"
+	"golang.org/x/sync/singleflight"
+)
+
+const default{{.EntityPascal}}RowsTTL = 30 * time.Second
+
+// {{.EntityPascal}}Cache 是 {{.DomainKey}} 领域统一缓存入口。
+type {{.EntityPascal}}Cache struct {
+	store     frameworkcache.Store
+	rowsTTL   time.Duration
+	log       *logger.CtxZapLogger
+	rowsGroup singleflight.Group
+
+	hits   int64
+	misses int64
+	errors int64
+}
+
+// Stats 是领域缓存的轻量观测数据。
+type Stats struct {
+	Hits   int64
+	Misses int64
+	Errors int64
+}
+
+// New{{.EntityPascal}}Cache 使用框架 Store 创建领域缓存；测试可传 memory store，生产 provider 传 RedisStore。
+func New{{.EntityPascal}}Cache(store frameworkcache.Store, rowsTTL time.Duration, log *logger.CtxZapLogger) *{{.EntityPascal}}Cache {
+	if rowsTTL <= 0 {
+		rowsTTL = default{{.EntityPascal}}RowsTTL
+	}
+	return &{{.EntityPascal}}Cache{store: store, rowsTTL: rowsTTL, log: log}
+}
+
+// Stats 返回缓存观测计数，供后续健康检查或调试接口读取。
+func (c *{{.EntityPascal}}Cache) Stats() Stats {
+	if c == nil {
+		return Stats{}
+	}
+	return Stats{
+		Hits:   atomic.LoadInt64(&c.hits),
+		Misses: atomic.LoadInt64(&c.misses),
+		Errors: atomic.LoadInt64(&c.errors),
+	}
+}
+
+func (c *{{.EntityPascal}}Cache) recordHit() {
+	atomic.AddInt64(&c.hits, 1)
+}
+
+func (c *{{.EntityPascal}}Cache) recordMiss() {
+	atomic.AddInt64(&c.misses, 1)
+}
+
+func (c *{{.EntityPascal}}Cache) recordError() {
+	atomic.AddInt64(&c.errors, 1)
+}
+
+func (c *{{.EntityPascal}}Cache) logWarn(ctx context.Context, message string, fields ...zap.Field) {
+	if c.log == nil {
+		return
+	}
+	c.log.WarnCtx(ctx, message, fields...)
+}

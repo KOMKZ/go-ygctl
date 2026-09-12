@@ -1,0 +1,36 @@
+// 本文件提供 {{.DomainKey}} 领域缓存的 Redis 构造入口。
+// 上游由 provider/do 注入 Redis manager 后调用；下游复用 go-yogan-framework/cache.RedisStore。
+// 维护时 Redis 实例名和 key 前缀集中在本包，业务 service 和 API module 不感知基础设施细节。
+package cache
+
+import (
+	"fmt"
+	"time"
+
+	frameworkcache "github.com/KOMKZ/go-yogan-framework/cache"
+	"github.com/KOMKZ/go-yogan-framework/logger"
+	frameworkredis "github.com/KOMKZ/go-yogan-framework/redis"
+)
+
+const (
+	RedisInstanceName = "{{.DomainSnake}}_cache"
+	RedisKeyPrefix    = "hrise:{{.DomainKey}}:"
+)
+
+// NewRedis{{.EntityPascal}}Cache 从框架 Redis manager 创建 {{.DomainKey}} 领域缓存。
+func NewRedis{{.EntityPascal}}Cache(redisManager *frameworkredis.Manager, log *logger.CtxZapLogger) (*{{.EntityPascal}}Cache, error) {
+	if redisManager == nil {
+		return nil, fmt.Errorf("{{.DomainKey}} cache redis manager is required")
+	}
+	client := redisManager.Client(RedisInstanceName)
+	if client == nil {
+		return nil, fmt.Errorf("{{.DomainKey}} cache redis instance %q is required", RedisInstanceName)
+	}
+	store := frameworkcache.NewRedisStore(RedisInstanceName, client, RedisKeyPrefix)
+	return New{{.EntityPascal}}Cache(store, default{{.EntityPascal}}RowsTTL, log), nil
+}
+
+// NewStore{{.EntityPascal}}Cache 供测试或后续专属 store 注入使用，生产默认使用 NewRedis{{.EntityPascal}}Cache。
+func NewStore{{.EntityPascal}}Cache(store frameworkcache.Store, ttl time.Duration, log *logger.CtxZapLogger) *{{.EntityPascal}}Cache {
+	return New{{.EntityPascal}}Cache(store, ttl, log)
+}

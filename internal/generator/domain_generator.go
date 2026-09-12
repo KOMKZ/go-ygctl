@@ -97,7 +97,7 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 		{"service/service.go.tmpl", "service/" + entitySnake + "_service.go"},
 		{"service/service_test.go.tmpl", "service/" + entitySnake + "_service_test.go"},
 		{"port/port.go.tmpl", "port/port.go"},
-		{"provider/do/provider.go.tmpl", "provider/do/provider.go"},
+		{"provider/do/provider.go.tmpl", "provider/do/" + entitySnake + "_provider.go"},
 		{"event/event.go.tmpl", "event/event.go"},
 		{"policy/policy.go.tmpl", "policy/policy.go"},
 		{"assembler/assembler.go.tmpl", "assembler/assembler.go"},
@@ -112,11 +112,27 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 			struct {
 				tmpl string
 				out  string
-			}{"repository/repository.go.tmpl", "repository/repository.go"},
+			}{"repository/repository.go.tmpl", "repository/" + entitySnake + "_repository.go"},
 			struct {
 				tmpl string
 				out  string
-			}{"repository/repository_mysql.go.tmpl", "repository/repository_mysql.go"},
+			}{"repository/repository_mysql.go.tmpl", "repository/" + entitySnake + "_repository_mysql.go"},
+			struct {
+				tmpl string
+				out  string
+			}{"cache/AGENTS.md.tmpl", "cache/AGENTS.md"},
+			struct {
+				tmpl string
+				out  string
+			}{"cache/domain_cache.go.tmpl", "cache/" + entitySnake + "_cache.go"},
+			struct {
+				tmpl string
+				out  string
+			}{"cache/redis_domain_cache.go.tmpl", "cache/redis_" + entitySnake + "_cache.go"},
+			struct {
+				tmpl string
+				out  string
+			}{"cache/entity_rows_cache.go.tmpl", "cache/" + entitySnake + "_rows_cache.go"},
 		)
 		files = append(files,
 			struct{ tmpl, out string }{"read/model/read_list_item.go.tmpl", "read/model/" + entitySnake + "_read_list_item.go"},

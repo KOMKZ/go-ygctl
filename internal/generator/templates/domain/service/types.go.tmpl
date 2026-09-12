@@ -1,4 +1,21 @@
 package service
 
+{{- if not .Pure}}
+import (
+	"context"
+
+	"{{.DomainImport}}/model"
+)
+
+{{- end}}
 // {{.EntityPascal}}Service 的业务输入、输出和领域类型定义。
 // 具体业务类型按领域需求补充，避免全部堆积在 service 实现文件中。
+{{if not .Pure}}
+
+// {{.EntityPascal}}RowsCache 是 {{.DomainKey}} 领域读取缓存的窄接口。
+// 实现位于 cache 子包；service 只表达“记忆领域行集合”，不接触 Redis、key、TTL 或序列化细节。
+type {{.EntityPascal}}RowsCache interface {
+	Remember{{.EntityPascal}}Rows(ctx context.Context, scope string, loader func(context.Context) ([]model.{{.EntityPascal}}, error)) ([]model.{{.EntityPascal}}, error)
+	Invalidate{{.EntityPascal}}Rows(ctx context.Context, scope string)
+}
+{{end}}

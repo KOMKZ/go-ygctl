@@ -1,0 +1,23 @@
+# {{.DomainKey}}/cache Agent Guide
+
+## 定位
+
+`domains/{{.DomainKey}}/cache` 是 {{.DomainKey}} 领域的缓存治理子包，只负责缓存横切能力在本领域内的落地。
+
+业务 service 只依赖 `service.{{.EntityPascal}}RowsCache` 等窄接口。service 不感知 Redis、缓存 key、TTL、序列化、singleflight、统计和失效实现。
+
+## 文件分工
+
+- `{{.EntitySnake}}_cache.go`：领域缓存聚合对象、构造函数、通用统计和日志辅助。
+- `redis_{{.EntitySnake}}_cache.go`：Redis store 装配、Redis 实例名、领域 key 前缀。
+- `{{.EntitySnake}}_rows_cache.go`：{{.EntitySnake}} 行集合缓存资源的 key、读穿、序列化、singleflight 和失效策略。
+- `*_test.go`：用框架 memory store 验证缓存命中、失效和回源行为。
+
+## 调用边界
+
+- API handler 不调用本包。
+- API module 不调用本包。
+- 领域 service 不直接调用 Redis store，不拼 key，不处理 JSON 编解码。
+- provider/do 负责把 `{{.EntityPascal}}Cache` 注入 service。
+- 跨领域读取时，仍然调用 {{.DomainKey}} 暴露的领域 service，不直接引用本 cache 包。
+

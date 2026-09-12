@@ -11,17 +11,22 @@ import (
 // 骨架不含业务逻辑，按需添加方法。
 type {{.EntityPascal}}Service struct {
 {{- if not .Pure}}
-	repo repository.{{.EntityPascal}}Repository
+	repo   repository.{{.EntityPascal}}Repository
+	cache {{.EntityPascal}}RowsCache
 {{- end}}
 	log *logger.CtxZapLogger
 }
 
 // New{{.EntityPascal}}Service creates the domain service.
-func New{{.EntityPascal}}Service({{if not .Pure}}repo repository.{{.EntityPascal}}Repository, {{end}}log *logger.CtxZapLogger) *{{.EntityPascal}}Service {
+func New{{.EntityPascal}}Service({{if not .Pure}}repo repository.{{.EntityPascal}}Repository, {{end}}log *logger.CtxZapLogger{{if not .Pure}}, caches ...{{.EntityPascal}}RowsCache{{end}}) *{{.EntityPascal}}Service {
 {{- if .Pure}}
 	return &{{.EntityPascal}}Service{log: log}
 {{- else}}
-	return &{{.EntityPascal}}Service{repo: repo, log: log}
+	s := &{{.EntityPascal}}Service{repo: repo, log: log}
+	if len(caches) > 0 {
+		s.cache = caches[0]
+	}
+	return s
 {{- end}}
 }
 

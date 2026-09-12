@@ -4,12 +4,19 @@ import (
 {{- if .Pure}}
 	"{{.DomainImport}}/service"
 {{- else}}
+	"context"
+
+	domaincache "{{.DomainImport}}/cache"
 	"{{.DomainImport}}/repository"
 	"{{.DomainImport}}/service"
 {{- end}}
 	"github.com/KOMKZ/go-yogan-framework/logger"
+{{- if not .Pure}}
+	frameworkredis "github.com/KOMKZ/go-yogan-framework/redis"
+{{- end}}
 	"github.com/samber/do/v2"
 {{- if not .Pure}}
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 {{- end}}
 )
@@ -24,6 +31,15 @@ func Provide{{.EntityPascal}}Repository(i do.Injector) (repository.{{.EntityPasc
 	return repository.New{{.EntityPascal}}MySQLRepository(db), nil
 }
 
+// Provide{{.EntityPascal}}Cache registers the optional domain cache in the DI container.
+func Provide{{.EntityPascal}}Cache(i do.Injector) (*domaincache.{{.EntityPascal}}Cache, error) {
+	redisManager, err := do.Invoke[*frameworkredis.Manager](i)
+	if err != nil {
+		return nil, err
+	}
+	return domaincache.NewRedis{{.EntityPascal}}Cache(redisManager, logger.GetLogger("{{.DomainKey}}"))
+}
+
 {{end}}
 // Provide{{.EntityPascal}}Service registers the service in the DI container.
 func Provide{{.EntityPascal}}Service(i do.Injector) (*service.{{.EntityPascal}}Service, error) {
@@ -35,7 +51,13 @@ func Provide{{.EntityPascal}}Service(i do.Injector) (*service.{{.EntityPascal}}S
 	if err != nil {
 		return nil, err
 	}
+	var rowsCache service.{{.EntityPascal}}RowsCache
+	if cache, err := do.Invoke[*domaincache.{{.EntityPascal}}Cache](i); err == nil {
+		rowsCache = cache
+	} else {
+		logger.GetLogger("{{.DomainKey}}").WarnCtx(context.Background(), "{{.DomainKey}} cache disabled", zap.Error(err))
+	}
 	log := do.MustInvokeNamed[*logger.CtxZapLogger](i, "{{.DomainKey}}")
-	return service.New{{.EntityPascal}}Service(repo, log), nil
+	return service.New{{.EntityPascal}}Service(repo, log, rowsCache), nil
 {{- end}}
 }

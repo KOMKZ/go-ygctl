@@ -1,6 +1,11 @@
 package service
 
-import "time"
+import (
+	"context"
+	"time"
+
+	"{{.DomainImport}}/model"
+)
 
 // —— service 层结构体：公共 API 的输入输出，不暴露 model 层 ——
 
@@ -27,4 +32,11 @@ type {{.EntityPascal}}Item struct {
 {{- end}}
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+// {{.EntityPascal}}RowsCache 是 {{.DomainKey}} 领域读取缓存的窄接口。
+// 实现位于 cache 子包；service 只表达“记忆领域行集合”，不接触 Redis、key、TTL 或序列化细节。
+type {{.EntityPascal}}RowsCache interface {
+	Remember{{.EntityPascal}}Rows(ctx context.Context, scope string, loader func(context.Context) ([]model.{{.EntityPascal}}, error)) ([]model.{{.EntityPascal}}, error)
+	Invalidate{{.EntityPascal}}Rows(ctx context.Context, scope string)
 }

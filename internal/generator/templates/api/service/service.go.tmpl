@@ -14,13 +14,18 @@ import (
 // {{.EntityPascal}}Service 领域服务：CRUD 骨架（由 ygctl api gen 生成）。
 // 业务规则在骨架方法内填充（TODO 标注处）。
 type {{.EntityPascal}}Service struct {
-	repo repository.{{.EntityPascal}}Repository
-	log  *logger.CtxZapLogger
+	repo  repository.{{.EntityPascal}}Repository
+	cache {{.EntityPascal}}RowsCache
+	log   *logger.CtxZapLogger
 }
 
 // New{{.EntityPascal}}Service creates the domain service.
-func New{{.EntityPascal}}Service(repo repository.{{.EntityPascal}}Repository, log *logger.CtxZapLogger) *{{.EntityPascal}}Service {
-	return &{{.EntityPascal}}Service{repo: repo, log: log}
+func New{{.EntityPascal}}Service(repo repository.{{.EntityPascal}}Repository, log *logger.CtxZapLogger, caches ...{{.EntityPascal}}RowsCache) *{{.EntityPascal}}Service {
+	s := &{{.EntityPascal}}Service{repo: repo, log: log}
+	if len(caches) > 0 {
+		s.cache = caches[0]
+	}
+	return s
 }
 
 // Create creates a new {{.EntityName}}.
@@ -30,6 +35,7 @@ func (s *{{.EntityPascal}}Service) Create(ctx context.Context, input Create{{.En
 	if err := s.repo.Create(ctx, m); err != nil {
 		return nil, err
 	}
+	s.invalidateRows(ctx)
 	return s.toItem(m), nil
 }
 
@@ -49,12 +55,20 @@ func (s *{{.EntityPascal}}Service) GetByID(ctx context.Context, id uint) (*{{.En
 func (s *{{.EntityPascal}}Service) Update(ctx context.Context, input Update{{.EntityPascal}}Input) error {
 	// TODO: 业务规则（存在性检查、状态机等）
 	m := s.toModelFromUpdate(input)
-	return s.repo.Update(ctx, m)
+	if err := s.repo.Update(ctx, m); err != nil {
+		return err
+	}
+	s.invalidateRows(ctx)
+	return nil
 }
 
 // Delete deletes one {{.EntityName}}.
 func (s *{{.EntityPascal}}Service) Delete(ctx context.Context, id uint) error {
-	return s.repo.Delete(ctx, id)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+	s.invalidateRows(ctx)
+	return nil
 }
 
 // Paginate lists {{.EntityName}}s by page.
@@ -68,6 +82,12 @@ func (s *{{.EntityPascal}}Service) Paginate(ctx context.Context, page, pageSize 
 		items = append(items, *s.toItem(&records[i]))
 	}
 	return items, total, nil
+}
+
+func (s *{{.EntityPascal}}Service) invalidateRows(ctx context.Context) {
+	if s.cache != nil {
+		s.cache.Invalidate{{.EntityPascal}}Rows(ctx, "all")
+	}
 }
 
 {{range .Queries}}

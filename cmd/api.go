@@ -71,8 +71,8 @@ var daoGenCmd = &cobra.Command{
 
   model/<entity>.go               gorm entity (fields from def)
   errors/errors.go                module number + not_found / xxx_exists codes
-  repository/repository.go        interface (CRUD + def queries)
-  repository/repository_mysql.go  BaseRepository implementation + compile assert
+  repository/<entity>_repository.go        interface (CRUD + def queries)
+  repository/<entity>_repository_mysql.go  BaseRepository implementation + compile assert
 
 If domains/<domain> does not exist, a skeleton is initialized first
 (pure is auto-detected: dao gen always produces a table-backed domain).
@@ -100,7 +100,7 @@ var apiGenCmd = &cobra.Command{
 	Long: `Generate the API layer on top of the DAO layer:
 
   domains/<domain>/service/<entity>_service.go   CRUD skeleton (no business rules)
-  domains/<domain>/provider/do/provider.go       DI registration
+  domains/<domain>/provider/do/<entity>_provider.go       DI registration
   domains/<domain>/permissions/                  permission codes per endpoint
   domains/<domain>/contract/contract.md          service method contract
   apps/<app>/internal/module/<entity>/           handler/dto/provider skeleton

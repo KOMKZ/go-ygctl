@@ -1,0 +1,96 @@
+// 本文件实现 {{.EntitySnake}} 行集合缓存资源。
+// 读取端统一缓存原始模型行，上层列表、选项和跨领域读取都从同一份快照派生。
+// 维护时本文件只管理 {{.EntitySnake}} 行集合的 key、序列化、读穿、singleflight 和失效策略。
+package cache
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"strings"
+
+	frameworkcache "github.com/KOMKZ/go-yogan-framework/cache"
+	"{{.DomainImport}}/model"
+	"go.uber.org/zap"
+)
+
+const {{.EntitySnake}}RowsKeyPrefix = "{{.EntitySnake}}-rows:"
+
+// Remember{{.EntityPascal}}Rows 缓存一个 scope 下的 {{.EntitySnake}} 原始行集合。
+func (c *{{.EntityPascal}}Cache) Remember{{.EntityPascal}}Rows(ctx context.Context, scope string, loader func(context.Context) ([]model.{{.EntityPascal}}, error)) ([]model.{{.EntityPascal}}, error) {
+	if c == nil || c.store == nil {
+		return loader(ctx)
+	}
+	key := {{.EntitySnake}}RowsKey(scope)
+	if rows, ok := c.get{{.EntityPascal}}Rows(ctx, key); ok {
+		c.recordHit()
+		return rows, nil
+	}
+	c.recordMiss()
+
+	value, err, _ := c.rowsGroup.Do(key, func() (any, error) {
+		if rows, ok := c.get{{.EntityPascal}}Rows(ctx, key); ok {
+			return rows, nil
+		}
+		rows, err := loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if err := c.set{{.EntityPascal}}Rows(ctx, key, rows); err != nil {
+			c.logWarn(ctx, "{{.DomainKey}} cache set failed", zap.String("key", key), zap.Error(err))
+		}
+		return rows, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	rows, ok := value.([]model.{{.EntityPascal}})
+	if !ok {
+		c.recordError()
+		return loader(ctx)
+	}
+	return rows, nil
+}
+
+// Invalidate{{.EntityPascal}}Rows 清理指定 scope 的 {{.EntitySnake}} 行集合缓存。
+func (c *{{.EntityPascal}}Cache) Invalidate{{.EntityPascal}}Rows(ctx context.Context, scope string) {
+	if c == nil || c.store == nil {
+		return
+	}
+	key := {{.EntitySnake}}RowsKey(scope)
+	if err := c.store.Delete(ctx, key); err != nil && !errors.Is(err, frameworkcache.ErrCacheMiss) {
+		c.recordError()
+		c.logWarn(ctx, "{{.DomainKey}} cache invalidate failed", zap.String("key", key), zap.Error(err))
+	}
+}
+
+func (c *{{.EntityPascal}}Cache) get{{.EntityPascal}}Rows(ctx context.Context, key string) ([]model.{{.EntityPascal}}, bool) {
+	data, err := c.store.Get(ctx, key)
+	if err != nil {
+		if !errors.Is(err, frameworkcache.ErrCacheMiss) {
+			c.recordError()
+			c.logWarn(ctx, "{{.DomainKey}} cache get failed", zap.String("key", key), zap.Error(err))
+		}
+		return nil, false
+	}
+	var rows []model.{{.EntityPascal}}
+	if err := json.Unmarshal(data, &rows); err != nil {
+		c.recordError()
+		c.logWarn(ctx, "{{.DomainKey}} cache decode failed", zap.String("key", key), zap.Error(err))
+		return nil, false
+	}
+	return rows, true
+}
+
+func (c *{{.EntityPascal}}Cache) set{{.EntityPascal}}Rows(ctx context.Context, key string, rows []model.{{.EntityPascal}}) error {
+	data, err := json.Marshal(rows)
+	if err != nil {
+		c.recordError()
+		return err
+	}
+	return c.store.Set(ctx, key, data, c.rowsTTL)
+}
+
+func {{.EntitySnake}}RowsKey(scope string) string {
+	return {{.EntitySnake}}RowsKeyPrefix + strings.TrimSpace(scope)
+}

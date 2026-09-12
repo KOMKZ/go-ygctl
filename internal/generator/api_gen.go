@@ -71,7 +71,11 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 		{"service/types.go.tmpl", "service/" + data.EntitySnake + "_types.go"},
 		{"service/service.go.tmpl", "service/" + data.EntitySnake + "_service.go"},
 		{"service/service_test.go.tmpl", "service/" + data.EntitySnake + "_service_test.go"},
-		{"provider/do/provider.go.tmpl", "provider/do/provider.go"},
+		{"provider/do/provider.go.tmpl", "provider/do/" + data.EntitySnake + "_provider.go"},
+		{"cache/AGENTS.md.tmpl", "cache/AGENTS.md"},
+		{"cache/domain_cache.go.tmpl", "cache/" + data.EntitySnake + "_cache.go"},
+		{"cache/redis_domain_cache.go.tmpl", "cache/redis_" + data.EntitySnake + "_cache.go"},
+		{"cache/entity_rows_cache.go.tmpl", "cache/" + data.EntitySnake + "_rows_cache.go"},
 		{"contract/contract.md.tmpl", "contract/contract.md"},
 	}
 	for _, f := range domainFiles {
@@ -92,6 +96,7 @@ func (c *APIGenConfig) Generate() (*APIGenResult, error) {
 	// <entity>_service.go; remove only those two (do NOT touch dao gen outputs).
 	_ = os.Remove(filepath.Join(domainDir, "service", "service.go"))
 	_ = os.Remove(filepath.Join(domainDir, "service", "service_test.go"))
+	_ = os.Remove(filepath.Join(domainDir, "provider", "do", "provider.go"))
 
 	// ---- App-side files ----
 	appFiles := []struct {

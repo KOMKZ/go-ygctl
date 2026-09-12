@@ -112,8 +112,8 @@ func (c *DAOGenConfig) Generate() (*DAOGenResult, error) {
 	}{
 		{"model/model.go.tmpl", "model/" + data.EntitySnake + ".go"},
 		{"errors/errors.go.tmpl", "errors/errors.go"},
-		{"repository/repository.go.tmpl", "repository/repository.go"},
-		{"repository/repository_mysql.go.tmpl", "repository/repository_mysql.go"},
+		{"repository/repository.go.tmpl", "repository/" + data.EntitySnake + "_repository.go"},
+		{"repository/repository_mysql.go.tmpl", "repository/" + data.EntitySnake + "_repository_mysql.go"},
 	}
 
 	var goFiles []string

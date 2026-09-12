@@ -40,7 +40,7 @@ var domainInitCmd = &cobra.Command{
   ├── CLAUDE.md                     # domain usage & rules (for AI dev)
   ├── errors/ errors.go             # error codes (module number auto-allocated)
   ├── model/                        # gorm entity placeholder
-  ├── repository/                   # interface + MySQL impl (BaseRepository)
+  ├── repository/                   # <entity>_repository.go + <entity>_repository_mysql.go
   ├── service/                      # domain logic placeholder + test
   ├── provider/do/                  # DI providers
   ├── event/ permissions/ policy/ assembler/ contract/
