@@ -8,12 +8,8 @@ import (
 
 // {{.EntityPascal}}ReadFilter 是读侧过滤条件。过滤、排序和分页必须在数据库完成。
 type {{.EntityPascal}}ReadFilter struct {
-	UserID      *uint
-	AdminID     *uint
-	UserKeyword string
-	AdminKeyword string
-	SortBy      string
-	SortOrder   string
+	SortBy    string
+	SortOrder string
 }
 
 // {{.EntityPascal}}ReadRepository 只负责管理端读模型查询，不承载写入。
