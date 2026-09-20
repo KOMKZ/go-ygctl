@@ -4,6 +4,7 @@ import (
 {{- if not .Pure}}
 	"{{.DomainImport}}/repository"
 {{- end}}
+	"github.com/KOMKZ/go-yogan-framework/errcode"
 	"github.com/KOMKZ/go-yogan-framework/logger"
 )
 
@@ -30,15 +31,27 @@ func New{{.EntityPascal}}Service({{if not .Pure}}repo repository.{{.EntityPascal
 {{- end}}
 }
 
-// TODO: 在此添加领域方法，例如：
+// TODO: 在此添加领域方法。错误治理合同（errlint 8 条全部 block，强制）：
+//   - 公共方法用命名返回值 + 入口 defer errcode.CaptureInto（errcode 语义见 skill error-handling.md）
+//   - I/O 边界用 errcode.Capture；业务语义用域 sentinel.Wrap；禁止裸 return err / fmt.Errorf 最终返回
 {{- if .Pure}}
 //
-//	func (s *{{.EntityPascal}}Service) Do(ctx context.Context, in port.SomeInput) (*port.SomeOutput, error) {
-//		// 调用 s 注入的端口，编排领域规则
+//	func (s *{{.EntityPascal}}Service) Do(ctx context.Context, in port.SomeInput) (out *port.SomeOutput, err error) {
+//		defer errcode.CaptureInto(&err, "{{.DomainKey}}.{{.EntitySnake}}_service.do")
+//		out, err = s.run(ctx, in)
+//		if err != nil {
+//			return nil, errcode.Capture(err, "{{.DomainKey}}.{{.EntitySnake}}_service.run")
+//		}
+//		return out, nil
 //	}
 {{- else}}
 //
-//	func (s *{{.EntityPascal}}Service) Get(ctx context.Context, id uint) (*model.{{.EntityPascal}}, error) {
-//		return s.repo.FindByID(ctx, id)
+//	func (s *{{.EntityPascal}}Service) Get(ctx context.Context, id uint) (item *model.{{.EntityPascal}}, err error) {
+//		defer errcode.CaptureInto(&err, "{{.DomainKey}}.{{.EntitySnake}}_service.get")
+//		row, err := s.repo.FindByID(ctx, id)
+//		if err != nil {
+//			return nil, errcode.Capture(err, "{{.DomainKey}}.{{.EntitySnake}}_service.get_by_id")
+//		}
+//		return row, nil
 //	}
 {{- end}}
