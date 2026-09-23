@@ -1,8 +1,8 @@
 {
   "mode": "changed",
   "root": "/home/kitral/pro/happy-rise-cpy/happy-rise-devpro/go-ygctl",
-  "files_scanned": 62,
-  "funcs_scanned": 307,
+  "files_scanned": 65,
+  "funcs_scanned": 330,
   "issues": [
     {
       "key": "naming:internal/generator/config.go",
@@ -27,6 +27,18 @@
       "reason": "weak file name; split/new business files should use business_role.go"
     },
     {
+      "key": "func:internal/generator/api_gen.go:*APIGenConfig.Generate",
+      "kind": "func",
+      "severity": "warn",
+      "path": "internal/generator/api_gen.go",
+      "name": "*APIGenConfig.Generate",
+      "value": 160,
+      "threshold": 130,
+      "blocking": false,
+      "changed": false,
+      "reason": "function line count exceeds threshold"
+    },
+    {
       "key": "func:internal/generator/domain_migrator.go:*DomainMigrator.Migrate",
       "kind": "func",
       "severity": "warn",
@@ -45,18 +57,6 @@
       "path": "internal/generator/http_generator.go",
       "name": "*HTTPGenerator.Generate",
       "value": 157,
-      "threshold": 130,
-      "blocking": false,
-      "changed": false,
-      "reason": "function line count exceeds threshold"
-    },
-    {
-      "key": "func:internal/generator/api_gen.go:*APIGenConfig.Generate",
-      "kind": "func",
-      "severity": "warn",
-      "path": "internal/generator/api_gen.go",
-      "name": "*APIGenConfig.Generate",
-      "value": 155,
       "threshold": 130,
       "blocking": false,
       "changed": false,
@@ -115,10 +115,10 @@
       "kind": "package",
       "severity": "warn",
       "path": "internal/generator",
-      "value": 27,
+      "value": 28,
       "threshold": 18,
       "blocking": false,
-      "changed": false,
+      "changed": true,
       "reason": "package file count exceeds threshold; report only, no automatic subpackage move"
     },
     {
@@ -126,11 +126,107 @@
       "kind": "package",
       "severity": "warn",
       "path": "cmd",
-      "value": 20,
+      "value": 21,
       "threshold": 18,
       "blocking": false,
       "changed": false,
       "reason": "package file count exceeds threshold; report only, no automatic subpackage move"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:internal/generator/api_gen.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "internal/generator/api_gen.go",
+      "name": "LINT-ERR-006",
+      "value": 4,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 97,98,99,144)"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:internal/generator/domain_migrator.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "internal/generator/domain_migrator.go",
+      "name": "LINT-ERR-006",
+      "value": 2,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 181,336)"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:cmd/api.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "cmd/api.go",
+      "name": "LINT-ERR-006",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 195)"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:cmd/domain_migrate.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "cmd/domain_migrate.go",
+      "name": "LINT-ERR-006",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 39)"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:cmd/migrate.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "cmd/migrate.go",
+      "name": "LINT-ERR-006",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 88)"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:cmd/model.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "cmd/model.go",
+      "name": "LINT-ERR-006",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 67)"
+    },
+    {
+      "key": "errlint:LINT-ERR-006:cmd/permission.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "cmd/permission.go",
+      "name": "LINT-ERR-006",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "禁止裸 _ = call() 吞错。修复：可传播→errcode.Capture 后返回；无法返回的旁路→logger.GetLogger(域).Warn 或 gin c.Error 显式告警；解码容错→if err != nil 显式降级零值；装配期错误→fail-fast panic (lines 69)"
+    },
+    {
+      "key": "errlint:LINT-ERR-004:internal/generator/migrate.go",
+      "kind": "errlint",
+      "severity": "warn",
+      "path": "internal/generator/migrate.go",
+      "name": "LINT-ERR-004",
+      "value": 1,
+      "threshold": 0,
+      "blocking": false,
+      "changed": false,
+      "reason": "err.Error() 不得进响应/DTO/持久化。修复：用户面 errcode.SafeMessage(err).PublicMessage 或 PublicMessageOf；运维/日志诊断面 errcode.Redact(err.Error())；内部分类改 errors.As 类型化判别 (lines 217)"
     }
   ],
   "blocking": []

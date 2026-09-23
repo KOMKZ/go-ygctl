@@ -56,7 +56,69 @@ var (
 	domainKeyRe  = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 	moduleLineRe = regexp.MustCompile(`^module\s+(\S+)`)
 	errModuleRe  = regexp.MustCompile(`const\s+Module\w+\s*=\s*(\d+)`)
+	singleUseRe  = regexp.MustCompile(`^\s*use\s+(\S+)\s*$`)
 )
+
+// domainFile 描述一个领域骨架输出项：模板名 + 相对领域根目录的输出路径。
+type domainFile struct {
+	tmpl string
+	out  string
+}
+
+// validateDomainKey 校验领域名：小写字母开头，仅小写字母/数字/连字符（kebab-case）。
+func validateDomainKey(key string) error {
+	if !domainKeyRe.MatchString(key) {
+		return fmt.Errorf("invalid domain name %q: use lowercase kebab-case (a-z, 0-9, -)", key)
+	}
+	return nil
+}
+
+// domainFilePlan 输出领域骨架文件计划（模板名 → 输出路径）。
+// 骨架矩阵来源：hrise-server-app 现行领域治理 + 金样域（resource-tags 表域 /
+// session-management、user-mini-orchestration、admin-orchestration 纯域）：
+//   - uploads/README.md 是所有业务领域的上传能力槽位（根 AGENTS.md 媒体资源治理），
+//     纯逻辑域与表域一致保留；无用例时只渲染 README，不生成空 Go 文件；
+//   - 纯逻辑域（--pure）裁剪 port/event/policy/assembler/contract 与表骨架，
+//     与金样纯域（errors/service/provider/do/uploads）基线一致；
+//   - 表域额外生成 model/repository/cache/read 读写真骨架。
+func domainFilePlan(pure bool, entitySnake string) []domainFile {
+	files := []domainFile{
+		{"go.mod.tmpl", "go.mod"},
+		{".gitignore.tmpl", ".gitignore"},
+		{"CLAUDE.md.tmpl", "CLAUDE.md"},
+		{"errors/errors.go.tmpl", "errors/errors.go"},
+		{"service/types.go.tmpl", "service/" + entitySnake + "_types.go"},
+		{"service/service.go.tmpl", "service/" + entitySnake + "_service.go"},
+		{"service/service_test.go.tmpl", "service/" + entitySnake + "_service_test.go"},
+		{"provider/do/provider.go.tmpl", "provider/do/" + entitySnake + "_provider.go"},
+		{"uploads/README.md.tmpl", "uploads/README.md"},
+	}
+	if pure {
+		return files
+	}
+	files = append(files,
+		domainFile{"port/port.go.tmpl", "port/port.go"},
+		domainFile{"event/event.go.tmpl", "event/event.go"},
+		domainFile{"policy/policy.go.tmpl", "policy/policy.go"},
+		domainFile{"assembler/assembler.go.tmpl", "assembler/assembler.go"},
+		domainFile{"contract/contract.md.tmpl", "contract/contract.md"},
+		domainFile{"model/model.go.tmpl", "model/" + entitySnake + ".go"},
+		domainFile{"repository/repository.go.tmpl", "repository/" + entitySnake + "_repository.go"},
+		domainFile{"repository/repository_mysql.go.tmpl", "repository/" + entitySnake + "_repository_mysql.go"},
+		domainFile{"cache/AGENTS.md.tmpl", "cache/AGENTS.md"},
+		domainFile{"cache/domain_cache.go.tmpl", "cache/" + entitySnake + "_cache.go"},
+		domainFile{"cache/redis_domain_cache.go.tmpl", "cache/redis_" + entitySnake + "_cache.go"},
+		domainFile{"cache/entity_rows_cache.go.tmpl", "cache/" + entitySnake + "_rows_cache.go"},
+		domainFile{"read/model/read_list_item.go.tmpl", "read/model/" + entitySnake + "_read_list_item.go"},
+		domainFile{"read/model/read_detail_item.go.tmpl", "read/model/" + entitySnake + "_read_detail_item.go"},
+		domainFile{"read/repository/read_repository.go.tmpl", "read/repository/" + entitySnake + "_read_repository.go"},
+		domainFile{"read/repository/read_repository_mysql.go.tmpl", "read/repository/" + entitySnake + "_read_repository_mysql.go"},
+		domainFile{"read/service/read_query_types.go.tmpl", "read/service/" + entitySnake + "_read_query_types.go"},
+		domainFile{"read/service/read_query_service.go.tmpl", "read/service/" + entitySnake + "_read_query_service.go"},
+		domainFile{"read/claude.md.tmpl", "read/claude.md"},
+	)
+	return files
+}
 
 // Generate creates the domain skeleton and verifies it compiles.
 func (g *DomainGenerator) Generate() (*DomainInfo, error) {
@@ -64,8 +126,8 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 		return nil, err
 	}
 	key := g.config.DomainKey
-	if !domainKeyRe.MatchString(key) {
-		return nil, fmt.Errorf("invalid domain name %q: use lowercase snake/kebab-case (a-z, 0-9, -)", key)
+	if err := validateDomainKey(key); err != nil {
+		return nil, err
 	}
 
 	domainsDir := filepath.Join(g.config.WorkspacePath, "domains")
@@ -83,67 +145,7 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 	g.errModule = allocateErrModule(domainsDir)
 
 	data := g.templateData(key)
-
-	entitySnake := data["EntitySnake"].(string)
-	files := []struct {
-		tmpl string
-		out  string
-	}{
-		{"go.mod.tmpl", "go.mod"},
-		{".gitignore.tmpl", ".gitignore"},
-		{"CLAUDE.md.tmpl", "CLAUDE.md"},
-		{"errors/errors.go.tmpl", "errors/errors.go"},
-		{"service/types.go.tmpl", "service/" + entitySnake + "_types.go"},
-		{"service/service.go.tmpl", "service/" + entitySnake + "_service.go"},
-		{"service/service_test.go.tmpl", "service/" + entitySnake + "_service_test.go"},
-		{"port/port.go.tmpl", "port/port.go"},
-		{"provider/do/provider.go.tmpl", "provider/do/" + entitySnake + "_provider.go"},
-		{"event/event.go.tmpl", "event/event.go"},
-		{"policy/policy.go.tmpl", "policy/policy.go"},
-		{"assembler/assembler.go.tmpl", "assembler/assembler.go"},
-		{"contract/contract.md.tmpl", "contract/contract.md"},
-	}
-	if !g.config.Pure {
-		files = append(files,
-			struct {
-				tmpl string
-				out  string
-			}{"model/model.go.tmpl", "model/" + entitySnake + ".go"},
-			struct {
-				tmpl string
-				out  string
-			}{"repository/repository.go.tmpl", "repository/" + entitySnake + "_repository.go"},
-			struct {
-				tmpl string
-				out  string
-			}{"repository/repository_mysql.go.tmpl", "repository/" + entitySnake + "_repository_mysql.go"},
-			struct {
-				tmpl string
-				out  string
-			}{"cache/AGENTS.md.tmpl", "cache/AGENTS.md"},
-			struct {
-				tmpl string
-				out  string
-			}{"cache/domain_cache.go.tmpl", "cache/" + entitySnake + "_cache.go"},
-			struct {
-				tmpl string
-				out  string
-			}{"cache/redis_domain_cache.go.tmpl", "cache/redis_" + entitySnake + "_cache.go"},
-			struct {
-				tmpl string
-				out  string
-			}{"cache/entity_rows_cache.go.tmpl", "cache/" + entitySnake + "_rows_cache.go"},
-		)
-		files = append(files,
-			struct{ tmpl, out string }{"read/model/read_list_item.go.tmpl", "read/model/" + entitySnake + "_read_list_item.go"},
-			struct{ tmpl, out string }{"read/model/read_detail_item.go.tmpl", "read/model/" + entitySnake + "_read_detail_item.go"},
-			struct{ tmpl, out string }{"read/repository/read_repository.go.tmpl", "read/repository/" + entitySnake + "_read_repository.go"},
-			struct{ tmpl, out string }{"read/repository/read_repository_mysql.go.tmpl", "read/repository/" + entitySnake + "_read_repository_mysql.go"},
-			struct{ tmpl, out string }{"read/service/read_query_types.go.tmpl", "read/service/" + entitySnake + "_read_query_types.go"},
-			struct{ tmpl, out string }{"read/service/read_query_service.go.tmpl", "read/service/" + entitySnake + "_read_query_service.go"},
-			struct{ tmpl, out string }{"read/claude.md.tmpl", "read/claude.md"},
-		)
-	}
+	files := domainFilePlan(g.config.Pure, data["EntitySnake"].(string))
 
 	var goFiles []string
 	for _, f := range files {
@@ -151,7 +153,7 @@ func (g *DomainGenerator) Generate() (*DomainInfo, error) {
 		if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
 			return nil, err
 		}
-		if err := g.renderDomainFile(outPath, f.tmpl, data); err != nil {
+		if err := renderDomainFile(outPath, f.tmpl, data); err != nil {
 			return nil, fmt.Errorf("failed to generate %s: %w", f.out, err)
 		}
 		if strings.HasSuffix(f.out, ".go") {
@@ -276,6 +278,9 @@ func (g *DomainGenerator) loadModuleBase() error {
 // registerGoWork adds "use ./domains/<key>" to go.work (idempotent).
 // The closing paren is matched on its own line so comments containing ")"
 // are not mistaken for the end of the use block.
+// `go work sync` rewrites a single-entry use block into the single-line
+// `use <path>` form; that form is converted back to a block so the next
+// domain init can append its entry.
 func registerGoWork(workspacePath, key string) error {
 	goWorkPath := filepath.Join(workspacePath, "go.work")
 	content, err := os.ReadFile(goWorkPath)
@@ -291,9 +296,26 @@ func registerGoWork(workspacePath, key string) error {
 		}
 	}
 	useLine := -1
+	inserted := false
 	for i, ln := range lines {
 		if strings.Contains(ln, "use (") {
 			useLine = i
+			break
+		}
+	}
+	if useLine < 0 {
+		// Single-line `use <path>` form (produced by `go work sync` for
+		// single-module workspaces): convert it to a block listing both;
+		// the new entry is already part of the block, so insertion is skipped.
+		for i, ln := range lines {
+			single := singleUseRe.FindStringSubmatch(ln)
+			if single == nil || strings.TrimSpace(single[1]) == entry {
+				continue
+			}
+			block := []string{"use (", "\t" + strings.TrimSpace(single[1]), "\t" + entry, ")"}
+			lines = append(lines[:i], append(block, lines[i+1:]...)...)
+			useLine = i
+			inserted = true
 			break
 		}
 	}
@@ -312,7 +334,9 @@ func registerGoWork(workspacePath, key string) error {
 		return fmt.Errorf("go.work 'use' block is not closed")
 	}
 
-	lines = append(lines[:closeLine], append([]string{"\t" + entry}, lines[closeLine:]...)...)
+	if !inserted {
+		lines = append(lines[:closeLine], append([]string{"\t" + entry}, lines[closeLine:]...)...)
+	}
 	if err := os.WriteFile(goWorkPath, []byte(strings.Join(lines, "\n")), 0644); err != nil {
 		return fmt.Errorf("failed to update go.work: %w", err)
 	}
@@ -389,7 +413,7 @@ func (g *DomainGenerator) templateData(key string) map[string]any {
 }
 
 // renderDomainFile renders one embedded domain template.
-func (g *DomainGenerator) renderDomainFile(outPath, tmplName string, data map[string]any) error {
+func renderDomainFile(outPath, tmplName string, data map[string]any) error {
 	tmplPath := filepath.Join("templates", "domain", tmplName)
 	content, err := domainTemplates.ReadFile(tmplPath)
 	if err != nil {

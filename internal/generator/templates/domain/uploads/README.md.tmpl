@@ -1,0 +1,12 @@
+# {{.DomainKey}} uploads
+
+本目录是 `{{.DomainKey}}` 领域的业务上传能力槽位（治理来源：工作区根 `AGENTS.md` 媒体资源治理）。
+所有业务领域默认保留本槽位；`domains/storage` 是基础设施本体，不在此列。
+
+- 当前没有已登记的业务上传用例：只保留本 README 作为治理入口，禁止创建空 Go 文件占位。
+- 新增业务上传时：一类业务使用一个 lower_snake_case 文件和一个有业务语义的公开方法，禁止通用 `Upload` 方法。
+- 文件头写明用途、上游、下游、固定规则、边界和拆分条件；Application、storage、media class、BusinessType 和 BusinessID 格式在用例内部固定。
+- 调用方只传业务产物与业务上下文；禁止把 storage、business_type、media_class 等上传策略默认值扩散到调用方或写入通用模板。
+- 直接调用 `domains/storage/service.FileService`；禁止新增 resolver、URL 拼接、driver、StorageID 或配置逻辑。
+- 生命周期规则（temporary/formal、预留/确认/释放）只收敛在 Storage 领域与本目录用例，禁止扩散到 executor、callback handler 或 repository。
+- 登记第一项用例时同步更新本 README、storage 能力索引、领域测试和治理 ticket。

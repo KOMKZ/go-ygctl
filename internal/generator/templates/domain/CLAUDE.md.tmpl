@@ -19,25 +19,33 @@
 | read/ | 管理端列表/详情等读模型；MVP 可 JOIN，未来可替换为 CDC/宽表 |
 {{- end}}
 | service/ | 领域业务规则（骨架无逻辑，按需添加） |
+{{- if not .Pure}}
 | port/ | 端口定义："域定义、外部实现"的接口 + 域默认实现（app 层适配注入） |
+{{- end}}
 | provider/do/ | DI 注册（{{if .Pure}}service{{else}}repo/service{{end}}；app 侧 `do.Invoke` 使用） |
+{{- if not .Pure}}
 | event/ | 领域事件（经 framework event.Dispatcher 分发，app 层订阅） |
+{{- end}}
 | permissions/ | 权限码字典（域内声明，API 侧自动 upsert，禁止 app 手写权限 SQL） |
+{{- if not .Pure}}
 | policy/ | 策略定义（访问控制、业务规则） |
 | assembler/ | model ↔ DTO 转换 |
 | contract/ | 领域契约文档 |
+{{- end}}
+| uploads/ | 业务上传能力槽位（`uploads/README.md` 是唯一治理入口；无用例时只保留 README，不创建空 Go 文件） |
 
-{{if .Pure}}> 本域为**纯逻辑域（--pure）**：无数据表、无 model/repository。业务对象由其他域提供（接口注入）。
+{{if .Pure}}> 本域为**纯逻辑域（--pure）**：无数据表、无 model/repository。业务对象由其他域提供（service 内声明窄接口注入）。
 
 {{end}}
 ## 铁律
 
-1. **域根目录不放置代码**：根目录只有 go.mod/.gitignore/CLAUDE.md；一切代码进子包（errors/model/repository/read/service/port/provider/event/permissions/policy/assembler）
-2. **migration 不属于域**：所有 SQL 集中在 `apps/<app>/migrations/`，用 `ygctl migrate create <desc> --domain {{.DomainKey}}` 创建，禁止在域内放 SQL
+1. **域根目录不放置代码**：根目录只有 go.mod/.gitignore/CLAUDE.md；一切代码进子包（errors{{if not .Pure}}/model/repository/read{{end}}/service/provider{{if not .Pure}}/event/permissions/policy/assembler{{end}}/uploads）
+2. **migration 不属于域**：所有 SQL 集中在 `apps/hrise-admin-api/migrations/`，优先用目标 app 的 `make migrate-create NAME=<desc>` 创建，禁止在域内放 SQL
 3. **model 变更必须有迁移**：加/改字段同步补 migration SQL
 4. **错误码**：模块号固定；新增业务码扫描 errors/errors.go 取 max+1
 5. **权限码**：只在 permissions/declared_permissions.go 声明
-6. **质量**：`go test ./domains/{{.DomainKey}}/...` 100% 通过，覆盖率不低于项目门禁
+6. **上传能力**：业务上传只从 `uploads/README.md` 治理入口进入；无用例时保留 README，不建空文件
+7. **质量**：`go test ./domains/{{.DomainKey}}/...` 100% 通过，覆盖率不低于项目门禁
 
 ## 常用命令
 
@@ -48,8 +56,8 @@ go test ./domains/{{.DomainKey}}/...
 {{if not .Pure}}# 从数据表生成 model（生成后人工核对字段与标签）
 ygctl model from-table <table> --domain {{.DomainKey}}
 
-{{end}}# 创建集中式 migration
-ygctl migrate create <desc> --domain {{.DomainKey}}
+{{end}}# 创建集中式 migration（在 apps/hrise-admin-api 执行）
+make migrate-create NAME=<desc>
 
 # 全 workspace 构建
 go build ./...
@@ -57,11 +65,10 @@ go build ./...
 
 ## 修改流程
 
-{{if .Pure}}1. 改 service/port，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
+{{if .Pure}}1. 改 service，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
 2. 权限相关 → 更新 permissions/declared_permissions.go
-3. 事件相关 → 在 event/ 定义，app 层 subscriber 订阅
 {{else}}1. 改 model/repository/read/service，补测试，`go test ./domains/{{.DomainKey}}/...` 全绿
-2. model 变更 → `ygctl migrate create` 补 SQL
+2. model 变更 → `make migrate-create` 补 SQL
 3. 权限相关 → 更新 permissions/declared_permissions.go
 4. 事件相关 → 在 event/ 定义，app 层 subscriber 订阅
 {{end}}
