@@ -32,3 +32,9 @@ __debug_bin*
 
 # Local test outputs
 /tmp/
+
+# Media policy: generated or temporary media must never be committed.
+*.mp4
+*.MP4
+*.mp3
+*.MP3
